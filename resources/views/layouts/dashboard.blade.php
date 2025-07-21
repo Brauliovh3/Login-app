@@ -162,6 +162,96 @@
             padding: 0.25rem 0.5rem;
             border-radius: 1rem;
         }
+
+        /* Topbar mejoras */
+        .topbar .navbar-nav .nav-link:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-radius: 0.35rem;
+        }
+
+        .topbar .dropdown-menu {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+        }
+
+        .animated--grow-in {
+            animation: growIn 0.2s ease-in-out;
+        }
+
+        @keyframes growIn {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .badge-counter {
+            font-size: 0.7rem;
+            border: 2px solid #fff;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fc;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
+        }
+
+        /* User info en topbar */
+        .topbar .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .topbar .nav-link:focus {
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(94, 114, 228, 0.25);
+        }
+
+        /* Estilos adicionales para notificaciones */
+        .notification-item:hover {
+            background-color: #f1f3f4 !important;
+        }
+
+        .notification-body {
+            scrollbar-width: thin;
+            scrollbar-color: #dee2e6 #f8f9fa;
+        }
+
+        .notification-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .notification-body::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        .notification-body::-webkit-scrollbar-thumb {
+            background-color: #dee2e6;
+            border-radius: 3px;
+        }
+
+        /* Animación suave para el dropdown */
+        .dropdown-menu {
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            transform-origin: top right;
+        }
+
+        .dropdown-menu[style*="display: none"] {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+            pointer-events: none;
+        }
+
+        .dropdown-menu[style*="display: block"] {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
@@ -351,51 +441,24 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Top Bar -->
-        <nav class="navbar navbar-expand topbar mb-4 static-top">
+        <nav class="navbar navbar-expand topbar mb-4 static-top" style="background: #fff; border-bottom: 1px solid #e3e6f0; box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);">
             <button class="btn btn-link d-md-none rounded-circle mr-3 mobile-menu-toggle" onclick="toggleSidebar()">
                 <i class="fa fa-bars"></i>
             </button>
 
-            <ul class="navbar-nav ml-auto">
-                @auth
-                    <!-- Notifications -->
-                    <li class="nav-item dropdown no-arrow mx-1">
-                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-bell fa-fw"></i>
-                            @if(auth()->user()->notifications()->where('read', false)->count() > 0)
-                                <span class="badge badge-danger badge-counter">
-                                    {{ auth()->user()->notifications()->where('read', false)->count() }}
-                                </span>
-                            @endif
-                        </a>
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow">
-                            <h6 class="dropdown-header">Centro de Notificaciones</h6>
-                            @forelse(auth()->user()->notifications()->latest()->take(3)->get() as $notification)
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">{{ $notification->created_at->format('F d, Y') }}</div>
-                                        <span class="font-weight-bold">{{ $notification->title }}</span>
-                                    </div>
-                                </a>
-                            @empty
-                                <a class="dropdown-item text-center small text-gray-500" href="#">No hay notificaciones</a>
-                            @endforelse
-                            <a class="dropdown-item text-center small text-gray-500" href="{{ route('notifications.index') }}">Ver todas las notificaciones</a>
-                        </div>
-                    </li>
+            <!-- Espaciador para empujar todo hacia la derecha -->
+            <div class="navbar-nav flex-grow-1"></div>
 
-                    <!-- User Info -->
-                    <li class="nav-item dropdown no-arrow">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ auth()->user()->name }}</span>
-                            <i class="fas fa-user-circle fa-fw"></i>
+            <!-- Usuario y Notificaciones en la esquina superior derecha -->
+            <ul class="navbar-nav">
+                @auth
+                    <!-- User Info primero -->
+                    <li class="nav-item dropdown no-arrow mr-3">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #5a5c69; padding: 0.75rem;">
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">{{ auth()->user()->name }}</span>
+                            <i class="fas fa-user-circle fa-lg" style="color: #858796;"></i>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow">
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
                             <a class="dropdown-item" href="#">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Mi Perfil
@@ -412,6 +475,60 @@
                                     Cerrar Sesión
                                 </button>
                             </form>
+                        </div>
+                    </li>
+
+                    <!-- Notifications después -->
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link d-flex align-items-center" href="#" id="alertsDropdown" role="button" onclick="toggleNotifications(event)" style="color: #5a5c69; padding: 0.75rem; position: relative; cursor: pointer;">
+                            <i class="fas fa-bell fa-lg" style="color: #858796;"></i>
+                            @if(auth()->user()->notifications()->where('read', false)->count() > 0)
+                                <span class="badge badge-danger badge-counter position-absolute" style="top: 0.25rem; right: 0.25rem; background: #e74a3b; color: white; font-size: 0.7rem; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    {{ auth()->user()->notifications()->where('read', false)->count() }}
+                                </span>
+                            @endif
+                        </a>
+                        <!-- Dropdown de notificaciones OCULTO por defecto -->
+                        <div id="notificationsDropdown" class="dropdown-menu dropdown-menu-right shadow" style="display: none; position: absolute; right: 0; top: 100%; min-width: 22rem; max-width: 25rem; z-index: 1050; border: none; border-radius: 0.5rem; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);">
+                            <div class="dropdown-header bg-gradient-primary text-white py-3 px-3 m-0" style="border-radius: 0.5rem 0.5rem 0 0;">
+                                <i class="fas fa-bell mr-2"></i>Centro de Notificaciones
+                                <button type="button" class="btn-close btn-close-white float-end" onclick="closeNotifications()" style="font-size: 0.8rem;"></button>
+                            </div>
+                            <div class="notification-body" style="max-height: 400px; overflow-y: auto;">
+                                @forelse(auth()->user()->notifications()->latest()->take(5)->get() as $notification)
+                                    <a class="dropdown-item d-flex align-items-center py-3 border-bottom notification-item" href="#" style="white-space: normal; transition: background-color 0.2s;">
+                                        <div class="mr-3 flex-shrink-0">
+                                            <div class="icon-circle bg-primary d-flex align-items-center justify-content-center" style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: linear-gradient(45deg, #4e73df, #224abe);">
+                                                <i class="fas fa-bell text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 min-width-0">
+                                            <div class="small text-muted mb-1">{{ $notification->created_at->diffForHumans() }}</div>
+                                            <div class="font-weight-bold text-dark mb-1" style="font-size: 0.9rem;">{{ Str::limit($notification->title, 45) }}</div>
+                                            @if($notification->message)
+                                                <div class="small text-muted" style="line-height: 1.3;">{{ Str::limit($notification->message, 70) }}</div>
+                                            @endif
+                                        </div>
+                                        @if(!$notification->read)
+                                            <div class="ml-2 flex-shrink-0">
+                                                <span class="badge bg-primary badge-pill" style="font-size: 0.7rem;">Nuevo</span>
+                                            </div>
+                                        @endif
+                                    </a>
+                                @empty
+                                    <div class="dropdown-item-text text-center py-5">
+                                        <i class="fas fa-bell-slash fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
+                                        <p class="text-muted mb-0">No tienes notificaciones</p>
+                                        <small class="text-muted">Te avisaremos cuando lleguen nuevas</small>
+                                    </div>
+                                @endforelse
+                            </div>
+                            @if(auth()->user()->notifications()->count() > 0)
+                                <div class="dropdown-divider m-0"></div>
+                                <a class="dropdown-item text-center py-3" href="{{ route('notifications.index')}}" style="background: #f8f9fc; color: #5a5c69; font-weight: 500; border-radius: 0 0 0.5rem 0.5rem;">
+                                    <i class="fas fa-eye mr-2"></i>Ver todas las notificaciones
+                                </a>
+                            @endif
                         </div>
                     </li>
                 @endauth
@@ -440,6 +557,65 @@
                 if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
                     sidebar.classList.remove('show');
                 }
+            }
+        });
+
+        // Funciones para manejar las notificaciones
+        function toggleNotifications(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const dropdown = document.getElementById('notificationsDropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                closeNotifications();
+            } else {
+                openNotifications();
+            }
+        }
+
+        function openNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            dropdown.style.display = 'block';
+            
+            // Agregar clase para animación
+            setTimeout(() => {
+                dropdown.classList.add('show');
+            }, 10);
+        }
+
+        function closeNotifications() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            dropdown.classList.remove('show');
+            
+            setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 200);
+        }
+
+        // Cerrar notificaciones cuando se hace clic fuera
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notificationsDropdown');
+            const bellIcon = document.getElementById('alertsDropdown');
+            
+            if (dropdown && bellIcon) {
+                // Si el dropdown está visible y el clic no es en el dropdown ni en la campanita
+                if (dropdown.style.display === 'block' && 
+                    !dropdown.contains(event.target) && 
+                    !bellIcon.contains(event.target)) {
+                    closeNotifications();
+                }
+            }
+        });
+
+        // Prevenir que el dropdown se cierre cuando se hace clic dentro de él
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdown = document.getElementById('notificationsDropdown');
+            if (dropdown) {
+                dropdown.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
             }
         });
     </script>
