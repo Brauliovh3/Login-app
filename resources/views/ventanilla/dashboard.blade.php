@@ -131,9 +131,9 @@
         </div>
     </div>
 
-    <!-- Atenciones Recientes y Cola -->
+    <!-- Atenciones Recientes -->
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-history me-2"></i>Atenciones Recientes</h4>
@@ -215,69 +215,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <!-- Cola de Espera -->
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0"><i class="fas fa-users me-2"></i>Cola de Espera</h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info text-center mb-3">
-                        <h3 class="mb-0">Próximo Turno</h3>
-                        <h1 class="display-4 text-primary">#A005</h1>
-                        <button class="btn btn-primary btn-lg">
-                            <i class="fas fa-bell me-2"></i>Llamar
-                        </button>
-                    </div>
-                    
-                    <div class="list-group">
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>#A006</strong><br>
-                                <small class="text-muted">Trámite general</small>
-                            </div>
-                            <span class="badge bg-warning rounded-pill">Esperando</span>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>#A007</strong><br>
-                                <small class="text-muted">Consulta</small>
-                            </div>
-                            <span class="badge bg-warning rounded-pill">Esperando</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notificaciones -->
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h4>
-                </div>
-                <div class="card-body">
-                    @forelse(\App\Models\Notification::where('user_id', Auth::id())->latest()->take(5)->get() as $notification)
-                        <div class="alert alert-{{ $notification->type == 'success' ? 'success' : ($notification->type == 'warning' ? 'warning' : 'info') }} alert-dismissible fade show">
-                            <strong>{{ $notification->title }}</strong><br>
-                            {{ $notification->message }}
-                            <small class="d-block mt-1 text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                        </div>
-                    @empty
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>Turno completado</strong><br>
-                            Se ha completado exitosamente el trámite #V001.
-                            <small class="d-block mt-1 text-muted">Hace 5 minutos</small>
-                        </div>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Sistema actualizado</strong><br>
-                            Nuevas funcionalidades disponibles en el sistema.
-                            <small class="d-block mt-1 text-muted">Hace 1 hora</small>
-                        </div>
-                    @endforelse
                 </div>
             </div>
         </div>

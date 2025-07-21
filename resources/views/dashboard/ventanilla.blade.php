@@ -100,7 +100,7 @@
 
 <!-- Panel de Operaciones -->
 <div class="row">
-    <div class="col-xl-8 col-lg-7">
+    <div class="col-xl-12 col-lg-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-info"><i class="fas fa-tools"></i> Herramientas de Ventanilla</h6>
@@ -286,85 +286,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- Panel de actividad -->
-    <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-info"><i class="fas fa-bell"></i> Notificaciones</h6>
-                <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-info">Ver Todas</a>
-            </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                @if($notifications->count() > 0)
-                    @foreach($notifications as $notification)
-                        <div class="media mb-3">
-                            <div class="media-object mr-3">
-                                @switch($notification->type)
-                                    @case('success')
-                                        <i class="fas fa-check-circle text-success fa-2x"></i>
-                                        @break
-                                    @case('error')
-                                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
-                                        @break
-                                    @case('warning')
-                                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
-                                        @break
-                                    @default
-                                        <i class="fas fa-info-circle text-info fa-2x"></i>
-                                @endswitch
-                            </div>
-                            <div class="media-body">
-                                <h6 class="mt-0">{{ $notification->title }}</h6>
-                                <p class="text-muted small mb-1">{{ $notification->message }}</p>
-                                <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                        @if(!$loop->last)<hr>@endif
-                    @endforeach
-                @else
-                    <div class="text-center text-muted">
-                        <i class="fas fa-bell-slash fa-3x mb-3"></i>
-                        <p>No hay notificaciones</p>
-                    </div>
-                @endif
-            </div>
-        </div>
 
-        <!-- Cola de atención -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-warning"><i class="fas fa-users"></i> Cola de Atención</h6>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Cliente #001</strong><br>
-                            <small class="text-muted">Trámite: Renovación de licencia</small>
-                        </div>
-                        <span class="badge bg-warning rounded-pill">Espera: 15 min</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Cliente #002</strong><br>
-                            <small class="text-muted">Trámite: Cambio de domicilio</small>
-                        </div>
-                        <span class="badge bg-info rounded-pill">Espera: 8 min</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Cliente #003</strong><br>
-                            <small class="text-muted">Trámite: Consulta general</small>
-                        </div>
-                        <span class="badge bg-success rounded-pill">Espera: 3 min</span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <button class="btn btn-primary btn-sm me-2">Llamar Siguiente</button>
-                    <button class="btn btn-outline-secondary btn-sm">Ver Cola Completa</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 @endsection

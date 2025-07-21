@@ -3,7 +3,14 @@
 @section('title', 'Panel de Fiscalizador')
 
 @section('content')
+<!-- Panel de Operaciones -->
 <div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-search"></i> Herramientas de Fiscalización</h6>
+            </div>
+            <div class="card-body">ss="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -100,7 +107,7 @@
 
 <!-- Panel de Fiscalización -->
 <div class="row">
-    <div class="col-xl-8 col-lg-7">
+    <div class="col-xl-12 col-lg-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-tasks"></i> Herramientas de Fiscalización</h6>
@@ -210,68 +217,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Panel de actividad -->
-    <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-bell"></i> Notificaciones</h6>
-                <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-success">Ver Todas</a>
-            </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                @if($notifications->count() > 0)
-                    @foreach($notifications as $notification)
-                        <div class="media mb-3">
-                            <div class="media-object mr-3">
-                                @switch($notification->type)
-                                    @case('success')
-                                        <i class="fas fa-check-circle text-success fa-2x"></i>
-                                        @break
-                                    @case('error')
-                                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
-                                        @break
-                                    @case('warning')
-                                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
-                                        @break
-                                    @default
-                                        <i class="fas fa-info-circle text-info fa-2x"></i>
-                                @endswitch
-                            </div>
-                            <div class="media-body">
-                                <h6 class="mt-0">{{ $notification->title }}</h6>
-                                <p class="text-muted small mb-1">{{ $notification->message }}</p>
-                                <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                        @if(!$loop->last)<hr>@endif
-                    @endforeach
-                @else
-                    <div class="text-center text-muted">
-                        <i class="fas fa-bell-slash fa-3x mb-3"></i>
-                        <p>No hay notificaciones</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- Alertas de trabajo -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-warning"><i class="fas fa-exclamation-triangle"></i> Alertas de Trabajo</h6>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-clock"></i> <strong>Recordatorio:</strong> Tienes 5 documentos pendientes de revisión con vencimiento hoy.
-                </div>
-                <div class="alert alert-info" role="alert">
-                    <i class="fas fa-info-circle"></i> <strong>Información:</strong> Nueva auditoría programada para mañana.
-                </div>
-                <div class="alert alert-success" role="alert">
-                    <i class="fas fa-check"></i> <strong>Completado:</strong> Informe mensual generado correctamente.
                 </div>
             </div>
         </div>

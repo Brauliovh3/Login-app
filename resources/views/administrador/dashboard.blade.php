@@ -133,7 +133,7 @@
 
     <!-- Usuarios Recientes -->
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-users me-2"></i>Usuarios Recientes</h4>
@@ -185,27 +185,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h4>
-                </div>
-                <div class="card-body">
-                    @forelse(\App\Models\Notification::where('user_id', Auth::id())->latest()->take(5)->get() as $notification)
-                        <div class="alert alert-{{ $notification->type == 'success' ? 'success' : ($notification->type == 'warning' ? 'warning' : 'info') }} alert-dismissible fade show">
-                            <strong>{{ $notification->title }}</strong><br>
-                            {{ $notification->message }}
-                            <small class="d-block mt-1 text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                        </div>
-                    @empty
-                        <div class="text-center text-muted">
-                            <i class="fas fa-bell-slash fa-2x mb-2"></i>
-                            <p>No hay notificaciones nuevas</p>
-                        </div>
-                    @endforelse
                 </div>
             </div>
         </div>

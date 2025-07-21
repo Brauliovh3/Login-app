@@ -131,9 +131,9 @@
         </div>
     </div>
 
-    <!-- Inspecciones Recientes y Notificaciones -->
+    <!-- Inspecciones Recientes -->
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0"><i class="fas fa-history me-2"></i>Inspecciones Recientes</h4>
@@ -199,64 +199,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h4>
-                </div>
-                <div class="card-body">
-                    @forelse(\App\Models\Notification::where('user_id', Auth::id())->latest()->take(5)->get() as $notification)
-                        <div class="alert alert-{{ $notification->type == 'success' ? 'success' : ($notification->type == 'warning' ? 'warning' : 'info') }} alert-dismissible fade show">
-                            <strong>{{ $notification->title }}</strong><br>
-                            {{ $notification->message }}
-                            <small class="d-block mt-1 text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                        </div>
-                    @empty
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Nueva asignación</strong><br>
-                            Se te ha asignado la inspección #004 para mañana.
-                            <small class="d-block mt-1 text-muted">Hace 2 horas</small>
-                        </div>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Revisión pendiente</strong><br>
-                            La inspección #002 requiere tu atención.
-                            <small class="d-block mt-1 text-muted">Hace 4 horas</small>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Calendario de Inspecciones -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Próximas Inspecciones</h4>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <div>
-                            <strong>Hotel Plaza</strong><br>
-                            <small class="text-muted">Inspección turística</small>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-info">Mañana</small><br>
-                            <small class="text-muted">09:00</small>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                        <div>
-                            <strong>Clínica Santa María</strong><br>
-                            <small class="text-muted">Inspección sanitaria</small>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-warning">Viernes</small><br>
-                            <small class="text-muted">14:30</small>
-                        </div>
                     </div>
                 </div>
             </div>

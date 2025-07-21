@@ -100,7 +100,7 @@
 
 <!-- Panel de administración -->
 <div class="row">
-    <div class="col-xl-8 col-lg-7">
+    <div class="col-12">
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-cogs"></i> Panel de Administración</h6>
@@ -191,50 +191,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Panel de notificaciones -->
-    <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-bell"></i> Actividad Reciente</h6>
-                <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-primary">Ver Todas</a>
-            </div>
-            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                @if($notifications->count() > 0)
-                    @foreach($notifications as $notification)
-                        <div class="media mb-3">
-                            <div class="media-object mr-3">
-                                @switch($notification->type)
-                                    @case('success')
-                                        <i class="fas fa-check-circle text-success fa-2x"></i>
-                                        @break
-                                    @case('error')
-                                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
-                                        @break
-                                    @case('warning')
-                                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
-                                        @break
-                                    @default
-                                        <i class="fas fa-info-circle text-info fa-2x"></i>
-                                @endswitch
-                            </div>
-                            <div class="media-body">
-                                <h6 class="mt-0">{{ $notification->title }}</h6>
-                                <p class="text-muted small mb-1">{{ $notification->message }}</p>
-                                <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                        @if(!$loop->last)<hr>@endif
-                    @endforeach
-                @else
-                    <div class="text-center text-muted">
-                        <i class="fas fa-bell-slash fa-3x mb-3"></i>
-                        <p>No hay notificaciones</p>
-                    </div>
-                @endif
             </div>
         </div>
     </div>
