@@ -126,6 +126,38 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Auditoría del Sistema</h5>
+                                    <p class="card-text">Revisar logs y actividades del sistema</p>
+                                    <a href="#" class="btn btn-warning">Ver Auditoría</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shield-alt fa-3x text-secondary mb-3"></i>
+                                    <h5 class="card-title">Seguridad</h5>
+                                    <p class="card-text">Gestionar permisos y seguridad del sistema</p>
+                                    <a href="#" class="btn btn-secondary">Seguridad</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-dark">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-database fa-3x text-dark mb-3"></i>
+                                    <h5 class="card-title">Base de Datos</h5>
+                                    <p class="card-text">Administrar y mantener la base de datos</p>
+                                    <a href="#" class="btn btn-dark">Gestionar BD</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
