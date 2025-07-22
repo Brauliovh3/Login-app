@@ -81,7 +81,7 @@
                 @else
                     <div class="text-center py-5">
                         <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No tienes notificaciones</h5>
+                        <h5 class="text-muted">No tienes notificaciones.</h5>
                         <p class="text-muted">Cuando tengas nuevas notificaciones aparecerán aquí.</p>
                     </div>
                 @endif
