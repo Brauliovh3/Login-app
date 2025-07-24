@@ -148,6 +148,18 @@
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">Infracciones</h5>
+                                    <p class="card-text">Gestionar infracciones de tránsito</p>
+                                    <a href="{{ route('infracciones.index') }}" class="btn btn-danger">Ver Infracciones</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
                             <div class="card h-100 border-dark">
                                 <div class="card-body text-center">
                                     <i class="fas fa-database fa-3x text-dark mb-3"></i>

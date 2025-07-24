@@ -101,7 +101,7 @@
                                     <i class="fas fa-search-plus fa-3x text-info mb-3"></i>
                                     <h5 class="card-title">Nueva Inspección</h5>
                                     <p class="card-text">Iniciar un nuevo proceso de fiscalización</p>
-                                    <a href="#" class="btn btn-info">Iniciar</a>
+                                    <a href="{{ route('inspecciones.create') }}" class="btn btn-info">Iniciar</a>
                                 </div>
                             </div>
                         </div>
@@ -111,7 +111,7 @@
                                     <i class="fas fa-list-alt fa-3x text-warning mb-3"></i>
                                     <h5 class="card-title">Mis Inspecciones</h5>
                                     <p class="card-text">Ver todas mis inspecciones realizadas</p>
-                                    <a href="#" class="btn btn-warning">Ver Lista</a>
+                                    <a href="{{ route('inspecciones.index') }}" class="btn btn-warning">Ver Lista</a>
                                 </div>
                             </div>
                         </div>
@@ -122,6 +122,28 @@
                                     <h5 class="card-title">Generar Reporte</h5>
                                     <p class="card-text">Crear reportes de fiscalizaciones</p>
                                     <a href="#" class="btn btn-success">Generar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-danger">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">Infracciones</h5>
+                                    <p class="card-text">Registrar y gestionar infracciones</p>
+                                    <a href="{{ route('infracciones.index') }}" class="btn btn-danger">Gestionar</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Calendario</h5>
+                                    <p class="card-text">Ver calendario de inspecciones</p>
+                                    <a href="#" class="btn btn-primary">Ver Calendario</a>
                                 </div>
                             </div>
                         </div>

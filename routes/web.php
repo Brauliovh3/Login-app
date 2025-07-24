@@ -5,6 +5,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\InfraccionController;
+use App\Http\Controllers\InspeccionController;
 
 // Ruta principal - redirige al login si no está autenticado
 Route::get('/', function () {
@@ -37,6 +39,16 @@ Route::middleware(['auth'])->group(function () {
     })->name('session.info');
 });
 
+// Rutas para administradores y fiscalizadores (infracciones)
+Route::middleware(['auth', 'multirole:administrador,fiscalizador'])->group(function () {
+    Route::resource('infracciones', InfraccionController::class);
+});
+
+// Rutas para inspecciones (administrador, fiscalizador, ventanilla)
+Route::middleware(['auth', 'multirole:administrador,fiscalizador,ventanilla'])->group(function () {
+    Route::resource('inspecciones', InspeccionController::class);
+});
+
 // Rutas específicas por rol con middleware de protección
 Route::middleware(['auth', 'role:administrador'])->group(function () {
     // Dashboard de administrador
@@ -44,6 +56,36 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
 
     // Rutas de CRUD DE USUARIOS
     Route::resource('users', \App\Http\Controllers\UserController::class);
+
+    // El administrador tiene acceso a TODAS las rutas de fiscalizador también
+    Route::get('/fiscalizador/dashboard', [DashboardController::class, 'fiscalizadorDashboard'])->name('fiscalizador.dashboard');
+    Route::get('/fiscalizador/inspecciones', function () {
+        return view('fiscalizador.inspecciones');
+    })->name('fiscalizador.inspecciones');
+    Route::get('/fiscalizador/nueva-inspeccion', function () {
+        return view('fiscalizador.nueva-inspeccion');
+    })->name('fiscalizador.nueva-inspeccion');
+    Route::get('/fiscalizador/reportes', function () {
+        return view('fiscalizador.reportes');
+    })->name('fiscalizador.reportes');
+    Route::get('/fiscalizador/calendario', function () {
+        return view('fiscalizador.calendario');
+    })->name('fiscalizador.calendario');
+
+    // Rutas de ventanilla también para admin
+    Route::get('/ventanilla/dashboard', [DashboardController::class, 'ventanillaDashboard'])->name('ventanilla.dashboard');
+    Route::get('/ventanilla/nueva-atencion', function () {
+        return view('ventanilla.nueva-atencion');
+    })->name('ventanilla.nueva-atencion');
+    Route::get('/ventanilla/tramites', function () {
+        return view('ventanilla.tramites');
+    })->name('ventanilla.tramites');
+    Route::get('/ventanilla/consultar', function () {
+        return view('ventanilla.consultar');
+    })->name('ventanilla.consultar');
+    Route::get('/ventanilla/cola-espera', function () {
+        return view('ventanilla.cola-espera');
+    })->name('ventanilla.cola-espera');
 
     Route::get('/admin/usuarios', function () {
         return view('administrador.usuarios');

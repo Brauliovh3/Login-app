@@ -126,6 +126,28 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-clipboard-check fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Nueva Inspección</h5>
+                                    <p class="card-text">Registrar inspección de establecimiento</p>
+                                    <a href="{{ route('inspecciones.create') }}" class="btn btn-warning">Crear</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-list fa-3x text-secondary mb-3"></i>
+                                    <h5 class="card-title">Mis Inspecciones</h5>
+                                    <p class="card-text">Ver inspecciones realizadas</p>
+                                    <a href="{{ route('inspecciones.index') }}" class="btn btn-secondary">Ver Lista</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

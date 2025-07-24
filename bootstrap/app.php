@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'multirole' => \App\Http\Middleware\MultiRoleMiddleware::class,
             'remember.session' => \App\Http\Middleware\RememberSessionMiddleware::class,
         ]);
         
