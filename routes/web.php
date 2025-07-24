@@ -87,9 +87,12 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
         return view('ventanilla.cola-espera');
     })->name('ventanilla.cola-espera');
 
+    // Esta ruta generaba conflicto al momento de navegar al CRUD de usuarios
+    // Lo cambie a mi propia ruta para evitar conflictos
     Route::get('/admin/usuarios', function () {
-        return view('administrador.usuarios');
+        return redirect()->route('users.index');
     })->name('admin.usuarios');
+
     Route::get('/admin/reportes', function () {
         return view('administrador.reportes');
     })->name('admin.reportes');
