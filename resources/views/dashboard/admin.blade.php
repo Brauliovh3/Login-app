@@ -115,9 +115,10 @@
                                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                             Gestión de Usuarios
                                         </div>
+                                        
                                         <div class="text-gray-800">
-                                            <button class="btn btn-sm btn-outline-primary me-1">Crear Usuario</button>
-                                            <button class="btn btn-sm btn-outline-secondary">Lista Usuarios</button>
+                                            <a href="{{route ('users.create')}}" class="btn btn-sm btn-outline-primary me-1">Crear usuario</a>
+                                            <a href="{{route ('users.index')}}" class="btn btn-sm btn-outline-secondary">Lista Usuarios</a>
                                         </div>
                                     </div>
                                     <div class="col-auto">

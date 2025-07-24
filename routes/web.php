@@ -45,9 +45,12 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
     // Rutas de CRUD DE USUARIOS
     Route::resource('users', \App\Http\Controllers\UserController::class);
 
+    // Esta ruta generaba conflicto al momento de navergar al CRUD de usuarios
+    // Lo cambie a mi propia ruta para evitar conflictos
     Route::get('/admin/usuarios', function () {
-        return view('administrador.usuarios');
+        return redirect()->route('users.index');
     })->name('admin.usuarios');
+
     Route::get('/admin/reportes', function () {
         return view('administrador.reportes');
     })->name('admin.reportes');
