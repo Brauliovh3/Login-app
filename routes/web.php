@@ -8,7 +8,7 @@ use App\Http\Controllers\NotificationController;
 
 // Ruta principal - redirige al login si no está autenticado
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    return \Illuminate\Support\Facades\Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
 // Rutas de autenticación
@@ -41,6 +41,10 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:administrador'])->group(function () {
     // Dashboard de administrador
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
+
+    // Rutas de CRUD DE USUARIOS
+    Route::resource('users', \App\Http\Controllers\UserController::class);
+
     Route::get('/admin/usuarios', function () {
         return view('administrador.usuarios');
     })->name('admin.usuarios');
