@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creando usuarios</title>
-</head>
-<body>
-@extends('layouts.app') {{-- Usa tu layout principal si lo tienes --}}
+@extends('layouts.app')
 
 @section('content')
+<a href="{{ route('dashboard') }}" class="btn btn-secondary mb-3">
+    <i class="fas fa-arrow-left"></i> Regresar al panel
+</a>
+
 <div class="container mt-4">
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -63,7 +59,6 @@
                 </tbody>
             </table>
 
-            
             <div class="d-flex justify-content-center mt-3">
                 {{ $users->links('pagination::bootstrap-4') }}
             </div>
@@ -71,6 +66,3 @@
     </div>
 </div>
 @endsection
-
-</body>
-</html>

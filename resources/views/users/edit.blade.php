@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar usuario</title>
-</head>
-<body>
-    @extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
+<a href="{{ route('dashboard')}}" class="btn btn-secondary mb-3">
+    <i class="fas fa-arrow-left"></i> Regresar al panel
+</a>
 <div class="container mt-4">
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-warning text-dark">
@@ -66,6 +61,3 @@
     </div>
 </div>
 @endsection
-
-</body>
-</html>
