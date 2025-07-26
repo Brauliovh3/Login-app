@@ -63,9 +63,9 @@
                     <label for="agente_infractor" class="form-label"><strong>Agente Infractor:</strong></label>
                     <select class="form-select @error('agente_infractor') is-invalid @enderror" id="agente_infractor" name="agente_infractor" required>
                         <option value="">Seleccione...</option>
-                        <option value="transportista" {{ old('agente_infractor') == 'transportista' ? 'selected' : '' }}>☑️ Transportista</option>
-                        <option value="operador_ruta" {{ old('agente_infractor') == 'operador_ruta' ? 'selected' : '' }}>☑️ Operador de Ruta</option>
-                        <option value="conductor" {{ old('agente_infractor') == 'conductor' ? 'selected' : '' }}>☑️ Conductor</option>
+                        <option value="transportista" {{ old('agente_infractor') == 'transportista' ? 'selected' : '' }}> Transportista</option>
+                        <option value="operador_ruta" {{ old('agente_infractor') == 'operador_ruta' ? 'selected' : '' }}> Operador de Ruta</option>
+                        <option value="conductor" {{ old('agente_infractor') == 'conductor' ? 'selected' : '' }}> Conductor</option>
                     </select>
                     @error('agente_infractor')
                         <div class="invalid-feedback">{{ $message }}</div>
