@@ -8,9 +8,15 @@
         <div class="col-md-4">
             <div class="auth-container">
                 <div class="auth-header">
-                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-                    <h2>Iniciar Sesión</h2>
-                    <p class="text-muted">Ingresa tus credenciales para acceder</p>
+                    <div style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto 20px; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);">
+                        <div class="text-center">
+                            <i class="fas fa-road"></i>
+                            <div style="font-size: 10px; line-height: 1;">DRTC</div>
+                        </div>
+                    </div>
+                    <h2>SISTEMA DRTC APURÍMAC</h2>
+                    <p class="text-muted">Dirección Regional de Transportes y Comunicaciones</p>
+                    <h5 class="text-muted">Iniciar Sesión</h5>
                 </div>
 
                 @if ($errors->any())

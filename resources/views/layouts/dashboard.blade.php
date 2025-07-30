@@ -10,6 +10,11 @@
         :root {
             --sidebar-width: 250px;
             --topbar-height: 60px;
+            --drtc-orange: #ff8c00;
+            --drtc-dark-orange: #e67c00;
+            --drtc-light-orange: #ffb84d;
+            --drtc-orange-bg: #fff4e6;
+            --drtc-navy: #1e3a8a;
         }
 
         body {
@@ -24,7 +29,7 @@
             left: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
+            background: linear-gradient(180deg, var(--drtc-orange) 10%, var(--drtc-dark-orange) 100%);
             z-index: 1000;
             transition: all 0.3s;
         }
@@ -117,15 +122,15 @@
 
         /* Role-specific colors */
         .sidebar.administrador {
-            background: linear-gradient(180deg, #5e72e4 10%, #3454d1 100%);
+            background: linear-gradient(180deg, var(--drtc-navy) 10%, #1e40af 100%);
         }
 
         .sidebar.fiscalizador {
-            background: linear-gradient(180deg, #36b9cc 10%, #258391 100%);
+            background: linear-gradient(180deg, var(--drtc-orange) 10%, var(--drtc-dark-orange) 100%);
         }
 
         .sidebar.ventanilla {
-            background: linear-gradient(180deg, #f6c23e 10%, #dda20a 100%);
+            background: linear-gradient(180deg, var(--drtc-light-orange) 10%, var(--drtc-orange) 100%);
         }
 
         /* Responsive */
@@ -199,7 +204,21 @@
         }
 
         .bg-gradient-primary {
-            background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%);
+            background: linear-gradient(87deg, var(--drtc-orange) 0, var(--drtc-dark-orange) 100%);
+        }
+        
+        .btn-primary {
+            background-color: var(--drtc-orange);
+            border-color: var(--drtc-orange);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--drtc-dark-orange);
+            border-color: var(--drtc-dark-orange);
+        }
+        
+        .text-primary {
+            color: var(--drtc-orange) !important;
         }
 
         /* User info en topbar */
@@ -271,9 +290,9 @@
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
         @endauth
             <div class="sidebar-brand-icon rotate-n-15">
-                <i class="fas fa-laugh-wink"></i>
+                <i class="fas fa-road"></i>
             </div>
-            <div class="sidebar-brand-text mx-3">Sistema</div>
+            <div class="sidebar-brand-text mx-3">DRTC Apurímac</div>
         </a>
 
         <hr class="sidebar-divider my-0" style="border-color: rgba(255, 255, 255, 0.1);">
