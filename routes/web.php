@@ -54,68 +54,55 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
     // Dashboard de administrador
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
 
-    // Rutas de CRUD DE USUARIOS
-    Route::resource('users', \App\Http\Controllers\UserController::class);
-
-    // El administrador tiene acceso a TODAS las rutas de fiscalizador también
-    Route::get('/fiscalizador/dashboard', [DashboardController::class, 'fiscalizadorDashboard'])->name('fiscalizador.dashboard');
-    Route::get('/fiscalizador/inspecciones', function () {
-        return view('fiscalizador.inspecciones');
-    })->name('fiscalizador.inspecciones');
-    Route::get('/fiscalizador/nueva-inspeccion', function () {
-        return view('fiscalizador.nueva-inspeccion');
-    })->name('fiscalizador.nueva-inspeccion');
-    Route::get('/fiscalizador/reportes', function () {
-        return view('fiscalizador.reportes');
-    })->name('fiscalizador.reportes');
-    Route::get('/fiscalizador/calendario', function () {
-        return view('fiscalizador.calendario');
-    })->name('fiscalizador.calendario');
-
-    // Rutas de ventanilla también para admin
-    Route::get('/ventanilla/dashboard', [DashboardController::class, 'ventanillaDashboard'])->name('ventanilla.dashboard');
-    Route::get('/ventanilla/nueva-atencion', function () {
-        return view('ventanilla.nueva-atencion');
-    })->name('ventanilla.nueva-atencion');
-    Route::get('/ventanilla/tramites', function () {
-        return view('ventanilla.tramites');
-    })->name('ventanilla.tramites');
-    Route::get('/ventanilla/consultar', function () {
-        return view('ventanilla.consultar');
-    })->name('ventanilla.consultar');
-    Route::get('/ventanilla/cola-espera', function () {
-        return view('ventanilla.cola-espera');
-    })->name('ventanilla.cola-espera');
-
-    // Esta ruta generaba conflicto al momento de navegar al CRUD de usuarios
-    // Lo cambie a mi propia ruta para evitar conflictos
-    Route::get('/admin/usuarios', function () {
-        return redirect()->route('users.index');
-    })->name('admin.usuarios');
-
-    Route::get('/admin/reportes', function () {
-        return view('administrador.reportes');
-    })->name('admin.reportes');
-    Route::get('/admin/configuracion', function () {
-        return view('administrador.configuracion');
-    })->name('admin.configuracion');
+    // Mantenimientos
+    Route::get('/admin/mantenimiento/fiscal', function () {
+        return view('administrador.mantenimiento.fiscal');
+    })->name('admin.mantenimiento.fiscal');
+    
+    Route::get('/admin/mantenimiento/conductor', function () {
+        return view('administrador.mantenimiento.conductor');
+    })->name('admin.mantenimiento.conductor');
+    
+    Route::get('/admin/mantenimiento/usuario', function () {
+        return view('administrador.mantenimiento.usuario');
+    })->name('admin.mantenimiento.usuario');
 });
 
 Route::middleware(['auth', 'role:fiscalizador'])->group(function () {
     // Dashboard de fiscalizador
     Route::get('/fiscalizador/dashboard', [DashboardController::class, 'fiscalizadorDashboard'])->name('fiscalizador.dashboard');
+    
+    // Inspecciones
     Route::get('/fiscalizador/inspecciones', function () {
         return view('fiscalizador.inspecciones');
     })->name('fiscalizador.inspecciones');
-    Route::get('/fiscalizador/nueva-inspeccion', function () {
-        return view('fiscalizador.nueva-inspeccion');
-    })->name('fiscalizador.nueva-inspeccion');
-    Route::get('/fiscalizador/reportes', function () {
-        return view('fiscalizador.reportes');
-    })->name('fiscalizador.reportes');
+    
+    // Calendario
     Route::get('/fiscalizador/calendario', function () {
         return view('fiscalizador.calendario');
     })->name('fiscalizador.calendario');
+    
+    // Gestión de Actas
+    Route::get('/fiscalizador/actas-contra', function () {
+        return view('fiscalizador.actas-contra');
+    })->name('fiscalizador.actas-contra');
+    
+    Route::get('/fiscalizador/carga-paga', function () {
+        return view('fiscalizador.carga-paga');
+    })->name('fiscalizador.carga-paga');
+    
+    Route::get('/fiscalizador/empresas', function () {
+        return view('fiscalizador.empresas');
+    })->name('fiscalizador.empresas');
+    
+    // Consultas y Reportes
+    Route::get('/fiscalizador/consultas', function () {
+        return view('fiscalizador.consultas');
+    })->name('fiscalizador.consultas');
+    
+    Route::get('/fiscalizador/reportes', function () {
+        return view('fiscalizador.reportes');
+    })->name('fiscalizador.reportes');
 });
 
 Route::middleware(['auth', 'role:ventanilla'])->group(function () {

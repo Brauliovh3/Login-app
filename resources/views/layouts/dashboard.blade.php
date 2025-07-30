@@ -325,27 +325,27 @@
                     <!-- Admin Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
-                        ADMINISTRACIÓN
+                        MANTENIMIENTOS
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.usuarios') ? 'active' : '' }}" href="{{ route('admin.usuarios') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.fiscal') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.fiscal') }}">
+                            <i class="fas fa-fw fa-user-shield"></i>
+                            <span>Mantenimiento Fiscal</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.conductor') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.conductor') }}">
+                            <i class="fas fa-fw fa-id-card"></i>
+                            <span>Mantenimiento Conductor</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.usuario') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.usuario') }}">
                             <i class="fas fa-fw fa-users"></i>
-                            <span>Gestionar Usuarios</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.reportes') ? 'active' : '' }}" href="{{ route('admin.reportes') }}">
-                            <i class="fas fa-fw fa-chart-area"></i>
-                            <span>Reportes</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.configuracion') ? 'active' : '' }}" href="{{ route('admin.configuracion') }}">
-                            <i class="fas fa-fw fa-cog"></i>
-                            <span>Configuración</span>
+                            <span>Mantenimiento Usuario</span>
                         </a>
                     </li>
 
@@ -353,13 +353,46 @@
                     <!-- Fiscalizador Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
-                        FISCALIZACIÓN
+                        GESTIÓN DE ACTAS
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.nueva-inspeccion') ? 'active' : '' }}" href="{{ route('fiscalizador.nueva-inspeccion') }}">
-                            <i class="fas fa-fw fa-search-plus"></i>
-                            <span>Nueva Inspección</span>
+                        <a class="nav-link {{ request()->routeIs('fiscalizador.actas-contra') ? 'active' : '' }}" href="{{ route('fiscalizador.actas-contra') }}">
+                            <i class="fas fa-fw fa-file-contract"></i>
+                            <span>Actas Contra</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('fiscalizador.carga-paga') ? 'active' : '' }}" href="{{ route('fiscalizador.carga-paga') }}">
+                            <i class="fas fa-fw fa-truck-loading"></i>
+                            <span>Carga y Paga</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('fiscalizador.empresas') ? 'active' : '' }}" href="{{ route('fiscalizador.empresas') }}">
+                            <i class="fas fa-fw fa-building"></i>
+                            <span>Empresas</span>
+                        </a>
+                    </li>
+
+                    <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
+                    <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
+                        CONSULTAS Y REPORTES
+                    </div>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('fiscalizador.consultas') ? 'active' : '' }}" href="{{ route('fiscalizador.consultas') }}">
+                            <i class="fas fa-fw fa-search"></i>
+                            <span>Consultas</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('fiscalizador.reportes') ? 'active' : '' }}" href="{{ route('fiscalizador.reportes') }}">
+                            <i class="fas fa-fw fa-chart-bar"></i>
+                            <span>Reportes</span>
                         </a>
                     </li>
 
@@ -465,14 +498,17 @@
                 <i class="fa fa-bars"></i>
             </button>
 
-            <!-- Espaciador para empujar todo hacia la derecha -->
-            <div class="navbar-nav flex-grow-1"></div>
+            <!-- Título de la página actual -->
+            <div class="navbar-nav flex-grow-1">
+                <span class="navbar-text text-muted fs-5 fw-light">
+                    @yield('title', 'Panel de Control')
+                </span>
+            </div>
 
-            <!-- Usuario y Notificaciones en la esquina superior derecha -->
+            <!-- Usuario en la esquina superior derecha -->
             <ul class="navbar-nav">
                 @auth
-                    <!-- User Info primero -->
-                    <li class="nav-item dropdown no-arrow mr-3">
+                    <li class="nav-item dropdown no-arrow">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #5a5c69; padding: 0.75rem;">
                             <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">{{ auth()->user()->name }}</span>
                             <i class="fas fa-user-circle fa-lg" style="color: #858796;"></i>
@@ -496,60 +532,6 @@
                             </form>
                         </div>
                     </li>
-
-                    <!-- Notifications después -->
-                    <li class="nav-item dropdown no-arrow">
-                        <a class="nav-link d-flex align-items-center" href="#" id="alertsDropdown" role="button" onclick="toggleNotifications(event)" style="color: #5a5c69; padding: 0.75rem; position: relative; cursor: pointer;">
-                            <i class="fas fa-bell fa-lg" style="color: #858796;"></i>
-                            @if(auth()->user()->notifications()->where('read', false)->count() > 0)
-                                <span class="badge badge-danger badge-counter position-absolute" style="top: 0.25rem; right: 0.25rem; background: #e74a3b; color: white; font-size: 0.7rem; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    {{ auth()->user()->notifications()->where('read', false)->count() }}
-                                </span>
-                            @endif
-                        </a>
-                        <!-- Dropdown de notificaciones OCULTO por defecto -->
-                        <div id="notificationsDropdown" class="dropdown-menu dropdown-menu-right shadow" style="display: none; position: absolute; right: 0; top: 100%; min-width: 22rem; max-width: 25rem; z-index: 1050; border: none; border-radius: 0.5rem; box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);">
-                            <div class="dropdown-header bg-gradient-primary text-white py-3 px-3 m-0" style="border-radius: 0.5rem 0.5rem 0 0;">
-                                <i class="fas fa-bell mr-2"></i>Centro de Notificaciones
-                                <button type="button" class="btn-close btn-close-white float-end" onclick="closeNotifications()" style="font-size: 0.8rem;"></button>
-                            </div>
-                            <div class="notification-body" style="max-height: 400px; overflow-y: auto;">
-                                @forelse(auth()->user()->notifications()->latest()->take(5)->get() as $notification)
-                                    <a class="dropdown-item d-flex align-items-center py-3 border-bottom notification-item" href="#" style="white-space: normal; transition: background-color 0.2s;">
-                                        <div class="mr-3 flex-shrink-0">
-                                            <div class="icon-circle bg-primary d-flex align-items-center justify-content-center" style="width: 2.5rem; height: 2.5rem; border-radius: 50%; background: linear-gradient(45deg, #4e73df, #224abe);">
-                                                <i class="fas fa-bell text-white"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 min-width-0">
-                                            <div class="small text-muted mb-1">{{ $notification->created_at->diffForHumans() }}</div>
-                                            <div class="font-weight-bold text-dark mb-1" style="font-size: 0.9rem;">{{ Str::limit($notification->title, 45) }}</div>
-                                            @if($notification->message)
-                                                <div class="small text-muted" style="line-height: 1.3;">{{ Str::limit($notification->message, 70) }}</div>
-                                            @endif
-                                        </div>
-                                        @if(!$notification->read)
-                                            <div class="ml-2 flex-shrink-0">
-                                                <span class="badge bg-primary badge-pill" style="font-size: 0.7rem;">Nuevo</span>
-                                            </div>
-                                        @endif
-                                    </a>
-                                @empty
-                                    <div class="dropdown-item-text text-center py-5">
-                                        <i class="fas fa-bell-slash fa-3x text-muted mb-3" style="opacity: 0.3;"></i>
-                                        <p class="text-muted mb-0">No tienes notificaciones</p>
-                                        <small class="text-muted">Te avisaremos cuando lleguen nuevas</small>
-                                    </div>
-                                @endforelse
-                            </div>
-                            @if(auth()->user()->notifications()->count() > 0)
-                                <div class="dropdown-divider m-0"></div>
-                                <a class="dropdown-item text-center py-3" href="{{ route('notifications.index')}}" style="background: #f8f9fc; color: #5a5c69; font-weight: 500; border-radius: 0 0 0.5rem 0.5rem;">
-                                    <i class="fas fa-eye mr-2"></i>Ver todas las notificaciones
-                                </a>
-                            @endif
-                        </div>
-                    </li>
                 @endauth
             </ul>
         </nav>
@@ -560,6 +542,9 @@
         </div>
     </div>
 
+    <!-- Sistema de Notificaciones Flotantes -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 350px;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
@@ -567,77 +552,144 @@
             document.getElementById('sidebar').classList.toggle('show');
         }
 
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const toggleButton = document.querySelector('.mobile-menu-toggle');
+        // Sistema de Notificaciones Flotantes
+        function showToast(title, message, type = 'success', duration = 5000) {
+            const toastContainer = document.getElementById('toast-container');
+            const toastId = 'toast-' + Date.now();
             
-            if (window.innerWidth <= 768) {
-                if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
-                    sidebar.classList.remove('show');
-                }
-            }
-        });
-
-        // Funciones para manejar las notificaciones
-        function toggleNotifications(event) {
-            event.preventDefault();
-            event.stopPropagation();
+            const icons = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-triangle', 
+                'warning': 'fas fa-exclamation-circle',
+                'info': 'fas fa-info-circle'
+            };
             
-            const dropdown = document.getElementById('notificationsDropdown');
-            const isVisible = dropdown.style.display === 'block';
+            const colors = {
+                'success': 'var(--drtc-orange)',
+                'error': '#dc3545',
+                'warning': '#ffc107',
+                'info': '#17a2b8'
+            };
             
-            if (isVisible) {
-                closeNotifications();
-            } else {
-                openNotifications();
-            }
-        }
-
-        function openNotifications() {
-            const dropdown = document.getElementById('notificationsDropdown');
-            dropdown.style.display = 'block';
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'toast-notification';
+            toast.innerHTML = `
+                <div style="
+                    background: white;
+                    border-left: 4px solid ${colors[type]};
+                    border-radius: 8px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                    margin-bottom: 10px;
+                    padding: 16px;
+                    display: flex;
+                    align-items: flex-start;
+                    animation: slideInRight 0.3s ease-out;
+                    position: relative;
+                    max-width: 100%;
+                ">
+                    <div style="color: ${colors[type]}; margin-right: 12px; margin-top: 2px;">
+                        <i class="${icons[type]}" style="font-size: 18px;"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: #333; margin-bottom: 4px; font-size: 14px;">
+                            ${title}
+                        </div>
+                        <div style="color: #666; font-size: 13px; line-height: 1.4;">
+                            ${message}
+                        </div>
+                    </div>
+                    <button onclick="closeToast('${toastId}')" style="
+                        background: none;
+                        border: none;
+                        color: #999;
+                        font-size: 16px;
+                        cursor: pointer;
+                        padding: 0;
+                        margin-left: 8px;
+                        width: 20px;
+                        height: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
             
-            // Agregar clase para animación
+            toastContainer.appendChild(toast);
+            
+            // Auto-cerrar después del tiempo especificado
             setTimeout(() => {
-                dropdown.classList.add('show');
-            }, 10);
+                closeToast(toastId);
+            }, duration);
         }
-
-        function closeNotifications() {
-            const dropdown = document.getElementById('notificationsDropdown');
-            dropdown.classList.remove('show');
-            
-            setTimeout(() => {
-                dropdown.style.display = 'none';
-            }, 200);
+        
+        function closeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }
         }
-
-        // Cerrar notificaciones cuando se hace clic fuera
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('notificationsDropdown');
-            const bellIcon = document.getElementById('alertsDropdown');
-            
-            if (dropdown && bellIcon) {
-                // Si el dropdown está visible y el clic no es en el dropdown ni en la campanita
-                if (dropdown.style.display === 'block' && 
-                    !dropdown.contains(event.target) && 
-                    !bellIcon.contains(event.target)) {
-                    closeNotifications();
-                }
-            }
-        });
-
-        // Prevenir que el dropdown se cierre cuando se hace clic dentro de él
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropdown = document.getElementById('notificationsDropdown');
-            if (dropdown) {
-                dropdown.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                });
-            }
-        });
+        
+        // Función global para mostrar notificaciones
+        window.showNotification = function(title, message, type = 'success') {
+            showToast(title, message, type);
+        };
+        
+        // Función global para mostrar notificaciones de éxito
+        window.showSuccess = function(message) {
+            showToast('¡Operación Exitosa!', message, 'success');
+        };
+        
+        // Función global para mostrar notificaciones de error
+        window.showError = function(message) {
+            showToast('Error', message, 'error');
+        };
+        
+        // Función global para mostrar notificaciones de advertencia
+        window.showWarning = function(message) {
+            showToast('Advertencia', message, 'warning');
+        };
+        
+        // Función global para mostrar notificaciones de información
+        window.showInfo = function(message) {
+            showToast('Información', message, 'info');
+        };
     </script>
+    
+    <style>
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .toast-notification:hover {
+            transform: translateX(-5px);
+            transition: transform 0.2s ease;
+        }
+    </style>
 
     @yield('scripts')
 </body>

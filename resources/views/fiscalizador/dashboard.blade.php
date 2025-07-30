@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-buscar-editar')?.addEventListener('click', function() {
         const criterio = document.getElementById('buscar-acta-editar').value;
         if (!criterio) {
-            alert('Por favor ingrese un criterio de búsqueda (N° de acta, RUC/DNI o placa)');
+            showWarning('Por favor ingrese un criterio de búsqueda (N° de acta, RUC/DNI o placa)');
             return;
         }
         
@@ -730,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-buscar-eliminar')?.addEventListener('click', function() {
         const criterio = document.getElementById('buscar-acta-eliminar').value;
         if (!criterio) {
-            alert('Por favor ingrese un criterio de búsqueda (N° de acta, RUC/DNI o placa)');
+            showWarning('Por favor ingrese un criterio de búsqueda (N° de acta, RUC/DNI o placa)');
             return;
         }
         
@@ -780,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.disabled = true;
             
             setTimeout(() => {
-                alert('✅ Acta DRTC eliminada correctamente del sistema');
+                showSuccess('Acta DRTC eliminada correctamente del sistema');
                 document.getElementById('resultado-eliminar').style.display = 'none';
                 document.getElementById('buscar-acta-eliminar').value = '';
                 this.innerHTML = '<i class="fas fa-trash me-2"></i>CONFIRMAR ELIMINACIÓN';
@@ -863,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Simular guardado
             setTimeout(() => {
-                alert('✅ Nueva Acta DRTC guardada correctamente en el sistema\n\nN° de Acta: DRTC-APU-2024-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'));
+                showSuccess('Nueva Acta DRTC guardada correctamente en el sistema\n\nN° de Acta: DRTC-APU-2024-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0'));
                 this.reset();
                 actualizarFechaHora();
                 
@@ -872,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             }, 2500);
         } else {
-            alert('⚠️ Por favor complete todos los campos obligatorios marcados para registrar el acta DRTC');
+            showWarning('Por favor complete todos los campos obligatorios marcados para registrar el acta DRTC');
         }
     });
 
