@@ -1,102 +1,273 @@
 @extends('layouts.app')
 
-@section('title', 'Panel de Ventanilla')
+@section('title', 'Panel de Ventanilla - DRTC Apurímac')
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1><i class="fas fa-desktop text-info"></i> Panel de Ventanilla</h1>
-                <p class="text-muted">Bienvenido {{ auth()->user()->username }} - Atención al Cliente y Trámites</p>
-            </div>
-            <div>
-                <button class="btn btn-info me-2"><i class="fas fa-plus"></i> Nuevo Trámite</button>
-                <button class="btn btn-outline-success"><i class="fas fa-print"></i> Imprimir Tickets</button>
-            </div>
+<div class="container-fluid">
+    <!-- Header principal -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-desktop text-info"></i> 
+                Panel de Ventanilla DRTC
+            </h1>
+            <p class="text-muted">Bienvenido {{ auth()->user()->username }} - Atención y Trámites Documentarios Apurímac</p>
+        </div>
+        <div>
+            <button class="btn btn-info shadow-sm">
+                <i class="fas fa-file-alt fa-sm text-white-50"></i> Nuevo Trámite
+            </button>
         </div>
     </div>
-</div>
 
-<!-- Estadísticas de Ventanilla -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="card bg-info text-white mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ $stats['pending_tasks'] ?? 23 }}</h4>
-                        <p class="mb-0">Trámites Pendientes</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-clock fa-3x opacity-75"></i>
+    <!-- Estadísticas de ventanilla -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Empresas Registradas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['empresas_activas'] }}</div>
+                            <div class="text-xs text-primary">En estado activo</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-building fa-2x text-gray-300"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="#">Atender Ahora</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Vehículos en Sistema
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['total_vehiculos'] }}</div>
+                            <div class="text-xs text-success">Total registrados</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Licencias Vigentes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['licencias_vigentes'] }}</div>
+                            <div class="text-xs text-info">de {{ $stats['conductores_registrados'] }} conductores</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-id-card fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Trámites Pendientes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $stats['solicitudes_pendientes'] }}</div>
+                            <div class="text-xs text-warning">Por procesar</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card bg-success text-white mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ $stats['completed_tasks'] ?? 87 }}</h4>
-                        <p class="mb-0">Trámites Completados</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-check-circle fa-3x opacity-75"></i>
+
+    <!-- Panel principal de trámites -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-file-alt"></i> Servicios de Ventanilla
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Registro de Empresas
+                                            </div>
+                                            <div class="text-gray-800">
+                                                <small class="text-muted d-block mb-2">Alta y modificación de empresas</small>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-building"></i> Gestionar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-building fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Registro Vehicular
+                                            </div>
+                                            <div class="text-gray-800">
+                                                <small class="text-muted d-block mb-2">Altas, bajas y modificaciones</small>
+                                                <button class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-bus"></i> Registrar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-bus fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Licencias de Conducir
+                                            </div>
+                                            <div class="text-gray-800">
+                                                <small class="text-muted d-block mb-2">Expedición y renovación</small>
+                                                <button class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-id-card"></i> Tramitar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-id-card fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Certificaciones
+                                            </div>
+                                            <div class="text-gray-800">
+                                                <small class="text-muted d-block mb-2">Emisión de certificados</small>
+                                                <button class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-certificate"></i> Certificar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-certificate fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="#">Ver Historial</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card bg-warning text-white mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>15</h4>
-                        <p class="mb-0">Clientes en Espera</p>
+
+        <!-- Panel de estado de licencias -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-id-badge"></i> Estado de Licencias
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <div class="text-center">
+                            <div class="h5 mb-2 font-weight-bold text-success">{{ $stats['licencias_vigentes'] }}</div>
+                            <p class="text-muted">Licencias Vigentes</p>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <div class="h6 mb-2 font-weight-bold text-danger">{{ $stats['licencias_vencidas'] }}</div>
+                            <p class="text-muted">Licencias Vencidas</p>
+                        </div>
                     </div>
-                    <div>
-                        <i class="fas fa-users fa-3x opacity-75"></i>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Vigentes
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Vencidas
+                        </span>
                     </div>
+                    <button class="btn btn-sm btn-block btn-outline-primary mt-3">
+                        <i class="fas fa-list"></i> Ver Detalle Completo
+                    </button>
                 </div>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="#">Gestionar Cola</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card bg-primary text-white mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>98%</h4>
-                        <p class="mb-0">Satisfacción</p>
-                    </div>
-                    <div>
-                        <i class="fas fa-smile fa-3x opacity-75"></i>
+
+            <!-- Accesos rápidos -->
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> Accesos Rápidos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-search text-primary"></i> Buscar Empresa
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-car text-success"></i> Consultar Vehículo
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-user text-info"></i> Verificar Conductor
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="fas fa-print text-warning"></i> Imprimir Formatos
+                        </a>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="small text-white stretched-link" href="#">Ver Evaluaciones</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
             </div>
         </div>
     </div>
 </div>
+@endsection
 
 <!-- Panel de Operaciones -->
 <div class="row">

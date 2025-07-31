@@ -39,6 +39,15 @@ class DatabaseSeeder extends Seeder
             'role' => 'ventanilla',
         ]);
 
+        // Ejecutar otros seeders
+        $this->call([
+            EmpresasSeeder::class,
+            ConductoresSeeder::class,
+            VehiculosSeeder::class,
+            InfraccionesSeeder::class,
+            InspectoresSeeder::class,
+        ]);
+
         // Crear notificaciones de bienvenida para cada usuario
         Notification::create([
             'title' => 'Bienvenido al Sistema',

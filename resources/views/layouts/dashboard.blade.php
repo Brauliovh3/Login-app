@@ -390,27 +390,6 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.reportes') ? 'active' : '' }}" href="{{ route('fiscalizador.reportes') }}">
-                            <i class="fas fa-fw fa-chart-bar"></i>
-                            <span>Reportes</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.inspecciones') ? 'active' : '' }}" href="{{ route('fiscalizador.inspecciones') }}">
-                            <i class="fas fa-fw fa-list-alt"></i>
-                            <span>Mis Inspecciones</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.reportes') ? 'active' : '' }}" href="{{ route('fiscalizador.reportes') }}">
-                            <i class="fas fa-fw fa-file-alt"></i>
-                            <span>Generar Reporte</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('fiscalizador.calendario') ? 'active' : '' }}" href="{{ route('fiscalizador.calendario') }}">
                             <i class="fas fa-fw fa-calendar-alt"></i>
                             <span>Calendario</span>
@@ -452,38 +431,6 @@
                         </a>
                     </li>
                 @endif
-
-                <!-- General Menu -->
-                <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
-                <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
-                    GENERAL
-                </div>
-
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('notifications.index') }}">
-                        <i class="fas fa-fw fa-bell"></i>
-                        <span>Notificaciones</span>
-                        @if(auth()->user()->notifications()->where('read', false)->count() > 0)
-                            <span class="notification-badge">
-                                {{ auth()->user()->notifications()->where('read', false)->count() }}
-                            </span>
-                        @endif
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('session.info') }}">
-                        <i class="fas fa-fw fa-info-circle"></i>
-                        <span>Info de Sesión</span>
-                    </a>
-                </li>
-
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-fw fa-user"></i>
-                        <span>Mi Perfil</span>
-                    </a>
-                </li>
             @endauth
         </ul>
 

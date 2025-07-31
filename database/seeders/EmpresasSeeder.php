@@ -1,0 +1,117 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class EmpresasSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $empresas = [
+            [
+                'razon_social' => 'Transportes Los Andes S.A.C.',
+                'ruc' => '20123456789',
+                'nombre_comercial' => 'Los Andes',
+                'direccion' => 'Av. Los Andes 123',
+                'distrito' => 'Abancay',
+                'provincia' => 'Abancay',
+                'departamento' => 'Apurímac',
+                'telefono' => '083-321123',
+                'email' => 'gerencia@transporteslosandes.com',
+                'representante_legal' => 'Carlos Mendoza Quispe',
+                'dni_representante' => '12345678',
+                'tipo_servicio' => 'personas',
+                'ambito' => 'interprovincial',
+                'fecha_autorizacion' => '2020-01-15',
+                'numero_autorizacion' => 'AUT-2020-001',
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'razon_social' => 'Empresa de Transportes Wari S.R.L.',
+                'ruc' => '20234567890',
+                'nombre_comercial' => 'Wari Express',
+                'direccion' => 'Jr. Wari 456',
+                'distrito' => 'Andahuaylas',
+                'provincia' => 'Andahuaylas',
+                'departamento' => 'Apurímac',
+                'telefono' => '083-421234',
+                'email' => 'contacto@transporteswari.com',
+                'representante_legal' => 'María Torres Huamán',
+                'dni_representante' => '23456789',
+                'tipo_servicio' => 'mixto',
+                'ambito' => 'interprovincial',
+                'fecha_autorizacion' => '2019-08-10',
+                'numero_autorizacion' => 'AUT-2019-002',
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'razon_social' => 'Transportes Chanka Express E.I.R.L.',
+                'ruc' => '20345678901',
+                'nombre_comercial' => 'Chanka Express',
+                'direccion' => 'Av. Chanka 789',
+                'distrito' => 'Chincheros',
+                'provincia' => 'Chincheros',
+                'departamento' => 'Apurímac',
+                'telefono' => '083-531345',
+                'email' => 'info@chankaexpress.com',
+                'representante_legal' => 'José Ramos Ccahuana',
+                'dni_representante' => '34567890',
+                'tipo_servicio' => 'personas',
+                'ambito' => 'urbano',
+                'fecha_autorizacion' => '2021-03-20',
+                'numero_autorizacion' => 'AUT-2021-003',
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'razon_social' => 'Servicios de Transporte Apurímac S.A.',
+                'ruc' => '20456789012',
+                'nombre_comercial' => 'Apurímac Express',
+                'direccion' => 'Av. Apurímac 321',
+                'distrito' => 'Antabamba',
+                'provincia' => 'Antabamba',
+                'departamento' => 'Apurímac',
+                'telefono' => '083-641456',
+                'email' => 'servicios@transporteapurimac.com',
+                'representante_legal' => 'Ana Flores Mamani',
+                'dni_representante' => '45678901',
+                'tipo_servicio' => 'carga',
+                'ambito' => 'interprovincial',
+                'fecha_autorizacion' => '2018-11-05',
+                'numero_autorizacion' => 'AUT-2018-004',
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'razon_social' => 'Transportes Inca S.A.C.',
+                'ruc' => '20567890123',
+                'nombre_comercial' => 'Inca Tours',
+                'direccion' => 'Jr. Inca 654',
+                'distrito' => 'Grau',
+                'provincia' => 'Grau',
+                'departamento' => 'Apurímac',
+                'telefono' => '083-751567',
+                'email' => 'administracion@transportesinca.com',
+                'representante_legal' => 'Roberto Silva Condori',
+                'dni_representante' => '56789012',
+                'tipo_servicio' => 'personas',
+                'ambito' => 'interprovincial',
+                'fecha_autorizacion' => '2022-06-15',
+                'numero_autorizacion' => 'AUT-2022-005',
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
+
+        DB::table('empresas')->insert($empresas);
+    }
+}
