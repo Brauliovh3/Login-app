@@ -1,12 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\InfraccionController;
 use App\Http\Controllers\InspeccionController;
+use App\Http\Controllers\UserController;
 
 // Ruta principal - redirige al login si no está autenticado
 Route::get('/', function () {
@@ -37,6 +39,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/session-info', function () {
         return view('auth.session-info');
     })->name('session.info');
+    
+    // Gestión de usuarios (solo para administradores)
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::resource('users', UserController::class);
+    });
 });
 
 // Rutas para administradores y fiscalizadores (infracciones)

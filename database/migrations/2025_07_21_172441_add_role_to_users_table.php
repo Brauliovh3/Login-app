@@ -10,9 +10,9 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
+    {   //Agregue el campo inspector al Enum de roles
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['administrador', 'fiscalizador', 'ventanilla'])->default('ventanilla');
+            $table->enum('role', ['administrador', 'fiscalizador', 'ventanilla', 'inspector'])->default('ventanilla');
         });
     }
 

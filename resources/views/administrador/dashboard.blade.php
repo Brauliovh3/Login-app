@@ -156,7 +156,7 @@
                                     <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
                                     <h5 class="card-title">Gestionar Usuarios</h5>
                                     <p class="card-text">Crear, editar y eliminar usuarios del sistema</p>
-                                    <a href="#" class="btn btn-primary">Gestionar</a>
+                                    <a href="{{ route('users.index') }}" class="btn btn-primary">Gestionar</a>
                                 </div>
                             </div>
                         </div>

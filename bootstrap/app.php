@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'multirole' => \App\Http\Middleware\MultiRoleMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'remember.session' => \App\Http\Middleware\RememberSessionMiddleware::class,
         ]);
         
