@@ -173,35 +173,197 @@
             align-items: center;
             justify-content: center;
         }
+        
+        /* Corregir dropdown que se corta */
+        .navbar {
+            position: relative;
+            overflow: visible !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+        }
+        
+        .navbar .container {
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+        
+        .dropdown-menu {
+            position: absolute !important;
+            top: 100% !important;
+            right: 0 !important;
+            left: auto !important;
+            z-index: 1055 !important;
+            min-width: 200px;
+            padding: 0.5rem 0;
+            margin: 0.125rem 0 0;
+            font-size: 0.875rem;
+            color: #212529;
+            text-align: left;
+            list-style: none;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: none !important;
+        }
+        
+        .dropdown-menu.show {
+            display: block !important;
+        }
+        
+        .navbar .dropdown {
+            position: static;
+        }
+        
+        .dropdown-menu-end {
+            right: 0 !important;
+            left: auto !important;
+        }
+        
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+        }
+        
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            color: #1e2125;
+            background-color: #e9ecef;
+        }
+        
+        .dropdown-divider {
+            height: 0;
+            margin: 0.5rem 0;
+            overflow: hidden;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .dropdown-header {
+            display: block;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0;
+            font-size: 0.875rem;
+            color: #6c757d;
+            white-space: nowrap;
+        }
+        
+        /* Eliminar barras verticales */
+        .navbar-nav {
+            flex-direction: row !important;
+        }
+        
+        .nav-item {
+            border-right: none !important;
+        }
+        
+        .nav-item::after {
+            display: none !important;
+        }
+        
+        /* Prevenir scroll horizontal cuando se abre dropdown */
+        html {
+            overflow-x: hidden !important;
+        }
+        
+        body {
+            overflow-x: hidden !important;
+            position: relative;
+        }
+        
+        .navbar .container {
+            overflow: visible !important;
+        }
+        
+        /* Asegurar que el dropdown no cause overflow */
+        .dropdown-menu {
+            right: 0 !important;
+            left: auto !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+        
+        /* Prevenir que elementos salgan del viewport */
+        * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* CSS global para prevenir overflow horizontal */
+        html {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+        }
+        
+        .container, .container-fluid {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+        
+        .row {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            max-width: 100% !important;
+        }
+        
+        [class*="col-"] {
+            padding-left: 7.5px !important;
+            padding-right: 7.5px !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* Prevenir elementos que se salgan del viewport */
+        * {
+            box-sizing: border-box !important;
+        }
+        
+        .main, main {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
     </style>
 </head>
 <body>
     @auth
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="position: relative; overflow: visible;">
+        <div class="container" style="position: relative;">
             <a class="navbar-brand" href="{{ route('dashboard') }}">
                 <i class="fas fa-shield-alt"></i> Sistema
             </a>
             
-            <div class="navbar-nav ms-auto">
-                <div class="nav-item dropdown">
+            <div class="navbar-nav ms-auto" style="position: relative;">
+                <div class="nav-item dropdown" style="position: relative;">
                     <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-bell"></i>
                         <span id="notification-badge" class="notification-badge d-none">0</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                    <ul class="dropdown-menu dropdown-menu-end" style="width: 300px; position: absolute; top: 100%; right: 0; z-index: 1055;">
                         <li><h6 class="dropdown-header">Notificaciones</h6></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('notifications.index') }}">Ver todas</a></li>
                     </ul>
                 </div>
                 
-                <div class="nav-item dropdown">
+                <div class="nav-item dropdown" style="position: relative;">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-user"></i> {{ auth()->user()->name }}
                         <span class="badge bg-secondary">{{ ucfirst(auth()->user()->role) }}</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end" style="position: absolute; top: 100%; right: 0; z-index: 1055; min-width: 200px;">
                         <li><a class="dropdown-item" href="{{ route('notifications.index') }}">
                             <i class="fas fa-bell"></i> Notificaciones
                         </a></li>
@@ -221,7 +383,7 @@
     </nav>
     @endauth
 
-    <main class="@auth container mt-4 @else container-fluid @endauth">
+    <main class="@auth container mt-4 @else container-fluid @endauth" style="position: relative; z-index: 1;">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
@@ -240,6 +402,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Toggle password visibility
         function togglePassword(inputId, iconId) {
@@ -277,6 +440,47 @@
         updateNotificationCount();
         setInterval(updateNotificationCount, 30000);
         @endauth
+        
+        // Corregir posicionamiento de dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            // Asegurar que los dropdowns se muestren correctamente
+            const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+            dropdownElements.forEach(function(element) {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const dropdownMenu = this.nextElementSibling;
+                    const isShown = dropdownMenu.classList.contains('show');
+                    
+                    // Cerrar otros dropdowns
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                    });
+                    
+                    // Toggle el dropdown actual
+                    if (!isShown) {
+                        dropdownMenu.classList.add('show');
+                        
+                        // Ajustar posición si es necesario
+                        const rect = dropdownMenu.getBoundingClientRect();
+                        const viewportWidth = window.innerWidth;
+                        
+                        if (rect.right > viewportWidth) {
+                            dropdownMenu.style.right = '0';
+                            dropdownMenu.style.left = 'auto';
+                        }
+                    }
+                });
+            });
+            
+            // Cerrar dropdowns al hacer click fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown')) {
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                    });
+                }
+            });
+        });
     </script>
     
     <!-- jQuery CDN -->

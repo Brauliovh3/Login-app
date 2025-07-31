@@ -1,49 +1,134 @@
+@push('styles')
+<style>
+/* Prevenir overflow horizontal - GLOBAL */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+}
+
+/* Contenedores principales */
+.container-fluid, .container {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+}
+
+.row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+}
+
+[class*="col-"] {
+    padding-left: 7.5px !important;
+    padding-right: 7.5px !important;
+    max-width: 100% !important;
+}
+
+/* Cards responsive */
+.card {
+    margin-bottom: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+.card-body {
+    padding: 1rem;
+    overflow: hidden;
+}
+
+/* Botones responsive */
+.btn {
+    word-wrap: break-word;
+    white-space: normal;
+    max-width: 100%;
+}
+
+/* Navegación responsive */
+.nav-pills .nav-link {
+    border-radius: 25px;
+    margin: 0 2px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+/* Cards con gradientes */
+.card.bg-gradient {
+    border: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.card.bg-gradient:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* Media queries para móviles */
+@media (max-width: 768px) {
+    .d-sm-flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .nav-pills {
+        flex-direction: column !important;
+    }
+    
+    .nav-pills .nav-item {
+        margin-bottom: 5px !important;
+        width: 100% !important;
+    }
+    
+    .nav-pills .nav-link {
+        text-align: center !important;
+        margin: 0 !important;
+    }
+    
+    .flex-shrink-0 {
+        margin-top: 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    [class*="col-"] {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+}
+</style>
+@endpush
+
 @extends('layouts.app')
 
 @section('title', 'Panel de Fiscalizador - DRTC Apurímac')
 
 @section('content')
-<style>
-    .nav-pills .nav-link {
-        border-radius: 25px;
-        margin: 0 2px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    
-    .nav-pills .nav-link.active {
-        background: linear-gradient(135deg, #007bff, #0056b3);
-        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-    }
-    
-    .card.bg-gradient {
-        border: none;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-    }
-    
-    .card.bg-gradient:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    }
-    
-    .gap-2 {
-        gap: 0.5rem;
-    }
-</style>
-
-<div class="container-fluid">
+<div class="container-fluid p-3">
     <!-- Header principal -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <div>
+        <div class="flex-grow-1">
             <h1 class="h3 mb-0 text-gray-800">
                 <i class="fas fa-search text-success"></i> 
                 Panel de Fiscalizador DRTC
             </h1>
             <p class="text-muted">Bienvenido {{ auth()->user()->username }} - Control y Supervisión de Transporte Apurímac</p>
         </div>
-        <div>
-            <button class="btn btn-success shadow-sm">
+        <div class="flex-shrink-0">
+            <button class="btn btn-success shadow-sm" onclick="nuevaInspeccion()">
                 <i class="fas fa-clipboard-check fa-sm text-white-50"></i> Nueva Inspección
             </button>
         </div>
@@ -162,7 +247,7 @@
                                             </div>
                                             <h6 class="font-weight-bold">Nueva Acta de Infracción</h6>
                                             <p class="text-muted small">Registrar nueva infracción detectada</p>
-                                            <button class="btn btn-warning btn-sm">
+                                            <button class="btn btn-warning btn-sm" onclick="crearActa()">
                                                 <i class="fas fa-plus"></i> Crear Acta
                                             </button>
                                         </div>
@@ -177,7 +262,7 @@
                                             </div>
                                             <h6 class="font-weight-bold">Revisar Actas Pendientes</h6>
                                             <p class="text-muted small">{{ $stats['pendientes'] }} actas por procesar</p>
-                                            <button class="btn btn-info btn-sm">
+                                            <button class="btn btn-info btn-sm" onclick="revisarPendientes()">
                                                 <i class="fas fa-eye"></i> Revisar
                                             </button>
                                         </div>
@@ -192,7 +277,7 @@
                                             </div>
                                             <h6 class="font-weight-bold">Actas Procesadas</h6>
                                             <p class="text-muted small">{{ $stats['procesadas'] }} completadas hoy</p>
-                                            <button class="btn btn-success btn-sm">
+                                            <button class="btn btn-success btn-sm" onclick="verHistorial()">
                                                 <i class="fas fa-history"></i> Ver Historial
                                             </button>
                                         </div>
@@ -207,7 +292,7 @@
                                             </div>
                                             <h6 class="font-weight-bold">Infracciones Registradas</h6>
                                             <p class="text-muted small">{{ $stats['total_infracciones'] }} tipos en sistema</p>
-                                            <button class="btn btn-danger btn-sm">
+                                            <button class="btn btn-danger btn-sm" onclick="consultarInfracciones()">
                                                 <i class="fas fa-book"></i> Consultar
                                             </button>
                                         </div>
@@ -227,7 +312,7 @@
                                             </h6>
                                             <p class="text-muted small mb-3">Control técnico y documentario de vehículos</p>
                                             <div class="small text-muted mb-2">{{ $stats['vehiculos_activos'] }} vehículos activos</div>
-                                            <button class="btn btn-primary btn-sm">Iniciar Inspección</button>
+                                            <button class="btn btn-primary btn-sm" onclick="iniciarInspeccionVehicular()">Iniciar Inspección</button>
                                         </div>
                                     </div>
                                 </div>
@@ -240,7 +325,7 @@
                                             </h6>
                                             <p class="text-muted small mb-3">Control de habilitaciones de conductores</p>
                                             <div class="small text-muted mb-2">{{ $stats['conductores_vigentes'] }} licencias vigentes</div>
-                                            <button class="btn btn-success btn-sm">Verificar Licencia</button>
+                                            <button class="btn btn-success btn-sm" onclick="verificarLicencia()">Verificar Licencia</button>
                                         </div>
                                     </div>
                                 </div>
@@ -258,11 +343,11 @@
                                             </div>
                                             <h5 class="font-weight-bold">Reportes de Fiscalización</h5>
                                             <p class="text-muted">Generar informes detallados de actividades de control</p>
-                                            <div class="d-flex justify-content-center gap-2 mt-3">
-                                                <button class="btn btn-primary btn-sm">
+                                            <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+                                                <button class="btn btn-primary btn-sm" onclick="generarReportePDF()">
                                                     <i class="fas fa-file-pdf"></i> Generar PDF
                                                 </button>
-                                                <button class="btn btn-success btn-sm">
+                                                <button class="btn btn-success btn-sm" onclick="exportarExcel()">
                                                     <i class="fas fa-file-excel"></i> Exportar Excel
                                                 </button>
                                             </div>
@@ -297,7 +382,7 @@
                     <div class="progress mb-3">
                         <div class="progress-bar bg-warning" role="progressbar" style="width: 25%"></div>
                     </div>
-                    <button class="btn btn-sm btn-block btn-outline-primary">
+                    <button class="btn btn-sm btn-block btn-outline-primary" onclick="verListaEmpresas()">
                         <i class="fas fa-list"></i> Ver Lista Completa
                     </button>
                 </div>
@@ -336,128 +421,180 @@
     </div>
 </div>
 @endsection
-                <a class="small text-white stretched-link" href="#">Ver Métricas</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Panel de Fiscalización -->
-<div class="row">
-    <div class="col-xl-12 col-lg-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-success"><i class="fas fa-tasks"></i> Herramientas de Fiscalización</h6>
-            </div>
-            <div class="card-body">
-                <!-- Tabs de navegación -->
-                <ul class="nav nav-tabs" id="fiscalizadorTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="revision-tab" data-bs-toggle="tab" data-bs-target="#revision" type="button" role="tab">
-                            <i class="fas fa-search"></i> Revisiones
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="auditoria-tab" data-bs-toggle="tab" data-bs-target="#auditoria" type="button" role="tab">
-                            <i class="fas fa-clipboard-check"></i> Auditorías
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="informes-tab" data-bs-toggle="tab" data-bs-target="#informes" type="button" role="tab">
-                            <i class="fas fa-file-alt"></i> Informes
-                        </button>
-                    </li>
-                </ul>
-                
-                <!-- Contenido de tabs -->
-                <div class="tab-content mt-3" id="fiscalizadorTabsContent">
-                    <div class="tab-pane fade show active" id="revision" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-success shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-success font-weight-bold mb-2">
-                                            <i class="fas fa-search"></i> Revisar Documentos
-                                        </h6>
-                                        <p class="text-muted small mb-3">Revisar y validar documentos enviados por usuarios de ventanilla</p>
-                                        <button class="btn btn-success btn-sm">Iniciar Revisión</button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-warning shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-warning font-weight-bold mb-2">
-                                            <i class="fas fa-exclamation-circle"></i> Casos Pendientes
-                                        </h6>
-                                        <p class="text-muted small mb-3">Casos que requieren atención inmediata o seguimiento especial</p>
-                                        <button class="btn btn-warning btn-sm">Ver Casos</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="tab-pane fade" id="auditoria" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-primary shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-primary font-weight-bold mb-2">
-                                            <i class="fas fa-clipboard-list"></i> Nueva Auditoría
-                                        </h6>
-                                        <p class="text-muted small mb-3">Crear y programar nuevas auditorías del sistema</p>
-                                        <button class="btn btn-primary btn-sm">Crear Auditoría</button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-info shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-info font-weight-bold mb-2">
-                                            <i class="fas fa-history"></i> Historial de Auditorías
-                                        </h6>
-                                        <p class="text-muted small mb-3">Consultar auditorías anteriores y sus resultados</p>
-                                        <button class="btn btn-info btn-sm">Ver Historial</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="tab-pane fade" id="informes" role="tabpanel">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-secondary shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-secondary font-weight-bold mb-2">
-                                            <i class="fas fa-chart-bar"></i> Generar Informe
-                                        </h6>
-                                        <p class="text-muted small mb-3">Crear informes personalizados con métricas específicas</p>
-                                        <button class="btn btn-secondary btn-sm">Generar</button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <div class="card border-left-dark shadow h-100 py-2">
-                                    <div class="card-body">
-                                        <h6 class="text-dark font-weight-bold mb-2">
-                                            <i class="fas fa-download"></i> Exportar Datos
-                                        </h6>
-                                        <p class="text-muted small mb-3">Exportar datos en diferentes formatos (PDF, Excel, CSV)</p>
-                                        <button class="btn btn-dark btn-sm">Exportar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Funciones del header
+function nuevaInspeccion() {
+    Swal.fire({
+        title: 'Nueva Inspección',
+        text: 'Iniciando proceso de nueva inspección...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para crear una nueva inspección
+}
+
+function verHistorialCompleto() {
+    Swal.fire({
+        title: 'Historial Completo',
+        text: 'Cargando historial completo de inspecciones...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para mostrar el historial completo
+}
+
+// Funciones de la pestaña Actas
+function crearActa() {
+    Swal.fire({
+        title: 'Crear Acta',
+        text: 'Abriendo formulario para crear nueva acta...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para crear un acta
+}
+
+function revisarPendientes() {
+    Swal.fire({
+        title: 'Actas Pendientes',
+        text: 'Mostrando actas pendientes de revisión...',
+        icon: 'warning',
+        timer: 2000
+    });
+    // Aquí iría la lógica para revisar pendientes
+}
+
+function verHistorial() {
+    Swal.fire({
+        title: 'Historial de Actas',
+        text: 'Cargando historial de actas...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para ver historial
+}
+
+function consultarInfracciones() {
+    Swal.fire({
+        title: 'Consultar Infracciones',
+        text: 'Abriendo consulta de infracciones...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para consultar infracciones
+}
+
+// Funciones de la pestaña Control
+function iniciarInspeccionVehicular() {
+    Swal.fire({
+        title: 'Inspección Vehicular',
+        text: 'Iniciando proceso de inspección vehicular...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para inspección vehicular
+}
+
+function verificarLicencia() {
+    Swal.fire({
+        title: 'Verificar Licencia',
+        text: 'Abriendo verificador de licencias...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para verificar licencias
+}
+
+// Funciones de la pestaña Reportes
+function generarReportePDF() {
+    Swal.fire({
+        title: 'Generar Reporte PDF',
+        text: 'Generando reporte en formato PDF...',
+        icon: 'success',
+        timer: 2000
+    });
+    // Aquí iría la lógica para generar PDF
+}
+
+function exportarExcel() {
+    Swal.fire({
+        title: 'Exportar a Excel',
+        text: 'Exportando datos a Excel...',
+        icon: 'success',
+        timer: 2000
+    });
+    // Aquí iría la lógica para exportar Excel
+}
+
+// Función del panel lateral
+function verListaEmpresas() {
+    Swal.fire({
+        title: 'Lista de Empresas',
+        text: 'Cargando lista completa de empresas de transporte...',
+        icon: 'info',
+        timer: 2000
+    });
+    // Aquí iría la lógica para ver lista de empresas
+}
+
+// Funciones de Revisión
+function iniciarRevision() {
+    Swal.fire({
+        title: 'Iniciar Revisión',
+        text: 'Iniciando proceso de revisión de documentos...',
+        icon: 'success',
+        timer: 2000
+    });
+}
+
+function verCasosPendientes() {
+    Swal.fire({
+        title: 'Casos Pendientes',
+        text: 'Mostrando casos que requieren atención inmediata...',
+        icon: 'warning',
+        timer: 2000
+    });
+}
+
+// Funciones de Auditoría
+function crearAuditoria() {
+    Swal.fire({
+        title: 'Crear Auditoría',
+        text: 'Abriendo formulario para nueva auditoría...',
+        icon: 'info',
+        timer: 2000
+    });
+}
+
+function verHistorialAuditorias() {
+    Swal.fire({
+        title: 'Historial de Auditorías',
+        text: 'Consultando auditorías anteriores...',
+        icon: 'info',
+        timer: 2000
+    });
+}
+
+// Funciones de Informes
+function generarInforme() {
+    Swal.fire({
+        title: 'Generar Informe',
+        text: 'Creando informe personalizado...',
+        icon: 'success',
+        timer: 2000
+    });
+}
+
+function exportarDatos() {
+    Swal.fire({
+        title: 'Exportar Datos',
+        text: 'Exportando datos en formato seleccionado...',
+        icon: 'success',
+        timer: 2000
+    });
+}
+</script>
+@endpush

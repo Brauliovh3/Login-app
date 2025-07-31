@@ -17,9 +17,15 @@
             --drtc-navy: #1e3a8a;
         }
 
+        html {
+            overflow-x: hidden !important;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fc;
+            overflow-x: hidden !important;
+            position: relative;
         }
 
         /* Sidebar */
@@ -151,6 +157,26 @@
                 display: block !important;
             }
         }
+        
+        /* Prevenir scroll horizontal global */
+        * {
+            box-sizing: border-box !important;
+        }
+        
+        .container, .container-fluid {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
+        
+        .row {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
+        
+        [class*="col-"] {
+            overflow-x: hidden !important;
+            max-width: 100% !important;
+        }
 
         .mobile-menu-toggle {
             display: none;
@@ -177,6 +203,26 @@
         .topbar .dropdown-menu {
             border: none;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+            position: absolute !important;
+            right: 0 !important;
+            left: auto !important;
+            z-index: 1055 !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+        
+        /* Prevenir scroll horizontal en topbar */
+        .topbar {
+            overflow: visible !important;
+        }
+        
+        .topbar .container {
+            overflow: visible !important;
+            max-width: 100% !important;
+        }
+        
+        .topbar .navbar-nav {
+            overflow: visible !important;
         }
 
         .animated--grow-in {
