@@ -225,7 +225,7 @@
                     <div class="h6 mb-2 text-gray-800">{{ $stats['inspectores_activos'] }} inspectores activos</div>
                     <div class="progress mb-3">
                         <div class="progress-bar bg-info" role="progressbar" 
-                             style="width: {{ ($stats['inspectores_activos']/$stats['total_inspectores'])*100 }}%">
+                            style="width: {{ ($stats['inspectores_activos']/$stats['total_inspectores'])*100 }}%">
                         </div>
                     </div>
                     <button class="btn btn-sm btn-block btn-outline-primary">
