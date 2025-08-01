@@ -52,10 +52,10 @@
             </div>
             <div class="row mt-3">
                 <div class="col-12">
-                    <button class="btn btn-primary me-2">
+                    <button class="btn btn-primary me-2" onclick="buscarInspectores()">
                         <i class="fas fa-search me-2"></i>Buscar
                     </button>
-                    <button class="btn btn-outline-secondary">
+                    <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
                         <i class="fas fa-times me-2"></i>Limpiar
                     </button>
                 </div>
@@ -85,67 +85,39 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="inspectoresTableBody">
+                        @forelse($inspectores as $inspector)
                         <tr>
-                            <td><strong>FISC-001</strong></td>
-                            <td>12345678</td>
-                            <td>Juan Carlos Pérez Mendoza</td>
-                            <td>+51 987654321</td>
-                            <td>juan.perez@drtc.gob.pe</td>
-                            <td>Zona Norte</td>
-                            <td><span class="badge bg-success">Activo</span></td>
+                            <td><strong>{{ $inspector->codigo_inspector }}</strong></td>
+                            <td>{{ $inspector->dni }}</td>
+                            <td>{{ $inspector->nombre_completo }}</td>
+                            <td>{{ $inspector->telefono }}</td>
+                            <td>{{ $inspector->email }}</td>
+                            <td>{{ $inspector->zona_asignada }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver perfil">
+                                <span class="badge bg-{{ $inspector->estado === 'activo' ? 'success' : ($inspector->estado === 'licencia' ? 'warning' : 'info') }}">
+                                    {{ ucfirst($inspector->estado) }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" title="Ver perfil" onclick="verInspector({{ $inspector->id }})">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
+                                <button class="btn btn-sm btn-outline-success" title="Editar" onclick="editarInspector({{ $inspector->id }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-warning" title="Cambiar estado">
-                                    <i class="fas fa-toggle-on"></i>
+                                <button class="btn btn-sm btn-outline-{{ $inspector->estado === 'activo' ? 'warning' : 'success' }}" 
+                                        title="{{ $inspector->estado === 'activo' ? 'Desactivar' : 'Activar' }}" 
+                                        onclick="toggleEstadoInspector({{ $inspector->id }}, '{{ $inspector->estado }}')">
+                                    <i class="fas fa-toggle-{{ $inspector->estado === 'activo' ? 'on' : 'off' }}"></i>
                                 </button>
                             </td>
                         </tr>
+                        @empty
                         <tr>
-                            <td><strong>FISC-002</strong></td>
-                            <td>87654321</td>
-                            <td>María Elena López García</td>
-                            <td>+51 912345678</td>
-                            <td>maria.lopez@drtc.gob.pe</td>
-                            <td>Zona Sur</td>
-                            <td><span class="badge bg-warning">Licencia</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver perfil">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" title="Cambiar estado">
-                                    <i class="fas fa-toggle-off"></i>
-                                </button>
-                            </td>
+                            <td colspan="8" class="text-center">No hay inspectores registrados</td>
                         </tr>
-                        <tr>
-                            <td><strong>FISC-003</strong></td>
-                            <td>11223344</td>
-                            <td>Roberto Carlos Quispe Huamán</td>
-                            <td>+51 923456789</td>
-                            <td>roberto.quispe@drtc.gob.pe</td>
-                            <td>Zona Centro</td>
-                            <td><span class="badge bg-info">Vacaciones</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver perfil">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" title="Cambiar estado">
-                                    <i class="fas fa-toggle-on"></i>
-                                </button>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -171,8 +143,8 @@
                             <input type="text" class="form-control" id="dni" maxlength="8" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="codigo_fiscal" class="form-label">Código de Fiscal *</label>
-                            <input type="text" class="form-control" id="codigo_fiscal" required>
+                            <label for="codigo_inspector" class="form-label">Código de Inspector *</label>
+                            <input type="text" class="form-control" id="codigo_inspector" required>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -223,28 +195,337 @@
     </div>
 </div>
 
+<!-- Modal Ver Inspector -->
+<div class="modal fade" id="verInspectorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #ff8c00; color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Datos del Inspector
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="verInspectorContent">
+                <!-- Contenido se carga dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Inspector -->
+<div class="modal fade" id="editarInspectorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #ff8c00; color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Editar Inspector
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editarInspectorForm">
+                    <input type="hidden" id="edit_inspector_id">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="edit_dni" class="form-label">DNI *</label>
+                            <input type="text" class="form-control" id="edit_dni" maxlength="8" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_codigo_inspector" class="form-label">Código de Inspector *</label>
+                            <input type="text" class="form-control" id="edit_codigo_inspector" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="edit_nombres" class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="edit_nombres" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="edit_apellidos" required>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="edit_telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="edit_telefono">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit_email">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="edit_fecha_ingreso" class="form-label">Fecha de Ingreso *</label>
+                            <input type="date" class="form-control" id="edit_fecha_ingreso" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_zona_asignada" class="form-label">Zona Asignada</label>
+                            <input type="text" class="form-control" id="edit_zona_asignada">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label for="edit_observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="edit_observaciones" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="actualizarInspector()">
+                    <i class="fas fa-save me-2"></i>Actualizar Inspector
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function guardarFiscal() {
     // Validar formulario
     const dni = document.getElementById('dni').value;
-    const codigo = document.getElementById('codigo_fiscal').value;
+    const codigo = document.getElementById('codigo_inspector').value;
     const nombres = document.getElementById('nombres').value;
     const apellidos = document.getElementById('apellidos').value;
+    const fecha_ingreso = document.getElementById('fecha_ingreso').value;
     
-    if (!dni || !codigo || !nombres || !apellidos) {
+    if (!dni || !codigo || !nombres || !apellidos || !fecha_ingreso) {
         showError('Por favor complete todos los campos obligatorios');
         return;
     }
     
-    // Simular guardado
-    showSuccess('Fiscal guardado exitosamente');
+    const formData = {
+        dni: dni,
+        codigo_inspector: codigo,
+        nombres: nombres,
+        apellidos: apellidos,
+        telefono: document.getElementById('telefono').value,
+        email: document.getElementById('email').value,
+        fecha_ingreso: fecha_ingreso,
+        zona_asignada: document.getElementById('zona_asignada').value,
+        observaciones: document.getElementById('observaciones').value,
+        estado: 'activo'
+    };
+
+    fetch('/admin/inspectores', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Inspector guardado exitosamente');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('nuevoFiscalModal'));
+            modal.hide();
+            document.getElementById('nuevoFiscalForm').reset();
+            location.reload();
+        } else {
+            if (data.errors) {
+                let errorMessage = 'Errores de validación:\n';
+                Object.keys(data.errors).forEach(key => {
+                    errorMessage += `${key}: ${data.errors[key].join(', ')}\n`;
+                });
+                showError(errorMessage);
+            } else {
+                showError(data.message || 'Error al guardar el inspector');
+            }
+        }
+    })
+    .catch(error => {
+        showError('Error al guardar el inspector');
+    });
+}
+
+// Función para ver inspector
+function verInspector(id) {
+    fetch(`/admin/inspectores/${id}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const inspector = data.inspector;
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información Personal</h6>
+                        <p><strong>DNI:</strong> ${inspector.dni}</p>
+                        <p><strong>Nombre:</strong> ${inspector.nombres} ${inspector.apellidos}</p>
+                        <p><strong>Código:</strong> ${inspector.codigo_inspector}</p>
+                        <p><strong>Teléfono:</strong> ${inspector.telefono || 'No especificado'}</p>
+                        <p><strong>Email:</strong> ${inspector.email || 'No especificado'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Información Laboral</h6>
+                        <p><strong>Fecha de Ingreso:</strong> ${new Date(inspector.fecha_ingreso).toLocaleDateString()}</p>
+                        <p><strong>Zona Asignada:</strong> ${inspector.zona_asignada || 'No asignada'}</p>
+                        <p><strong>Estado:</strong> <span class="badge bg-${inspector.estado === 'activo' ? 'success' : 'warning'}">${inspector.estado}</span></p>
+                        <p><strong>Observaciones:</strong> ${inspector.observaciones || 'Ninguna'}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('verInspectorContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('verInspectorModal')).show();
+        }
+    });
+}
+
+// Función para editar inspector
+function editarInspector(id) {
+    fetch(`/admin/inspectores/${id}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const inspector = data.inspector;
+            document.getElementById('edit_inspector_id').value = inspector.id;
+            document.getElementById('edit_dni').value = inspector.dni;
+            document.getElementById('edit_codigo_inspector').value = inspector.codigo_inspector;
+            document.getElementById('edit_nombres').value = inspector.nombres;
+            document.getElementById('edit_apellidos').value = inspector.apellidos;
+            document.getElementById('edit_telefono').value = inspector.telefono || '';
+            document.getElementById('edit_email').value = inspector.email || '';
+            document.getElementById('edit_fecha_ingreso').value = inspector.fecha_ingreso;
+            document.getElementById('edit_zona_asignada').value = inspector.zona_asignada || '';
+            document.getElementById('edit_observaciones').value = inspector.observaciones || '';
+            
+            new bootstrap.Modal(document.getElementById('editarInspectorModal')).show();
+        }
+    });
+}
+
+// Función para actualizar inspector
+function actualizarInspector() {
+    const id = document.getElementById('edit_inspector_id').value;
+    const formData = {
+        dni: document.getElementById('edit_dni').value,
+        codigo_inspector: document.getElementById('edit_codigo_inspector').value,
+        nombres: document.getElementById('edit_nombres').value,
+        apellidos: document.getElementById('edit_apellidos').value,
+        telefono: document.getElementById('edit_telefono').value,
+        email: document.getElementById('edit_email').value,
+        fecha_ingreso: document.getElementById('edit_fecha_ingreso').value,
+        zona_asignada: document.getElementById('edit_zona_asignada').value,
+        observaciones: document.getElementById('edit_observaciones').value
+    };
+
+    fetch(`/admin/inspectores/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccess('Inspector actualizado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('editarInspectorModal')).hide();
+            location.reload();
+        } else {
+            showError(data.message || 'Error al actualizar el inspector');
+        }
+    });
+}
+
+// Función para toggle estado
+function toggleEstadoInspector(id, estadoActual) {
+    const nuevoEstado = estadoActual === 'activo' ? 'inactivo' : 'activo';
+    const accion = nuevoEstado === 'activo' ? 'activar' : 'desactivar';
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('nuevoFiscalModal'));
-    modal.hide();
+    if (confirm(`¿Está seguro que desea ${accion} este inspector?`)) {
+        fetch(`/admin/inspectores/${id}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Estado actualizado exitosamente');
+                location.reload();
+            } else {
+                showError(data.message || 'Error al cambiar el estado');
+            }
+        });
+    }
+}
+
+// Función para buscar inspectores
+function buscarInspectores() {
+    const filtros = {
+        dni: document.getElementById('filtro_dni').value,
+        nombre: document.getElementById('filtro_nombre').value,
+        estado: document.getElementById('filtro_estado').value,
+        zona: document.getElementById('filtro_zona').value
+    };
+
+    const params = new URLSearchParams();
+    Object.keys(filtros).forEach(key => {
+        if (filtros[key]) params.append(key, filtros[key]);
+    });
+
+    fetch(`/admin/inspectores/search?${params.toString()}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            actualizarTablaInspectores(data.inspectores);
+        }
+    });
+}
+
+// Función para limpiar filtros
+function limpiarFiltros() {
+    document.getElementById('filtro_dni').value = '';
+    document.getElementById('filtro_nombre').value = '';
+    document.getElementById('filtro_estado').value = '';
+    document.getElementById('filtro_zona').value = '';
+    location.reload();
+}
+
+// Función para actualizar tabla
+function actualizarTablaInspectores(inspectores) {
+    const tbody = document.getElementById('inspectoresTableBody');
+    tbody.innerHTML = '';
     
-    // Limpiar formulario
-    document.getElementById('nuevoFiscalForm').reset();
+    if (inspectores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron inspectores</td></tr>';
+        return;
+    }
+    
+    inspectores.forEach(inspector => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${inspector.codigo_inspector}</strong></td>
+            <td>${inspector.dni}</td>
+            <td>${inspector.nombres} ${inspector.apellidos}</td>
+            <td>${inspector.telefono || ''}</td>
+            <td>${inspector.email || ''}</td>
+            <td>${inspector.zona_asignada || ''}</td>
+            <td><span class="badge bg-${inspector.estado === 'activo' ? 'success' : 'warning'}">${inspector.estado}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" title="Ver perfil" onclick="verInspector(${inspector.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-success" title="Editar" onclick="editarInspector(${inspector.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-${inspector.estado === 'activo' ? 'warning' : 'success'}" 
+                        title="${inspector.estado === 'activo' ? 'Desactivar' : 'Activar'}" 
+                        onclick="toggleEstadoInspector(${inspector.id}, '${inspector.estado}')">
+                    <i class="fas fa-toggle-${inspector.estado === 'activo' ? 'on' : 'off'}"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 </script>
 @endsection

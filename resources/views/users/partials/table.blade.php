@@ -86,6 +86,16 @@
                 <td class="text-center">
                     @if(auth()->user()->role === 'administrador')
                     <div class="btn-group shadow-sm" role="group" aria-label="Acciones de usuario">
+                        <!-- Botón Ver Detalles -->
+                        <button type="button" 
+                                class="btn btn-outline-info btn-sm view-user" 
+                                data-id="{{ $user->id }}"
+                                data-bs-toggle="tooltip"
+                                title="Ver detalles del usuario">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        
+                        <!-- Botón Editar -->
                         <button type="button" 
                                 class="btn btn-outline-primary btn-sm edit-user" 
                                 data-id="{{ $user->id }}"
@@ -93,7 +103,30 @@
                                 title="Editar usuario">
                             <i class="fas fa-edit"></i>
                         </button>
+                        
+                        <!-- Botón Cambiar Contraseña -->
+                        <button type="button" 
+                                class="btn btn-outline-warning btn-sm change-password" 
+                                data-id="{{ $user->id }}"
+                                data-name="{{ $user->name }}"
+                                data-bs-toggle="tooltip"
+                                title="Cambiar contraseña">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        
                         @if(auth()->user()->id !== $user->id)
+                        <!-- Botón Bloquear/Desbloquear -->
+                        <button type="button" 
+                                class="btn btn-outline-{{ isset($user->blocked_at) ? 'success' : 'secondary' }} btn-sm toggle-status" 
+                                data-id="{{ $user->id }}"
+                                data-name="{{ $user->name }}"
+                                data-status="{{ isset($user->blocked_at) ? 'blocked' : 'active' }}"
+                                data-bs-toggle="tooltip"
+                                title="{{ isset($user->blocked_at) ? 'Desbloquear usuario' : 'Bloquear usuario' }}">
+                            <i class="fas fa-{{ isset($user->blocked_at) ? 'unlock' : 'user-lock' }}"></i>
+                        </button>
+                        
+                        <!-- Botón Eliminar -->
                         <button type="button" 
                                 class="btn btn-outline-danger btn-sm delete-user" 
                                 data-id="{{ $user->id }}"
@@ -107,7 +140,7 @@
                                 class="btn btn-outline-secondary btn-sm" 
                                 disabled
                                 data-bs-toggle="tooltip"
-                                title="No puedes eliminarte a ti mismo">
+                                title="No puedes realizar acciones sobre tu propia cuenta">
                             <i class="fas fa-lock"></i>
                         </button>
                         @endif

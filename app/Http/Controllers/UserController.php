@@ -206,4 +206,102 @@ class UserController extends Controller
         
         return redirect()->route('users.index')->with('success', 'Usuario eliminado correctamente');
     }
+
+    // Cambiar contraseña de usuario
+    public function changePassword(Request $request, $id)
+    {
+        if(Auth::user()->role !== 'administrador'){
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para cambiar contraseñas.'
+                ], 403);
+            }
+            abort(403, 'No tienes permisos para cambiar contraseñas.');
+        }
+        
+        $user = User::findOrFail($id);
+        
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Contraseña actualizada exitosamente'
+            ]);
+        }
+        
+        return redirect()->route('users.index')->with('success', 'Contraseña actualizada correctamente');
+    }
+
+    // Bloquear/Desbloquear usuario
+    public function toggleStatus(Request $request, $id)
+    {
+        if(Auth::user()->role !== 'administrador'){
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para cambiar el estado de usuarios.'
+                ], 403);
+            }
+            abort(403, 'No tienes permisos para cambiar el estado de usuarios.');
+        }
+        
+        $user = User::findOrFail($id);
+        
+        // Evitar que el usuario se bloquee a sí mismo
+        if (Auth::user()->id == $user->id) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes cambiar tu propio estado'
+                ], 403);
+            }
+            return redirect()->route('users.index')->with('error', 'No puedes cambiar tu propio estado');
+        }
+        
+        $action = $request->input('action');
+        $message = '';
+        
+        if ($action === 'block') {
+            $user->update(['blocked_at' => now()]);
+            $message = 'Usuario bloqueado exitosamente';
+        } elseif ($action === 'unblock') {
+            $user->update(['blocked_at' => null]);
+            $message = 'Usuario desbloqueado exitosamente';
+        } else {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Acción no válida'
+                ], 400);
+            }
+            return redirect()->route('users.index')->with('error', 'Acción no válida');
+        }
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message
+            ]);
+        }
+        
+        return redirect()->route('users.index')->with('success', $message);
+    }
 }

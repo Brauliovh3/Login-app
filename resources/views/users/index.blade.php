@@ -282,6 +282,170 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Ver Detalles del Usuario -->
+<div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="viewUserModalLabel">
+                    <i class="fas fa-user me-2"></i>Detalles del Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-user me-1"></i>Nombre Completo
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_name">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-at me-1"></i>Nombre de Usuario
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_username">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-envelope me-1"></i>Correo Electrónico
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_email">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-user-tag me-1"></i>Rol del Sistema
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_role">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-calendar-plus me-1"></i>Fecha de Registro
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_created_at">-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-clock me-1"></i>Última Actualización
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_updated_at">-</p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="info-group">
+                            <label class="form-label fw-bold text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>Estado del Usuario
+                            </label>
+                            <p class="form-control-plaintext border rounded p-2 bg-light" id="view_status">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Contraseña -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="changePasswordModalLabel">
+                    <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="changePasswordForm">
+                @csrf
+                <input type="hidden" id="change_password_user_id" name="user_id">
+                <div class="modal-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-circle fa-3x text-warning mb-2"></i>
+                        <h6 class="mb-0">Usuario: <strong id="changePasswordUserName" class="text-dark"></strong></h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="change_new_password" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-1 text-muted"></i>Nueva Contraseña <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="change_new_password" name="password" required placeholder="Mínimo 8 caracteres">
+                            <div class="invalid-feedback" id="change_password_error"></div>
+                        </div>
+                        <div class="col-12">
+                            <label for="change_password_confirmation" class="form-label fw-semibold">
+                                <i class="fas fa-lock me-1 text-muted"></i>Confirmar Nueva Contraseña <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="change_password_confirmation" name="password_confirmation" required placeholder="Repetir la nueva contraseña">
+                            <div class="invalid-feedback" id="change_password_confirmation_error"></div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Nota:</strong> La nueva contraseña debe tener al menos 8 caracteres.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning btn-lg text-dark">
+                        <i class="fas fa-key me-1"></i>Cambiar Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Estado Usuario -->
+<div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" id="toggleStatusHeader">
+                <h5 class="modal-title" id="toggleStatusModalLabel">
+                    <i class="fas fa-user-lock me-2"></i>Cambiar Estado
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i id="toggleStatusIcon" class="fa-3x mb-3"></i>
+                </div>
+                <h6 class="mb-2" id="toggleStatusQuestion">¿Confirmar acción?</h6>
+                <p class="mb-0">Usuario: <strong id="toggleStatusUserName" class="text-primary"></strong></p>
+                <div class="alert mt-3" role="alert" id="toggleStatusAlert">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <span id="toggleStatusMessage">Esta acción cambiará el estado del usuario.</span>
+                </div>
+            </div>
+            <div class="modal-footer bg-light justify-content-center">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-lg" id="confirmToggleStatus">
+                    <i class="fas fa-check me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -503,6 +667,171 @@ $(document).ready(function() {
         $(this).find('form')[0].reset();
         clearErrors('create');
         clearErrors('edit');
+        clearErrors('change');
+    });
+
+    // ===== NUEVAS FUNCIONALIDADES =====
+
+    // Ver detalles del usuario
+    $(document).on('click', '.view-user', function() {
+        const userId = $(this).data('id');
+        
+        $.ajax({
+            url: `/users/${userId}/edit`,
+            type: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.success) {
+                    const user = response.user;
+                    
+                    $('#view_name').text(user.name);
+                    $('#view_username').text(user.username);
+                    $('#view_email').text(user.email);
+                    
+                    // Mostrar rol con icono
+                    let roleText = '';
+                    switch(user.role) {
+                        case 'administrador':
+                            roleText = '👑 Administrador';
+                            break;
+                        case 'fiscalizador':
+                            roleText = '📋 Fiscalizador';
+                            break;
+                        case 'ventanilla':
+                            roleText = '🪟 Ventanilla';
+                            break;
+                        case 'inspector':
+                            roleText = '🔍 Inspector';
+                            break;
+                        default:
+                            roleText = user.role;
+                    }
+                    $('#view_role').text(roleText);
+                    
+                    $('#view_created_at').text(new Date(user.created_at).toLocaleString());
+                    $('#view_updated_at').text(new Date(user.updated_at).toLocaleString());
+                    $('#view_status').html('<span class="badge bg-success">Activo</span>');
+                    
+                    $('#viewUserModal').modal('show');
+                }
+            },
+            error: function(xhr) {
+                showAlert('Error al cargar los detalles del usuario', 'error');
+            }
+        });
+    });
+
+    // Cambiar contraseña
+    $(document).on('click', '.change-password', function() {
+        const userId = $(this).data('id');
+        const userName = $(this).data('name');
+        
+        $('#change_password_user_id').val(userId);
+        $('#changePasswordUserName').text(userName);
+        $('#changePasswordModal').modal('show');
+    });
+
+    // Enviar formulario de cambio de contraseña
+    $('#changePasswordForm').on('submit', function(e) {
+        e.preventDefault();
+        clearErrors('change');
+        
+        const userId = $('#change_password_user_id').val();
+        const formData = {
+            password: $('#change_new_password').val(),
+            password_confirmation: $('#change_password_confirmation').val(),
+            _token: '{{ csrf_token() }}'
+        };
+        
+        $.ajax({
+            url: `/users/${userId}/change-password`,
+            type: 'PUT',
+            data: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#changePasswordModal').modal('hide');
+                    showAlert(response.message, 'success');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 422) {
+                    showErrors(xhr.responseJSON.errors, 'change');
+                } else {
+                    showAlert('Error al cambiar la contraseña', 'error');
+                }
+            }
+        });
+    });
+
+    // Cambiar estado del usuario (bloquear/desbloquear)
+    let toggleUserId = null;
+    let toggleAction = null;
+    
+    $(document).on('click', '.toggle-status', function() {
+        toggleUserId = $(this).data('id');
+        const userName = $(this).data('name');
+        const currentStatus = $(this).data('status');
+        
+        $('#toggleStatusUserName').text(userName);
+        
+        if (currentStatus === 'blocked') {
+            // Usuario está bloqueado, mostrar opción para desbloquear
+            toggleAction = 'unblock';
+            $('#toggleStatusHeader').removeClass('bg-warning').addClass('bg-success text-white');
+            $('#toggleStatusIcon').removeClass().addClass('fas fa-unlock text-success');
+            $('#toggleStatusQuestion').text('¿Desbloquear este usuario?');
+            $('#toggleStatusMessage').text('El usuario podrá acceder nuevamente al sistema.');
+            $('#toggleStatusAlert').removeClass('alert-warning').addClass('alert-success');
+            $('#confirmToggleStatus').removeClass('btn-warning').addClass('btn-success').html('<i class="fas fa-unlock me-1"></i>Desbloquear');
+        } else {
+            // Usuario está activo, mostrar opción para bloquear
+            toggleAction = 'block';
+            $('#toggleStatusHeader').removeClass('bg-success').addClass('bg-warning text-dark');
+            $('#toggleStatusIcon').removeClass().addClass('fas fa-user-lock text-warning');
+            $('#toggleStatusQuestion').text('¿Bloquear este usuario?');
+            $('#toggleStatusMessage').text('El usuario no podrá acceder al sistema hasta ser desbloqueado.');
+            $('#toggleStatusAlert').removeClass('alert-success').addClass('alert-warning');
+            $('#confirmToggleStatus').removeClass('btn-success').addClass('btn-warning text-dark').html('<i class="fas fa-user-lock me-1"></i>Bloquear');
+        }
+        
+        $('#toggleStatusModal').modal('show');
+    });
+
+    // Confirmar cambio de estado
+    $('#confirmToggleStatus').on('click', function() {
+        if (toggleUserId && toggleAction) {
+            $.ajax({
+                url: `/users/${toggleUserId}/toggle-status`,
+                type: 'PUT',
+                data: {
+                    action: toggleAction,
+                    _token: '{{ csrf_token() }}'
+                },
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#toggleStatusModal').modal('hide');
+                        loadUsers();
+                        showAlert(response.message, 'success');
+                    }
+                },
+                error: function(xhr) {
+                    $('#toggleStatusModal').modal('hide');
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        showAlert(xhr.responseJSON.message, 'error');
+                    } else {
+                        showAlert('Error al cambiar el estado del usuario', 'error');
+                    }
+                }
+            });
+        }
     });
 });
 </script>

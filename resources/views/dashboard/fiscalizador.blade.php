@@ -449,22 +449,213 @@ function verHistorialCompleto() {
 // Funciones de la pestaña Actas
 function crearActa() {
     Swal.fire({
-        title: 'Crear Acta',
-        text: 'Abriendo formulario para crear nueva acta...',
-        icon: 'info',
-        timer: 2000
+        title: 'Crear Nueva Acta',
+        html: `
+            <form id="actaForm" class="text-left">
+                <div class="mb-3">
+                    <label>Vehículo (Placa):</label>
+                    <select id="vehiculo_id" class="form-control" required>
+                        <option value="">Seleccionar vehículo...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Conductor:</label>
+                    <select id="conductor_id" class="form-control" required>
+                        <option value="">Seleccionar conductor...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Infracción:</label>
+                    <select id="infraccion_id" class="form-control" required>
+                        <option value="">Seleccionar infracción...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Inspector:</label>
+                    <select id="inspector_id" class="form-control" required>
+                        <option value="">Seleccionar inspector...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Ubicación:</label>
+                    <input type="text" id="ubicacion" class="form-control" required placeholder="Ubicación de la infracción">
+                </div>
+                <div class="mb-3">
+                    <label>Descripción:</label>
+                    <textarea id="descripcion" class="form-control" required placeholder="Descripción detallada"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label>Monto de Multa (S/):</label>
+                    <input type="number" id="monto_multa" class="form-control" required min="0" step="0.01">
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Crear Acta',
+        cancelButtonText: 'Cancelar',
+        width: 600,
+        didOpen: () => {
+            // Cargar datos para los selects
+            cargarDatosActa();
+        },
+        preConfirm: () => {
+            const form = document.getElementById('actaForm');
+            const formData = new FormData(form);
+            
+            return fetch('/api/actas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    vehiculo_id: document.getElementById('vehiculo_id').value,
+                    conductor_id: document.getElementById('conductor_id').value,
+                    infraccion_id: document.getElementById('infraccion_id').value,
+                    inspector_id: document.getElementById('inspector_id').value,
+                    ubicacion: document.getElementById('ubicacion').value,
+                    descripcion: document.getElementById('descripcion').value,
+                    monto_multa: document.getElementById('monto_multa').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data;
+                } else {
+                    throw new Error(data.message || 'Error al crear el acta');
+                }
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('¡Éxito!', 'Acta creada exitosamente', 'success');
+            // Recargar estadísticas
+            setTimeout(() => location.reload(), 1500);
+        }
+    }).catch((error) => {
+        Swal.fire('Error', error.message, 'error');
     });
-    // Aquí iría la lógica para crear un acta
+}
+
+function cargarDatosActa() {
+    // Cargar vehículos
+    fetch('/api/vehiculos-activos')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('vehiculo_id');
+            data.vehiculos.forEach(vehiculo => {
+                const option = document.createElement('option');
+                option.value = vehiculo.id;
+                option.textContent = `${vehiculo.placa} - ${vehiculo.modelo}`;
+                select.appendChild(option);
+            });
+        });
+
+    // Cargar conductores
+    fetch('/api/conductores-vigentes')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('conductor_id');
+            data.conductores.forEach(conductor => {
+                const option = document.createElement('option');
+                option.value = conductor.id;
+                option.textContent = `${conductor.nombre} - ${conductor.licencia}`;
+                select.appendChild(option);
+            });
+        });
+
+    // Cargar infracciones
+    fetch('/api/infracciones')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('infraccion_id');
+            data.infracciones.forEach(infraccion => {
+                const option = document.createElement('option');
+                option.value = infraccion.id;
+                option.textContent = `${infraccion.codigo} - ${infraccion.descripcion}`;
+                select.appendChild(option);
+            });
+        });
+
+    // Cargar inspectores
+    fetch('/api/inspectores-activos')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('inspector_id');
+            data.inspectores.forEach(inspector => {
+                const option = document.createElement('option');
+                option.value = inspector.id;
+                option.textContent = inspector.nombre;
+                select.appendChild(option);
+            });
+        });
 }
 
 function revisarPendientes() {
+    fetch('/api/actas/pendientes')
+        .then(response => response.json())
+        .then(data => {
+            if (data.actas.length === 0) {
+                Swal.fire('Sin Pendientes', 'No hay actas pendientes de revisión', 'info');
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-sm">';
+            html += '<thead><tr><th>Número</th><th>Placa</th><th>Conductor</th><th>Infracción</th><th>Acciones</th></tr></thead><tbody>';
+            
+            data.actas.forEach(acta => {
+                html += `<tr>
+                    <td>${acta.numero_acta}</td>
+                    <td>${acta.placa}</td>
+                    <td>${acta.conductor_nombre}</td>
+                    <td>${acta.infraccion_descripcion}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="procesarActa(${acta.id})">Procesar</button>
+                        <button class="btn btn-sm btn-info" onclick="verDetalleActa(${acta.id})">Ver</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+
+            Swal.fire({
+                title: 'Actas Pendientes',
+                html: html,
+                width: 800,
+                showCloseButton: true,
+                showConfirmButton: false
+            });
+        });
+}
+
+function procesarActa(actaId) {
     Swal.fire({
-        title: 'Actas Pendientes',
-        text: 'Mostrando actas pendientes de revisión...',
-        icon: 'warning',
-        timer: 2000
+        title: '¿Procesar Acta?',
+        text: 'Esta acción marcará el acta como procesada',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, procesar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/api/actas/${actaId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ estado: 'procesada' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('¡Procesada!', 'El acta ha sido procesada exitosamente', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                }
+            });
+        }
     });
-    // Aquí iría la lógica para revisar pendientes
 }
 
 function verHistorial() {
@@ -490,22 +681,286 @@ function consultarInfracciones() {
 // Funciones de la pestaña Control
 function iniciarInspeccionVehicular() {
     Swal.fire({
-        title: 'Inspección Vehicular',
-        text: 'Iniciando proceso de inspección vehicular...',
-        icon: 'info',
-        timer: 2000
+        title: 'Iniciar Inspección Vehicular',
+        html: `
+            <form id="inspeccionForm" class="text-left">
+                <div class="mb-3">
+                    <label>Placa del Vehículo:</label>
+                    <input type="text" id="placa" class="form-control" required placeholder="ABC-123" style="text-transform: uppercase;">
+                </div>
+                <div class="mb-3">
+                    <label>Inspector:</label>
+                    <select id="inspector_id" class="form-control" required>
+                        <option value="">Seleccionar inspector...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Tipo de Inspección:</label>
+                    <select id="tipo_inspeccion" class="form-control" required>
+                        <option value="tecnica">Técnica</option>
+                        <option value="documentos">Documentos</option>
+                        <option value="completa">Completa</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Ubicación:</label>
+                    <input type="text" id="ubicacion_inspeccion" class="form-control" required placeholder="Lugar de la inspección">
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar Inspección',
+        cancelButtonText: 'Cancelar',
+        width: 500,
+        didOpen: () => {
+            // Cargar inspectores
+            cargarInspectores();
+            
+            // Auto completar placa
+            document.getElementById('placa').addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+            });
+        },
+        preConfirm: () => {
+            const placa = document.getElementById('placa').value;
+            const inspector_id = document.getElementById('inspector_id').value;
+            const tipo_inspeccion = document.getElementById('tipo_inspeccion').value;
+            const ubicacion = document.getElementById('ubicacion_inspeccion').value;
+
+            if (!placa || !inspector_id || !tipo_inspeccion || !ubicacion) {
+                Swal.showValidationMessage('Todos los campos son obligatorios');
+                return false;
+            }
+
+            return fetch('/api/inspeccion/iniciar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    placa: placa,
+                    inspector_id: inspector_id,
+                    tipo_inspeccion: tipo_inspeccion,
+                    ubicacion: ubicacion
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data;
+                } else {
+                    throw new Error(data.message || 'Error al iniciar inspección');
+                }
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Abrir formulario de inspección detallada
+            abrirFormularioInspeccion(result.value.inspeccion_id, result.value.vehiculo);
+        }
+    }).catch((error) => {
+        Swal.fire('Error', error.message, 'error');
     });
-    // Aquí iría la lógica para inspección vehicular
+}
+
+function cargarInspectores() {
+    fetch('/api/inspectores-activos')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('inspector_id');
+            data.inspectores.forEach(inspector => {
+                const option = document.createElement('option');
+                option.value = inspector.id;
+                option.textContent = inspector.nombre;
+                select.appendChild(option);
+            });
+        });
+}
+
+function abrirFormularioInspeccion(inspeccionId, vehiculo) {
+    Swal.fire({
+        title: `Inspección - ${vehiculo.placa}`,
+        html: `
+            <div class="text-left">
+                <h6>Información del Vehículo:</h6>
+                <p><strong>Placa:</strong> ${vehiculo.placa}<br>
+                <strong>Modelo:</strong> ${vehiculo.modelo}<br>
+                <strong>Año:</strong> ${vehiculo.año}</p>
+                
+                <hr>
+                
+                <form id="inspeccionDetalleForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Documentos:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="soat_vigente">
+                                <label class="form-check-label">SOAT Vigente</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="revision_tecnica">
+                                <label class="form-check-label">Revisión Técnica</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tarjeta_propiedad">
+                                <label class="form-check-label">Tarjeta de Propiedad</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Estado Técnico:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="luces_funcionando">
+                                <label class="form-check-label">Luces Funcionando</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="neumaticos_buen_estado">
+                                <label class="form-check-label">Neumáticos Buen Estado</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="frenos_operativos">
+                                <label class="form-check-label">Frenos Operativos</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label>Observaciones:</label>
+                        <textarea id="observaciones_inspeccion" class="form-control" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label>Resultado de la Inspección:</label>
+                        <select id="resultado_inspeccion" class="form-control" required>
+                            <option value="">Seleccionar resultado...</option>
+                            <option value="aprobada">Aprobada</option>
+                            <option value="observada">Observada</option>
+                            <option value="rechazada">Rechazada</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Finalizar Inspección',
+        cancelButtonText: 'Cancelar',
+        width: 700,
+        preConfirm: () => {
+            const resultado = document.getElementById('resultado_inspeccion').value;
+            if (!resultado) {
+                Swal.showValidationMessage('Debe seleccionar el resultado de la inspección');
+                return false;
+            }
+
+            const detalles = {
+                soat_vigente: document.getElementById('soat_vigente').checked,
+                revision_tecnica: document.getElementById('revision_tecnica').checked,
+                tarjeta_propiedad: document.getElementById('tarjeta_propiedad').checked,
+                luces_funcionando: document.getElementById('luces_funcionando').checked,
+                neumaticos_buen_estado: document.getElementById('neumaticos_buen_estado').checked,
+                frenos_operativos: document.getElementById('frenos_operativos').checked,
+                observaciones: document.getElementById('observaciones_inspeccion').value,
+                resultado: resultado
+            };
+
+            return fetch('/api/inspeccion/registrar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    inspeccion_id: inspeccionId,
+                    detalles: detalles
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data;
+                } else {
+                    throw new Error(data.message || 'Error al registrar inspección');
+                }
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire('¡Éxito!', 'Inspección registrada exitosamente', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+    });
 }
 
 function verificarLicencia() {
     Swal.fire({
-        title: 'Verificar Licencia',
-        text: 'Abriendo verificador de licencias...',
-        icon: 'info',
-        timer: 2000
+        title: 'Verificar Licencia de Conducir',
+        html: `
+            <form id="licenciaForm" class="text-left">
+                <div class="mb-3">
+                    <label>Número de Licencia:</label>
+                    <input type="text" id="numero_licencia" class="form-control" required placeholder="Número de licencia">
+                </div>
+                <div class="mb-3">
+                    <label>DNI del Conductor:</label>
+                    <input type="text" id="dni_conductor" class="form-control" placeholder="DNI (opcional)">
+                </div>
+            </form>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Verificar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const numero_licencia = document.getElementById('numero_licencia').value;
+            const dni_conductor = document.getElementById('dni_conductor').value;
+
+            if (!numero_licencia) {
+                Swal.showValidationMessage('El número de licencia es obligatorio');
+                return false;
+            }
+
+            return fetch('/api/verificar-licencia', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    numero_licencia: numero_licencia,
+                    dni_conductor: dni_conductor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data;
+                } else {
+                    throw new Error(data.message || 'Error al verificar licencia');
+                }
+            });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const licencia = result.value.licencia;
+            const estado = licencia.vigente ? 'Vigente' : 'Vencida';
+            const clase = licencia.vigente ? 'success' : 'error';
+            
+            Swal.fire({
+                title: `Licencia ${estado}`,
+                html: `
+                    <div class="text-left">
+                        <p><strong>Conductor:</strong> ${licencia.conductor_nombre}</p>
+                        <p><strong>DNI:</strong> ${licencia.dni}</p>
+                        <p><strong>Categoría:</strong> ${licencia.categoria}</p>
+                        <p><strong>Fecha Vencimiento:</strong> ${licencia.fecha_vencimiento}</p>
+                        <p><strong>Estado:</strong> <span class="badge bg-${licencia.vigente ? 'success' : 'danger'}">${estado}</span></p>
+                    </div>
+                `,
+                icon: clase
+            });
+        }
+    }).catch((error) => {
+        Swal.fire('Error', error.message, 'error');
     });
-    // Aquí iría la lógica para verificar licencias
 }
 
 // Funciones de la pestaña Reportes

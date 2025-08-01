@@ -2,6 +2,56 @@
 
 @section('title', 'Panel de Administrador - DRTC Apurímac')
 
+@push('styles')
+<style>
+/* Eliminar efectos visuales no deseados */
+.card::before,
+.card::after,
+.card-body::before,
+.card-body::after {
+    display: none !important;
+}
+
+.card {
+    background: white !important;
+    border: 1px solid #e3e6f0 !important;
+    text-decoration: none !important;
+}
+
+.card:hover::before,
+.card:hover::after,
+.card:focus::before,
+.card:focus::after,
+.card:active::before,
+.card:active::after {
+    display: none !important;
+}
+
+/* Remover cualquier línea diagonal o decoración */
+.card * {
+    text-decoration: none !important;
+    background-image: none !important;
+}
+
+.card .row::before,
+.card .row::after,
+.card .col::before,
+.card .col::after,
+.card .col-auto::before,
+.card .col-auto::after {
+    display: none !important;
+}
+
+/* Anular transform y rotaciones */
+.card,
+.card *,
+.card::before,
+.card::after {
+    transform: none !important;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <!-- Header principal -->
@@ -225,7 +275,7 @@
                     <div class="h6 mb-2 text-gray-800">{{ $stats['inspectores_activos'] }} inspectores activos</div>
                     <div class="progress mb-3">
                         <div class="progress-bar bg-info" role="progressbar" 
-                            style="width: {{ ($stats['inspectores_activos']/$stats['total_inspectores'])*100 }}%">
+                             style="width: {{ ($stats['inspectores_activos']/$stats['total_inspectores'])*100 }}%">
                         </div>
                     </div>
                     <button class="btn btn-sm btn-block btn-outline-primary">
