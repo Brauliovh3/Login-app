@@ -83,16 +83,6 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
     Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
     Route::post('/admin/conductores/{id}/toggle-status', [App\Http\Controllers\ConductorController::class, 'toggleStatus'])->name('conductores.toggle-status');
     Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
-    
-    // Rutas para Usuario
-    Route::get('/admin/mantenimiento/usuario', [App\Http\Controllers\UserManagementController::class, 'index'])->name('admin.mantenimiento.usuario');
-    Route::post('/admin/users', [App\Http\Controllers\UserManagementController::class, 'store'])->name('users.store');
-    Route::get('/admin/users/{id}', [App\Http\Controllers\UserManagementController::class, 'show'])->name('users.show');
-    Route::put('/admin/users/{id}', [App\Http\Controllers\UserManagementController::class, 'update'])->name('users.update');
-    Route::delete('/admin/users/{id}', [App\Http\Controllers\UserManagementController::class, 'destroy'])->name('users.destroy');
-    Route::post('/admin/users/{id}/change-password', [App\Http\Controllers\UserManagementController::class, 'changePassword'])->name('users.change-password');
-    Route::post('/admin/users/{id}/toggle-status', [App\Http\Controllers\UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
-    Route::get('/admin/users/search', [App\Http\Controllers\UserManagementController::class, 'search'])->name('users.search');
 });
 
 Route::middleware(['auth', 'role:fiscalizador'])->group(function () {

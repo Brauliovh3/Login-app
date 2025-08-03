@@ -11,11 +11,14 @@
         :root {
             --sidebar-width: 250px;
             --topbar-height: 60px;
-            --drtc-orange: #ff8c00;
-            --drtc-dark-orange: #e67c00;
-            --drtc-light-orange: #ffb84d;
-            --drtc-orange-bg: #fff4e6;
-            --drtc-navy: #1e3a8a;
+            --drtc-primary: #2c3e50;
+            --drtc-secondary: #34495e;
+            --drtc-accent: #3498db;
+            --drtc-success: #27ae60;
+            --drtc-warning: #f39c12;
+            --drtc-danger: #e74c3c;
+            --drtc-light: #ecf0f1;
+            --drtc-dark: #2c3e50;
         }
 
         html {
@@ -36,7 +39,7 @@
             left: 0;
             height: 100vh;
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--drtc-orange) 10%, var(--drtc-dark-orange) 100%);
+            background: linear-gradient(180deg, #ff8c00 10%, #e67e22 100%);
             z-index: 1000;
             transition: all 0.3s;
         }
@@ -79,11 +82,16 @@
         .nav-link:hover {
             color: white !important;
             background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transform: translateX(5px);
+            transition: all 0.3s ease;
         }
 
         .nav-link.active {
             color: white !important;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            border-left: 3px solid #ff8c00;
         }
 
         .nav-link i {
@@ -141,6 +149,107 @@
         }
 
         /* Responsive */
+        /* Botones personalizados para un look más formal */
+        .btn-primary {
+            background: linear-gradient(135deg, #ff8c00, #e67e22) !important;
+            border: none !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            color: white !important;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 140, 0, 0.4);
+            color: white !important;
+        }
+
+        .btn-primary:focus,
+        .btn-primary:active {
+            background: linear-gradient(135deg, #ff8c00, #e67e22) !important;
+            color: white !important;
+            box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--accent-gray), #95a5a6);
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 8px;
+        }
+
+        /* Cards más elegantes */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #ff8c00, #e67e22);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+        }
+
+        /* Tabla más elegante */
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--light-gray), #ecf0f1);
+            color: var(--dark-text);
+            border: none;
+            font-weight: 600;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(44, 62, 80, 0.05);
+        }
+
+        /* Modales más elegantes */
+        .modal-content {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #ff8c00, #e67e22);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+        }
+
+        /* Iconos especiales naranjas */
+        .icon-orange {
+            color: #ff8c00 !important;
+        }
+
+        .text-orange {
+            color: #ff8c00 !important;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 margin-left: calc(var(--sidebar-width) * -1);
@@ -389,13 +498,6 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.usuario') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.usuario') }}">
-                            <i class="fas fa-fw fa-users"></i>
-                            <span>Mantenimiento Usuario</span>
-                        </a>
-                    </li>
-
                 @elseif(auth()->user()->role == 'fiscalizador')
                     <!-- Fiscalizador Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
@@ -541,6 +643,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <script>
         function toggleSidebar() {
@@ -560,7 +664,7 @@
             };
             
             const colors = {
-                'success': 'var(--drtc-orange)',
+                'success': '#ff8c00',
                 'error': '#dc3545',
                 'warning': '#ffc107',
                 'info': '#17a2b8'
@@ -657,6 +761,17 @@
         };
     </script>
     
+    <script>
+        // Configurar jQuery para usar el token CSRF en todas las peticiones AJAX
+        $(document).ready(function() {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+        });
+    </script>
+    
     <style>
         @keyframes slideInRight {
             from {
@@ -686,6 +801,7 @@
         }
     </style>
 
+    @stack('scripts')
     @yield('scripts')
 </body>
 </html>

@@ -151,22 +151,12 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-primary">
+                            <div class="card h-100 border-drtc-orange">
                                 <div class="card-body text-center">
-                                    <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+                                    <i class="fas fa-user-plus fa-3x text-drtc-orange mb-3"></i>
                                     <h5 class="card-title">Gestionar Usuarios</h5>
                                     <p class="card-text">Crear, editar y eliminar usuarios del sistema</p>
-                                    <a href="{{ route('users.index') }}" class="btn btn-primary">Gestionar</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-info">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
-                                    <h5 class="card-title">Reportes</h5>
-                                    <p class="card-text">Ver estadísticas y generar reportes del sistema</p>
-                                    <a href="#" class="btn btn-info">Ver Reportes</a>
+                                    <a href="{{ route('users.index') }}" class="btn bg-drtc-orange text-white">Gestionar</a>
                                 </div>
                             </div>
                         </div>
@@ -180,28 +170,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-warning">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
-                                    <h5 class="card-title">Auditoría del Sistema</h5>
-                                    <p class="card-text">Revisar logs y actividades del sistema</p>
-                                    <a href="#" class="btn btn-warning">Ver Auditoría</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-secondary">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-shield-alt fa-3x text-secondary mb-3"></i>
-                                    <h5 class="card-title">Seguridad</h5>
-                                    <p class="card-text">Gestionar permisos y seguridad del sistema</p>
-                                    <a href="#" class="btn btn-secondary">Seguridad</a>
-                                </div>
-                            </div>
-                        </div>
                         <div class="col-md-4 mb-3">
                             <div class="card h-100 border-danger">
                                 <div class="card-body text-center">
@@ -209,18 +177,6 @@
                                     <h5 class="card-title">Infracciones</h5>
                                     <p class="card-text">Gestionar infracciones de tránsito</p>
                                     <a href="{{ route('infracciones.index') }}" class="btn btn-danger">Ver Infracciones</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-dark">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-database fa-3x text-dark mb-3"></i>
-                                    <h5 class="card-title">Base de Datos</h5>
-                                    <p class="card-text">Administrar y mantener la base de datos</p>
-                                    <a href="#" class="btn btn-dark">Gestionar BD</a>
                                 </div>
                             </div>
                         </div>

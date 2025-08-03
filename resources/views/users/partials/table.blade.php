@@ -1,31 +1,31 @@
 <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
-        <thead class="table-dark">
+        <thead style="background: linear-gradient(135deg, #ff8c00, #e67e22); color: white;">
             <tr>
-                <th class="text-center" style="width: 60px;">
+                <th class="text-center" style="width: 60px; border: none;">
                     <i class="fas fa-hashtag"></i>
                 </th>
-                <th style="width: 200px;">
+                <th style="width: 200px; border: none;">
                     <i class="fas fa-user me-1"></i>Usuario
                 </th>
-                <th style="width: 150px;">
+                <th style="width: 150px; border: none;">
                     <i class="fas fa-at me-1"></i>Usuario/Login
                 </th>
-                <th>
+                <th style="border: none;">
                     <i class="fas fa-envelope me-1"></i>Email
                 </th>
-                <th class="text-center" style="width: 130px;">
+                <th class="text-center" style="width: 130px; border: none;">
                     <i class="fas fa-user-tag me-1"></i>Rol
                 </th>
-                <th class="text-center" style="width: 120px;">
+                <th class="text-center" style="width: 120px; border: none;">
                     <i class="fas fa-calendar me-1"></i>Registro
                 </th>
-                <th class="text-center" style="width: 120px;">
+                <th class="text-center" style="width: 120px; border: none;">
                     <i class="fas fa-cogs me-1"></i>Acciones
                 </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody style="background: linear-gradient(135deg, #fff4e6, #ffe4cc);"
             @forelse($users as $user)
             <tr class="border-bottom">
                 <td class="text-center">
@@ -33,7 +33,7 @@
                 </td>
                 <td>
                     <div class="d-flex align-items-center">
-                        <div class="avatar-md bg-gradient-primary rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm">
+                        <div class="avatar-md rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="background: linear-gradient(135deg, #ff8c00, #e67e22); width: 45px; height: 45px;">
                             <span class="text-white fw-bold fs-5">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                         </div>
                         <div>
@@ -88,7 +88,8 @@
                     <div class="btn-group shadow-sm" role="group" aria-label="Acciones de usuario">
                         <!-- Botón Ver Detalles -->
                         <button type="button" 
-                                class="btn btn-outline-info btn-sm view-user" 
+                                class="btn btn-sm view-user" 
+                                style="border-color: #17a2b8; color: #17a2b8; background: transparent;"
                                 data-id="{{ $user->id }}"
                                 data-bs-toggle="tooltip"
                                 title="Ver detalles del usuario">
@@ -97,7 +98,8 @@
                         
                         <!-- Botón Editar -->
                         <button type="button" 
-                                class="btn btn-outline-primary btn-sm edit-user" 
+                                class="btn btn-sm edit-user" 
+                                style="border-color: #ff8c00; color: #ff8c00; background: transparent;"
                                 data-id="{{ $user->id }}"
                                 data-bs-toggle="tooltip"
                                 title="Editar usuario">
@@ -106,7 +108,8 @@
                         
                         <!-- Botón Cambiar Contraseña -->
                         <button type="button" 
-                                class="btn btn-outline-warning btn-sm change-password" 
+                                class="btn btn-sm change-password" 
+                                style="border-color: #ffc107; color: #ffc107; background: transparent;"
                                 data-id="{{ $user->id }}"
                                 data-name="{{ $user->name }}"
                                 data-bs-toggle="tooltip"

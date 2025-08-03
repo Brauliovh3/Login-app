@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.dashboard')
 
 @section('title', 'Gestión de Usuarios')
 
@@ -7,23 +7,27 @@
     <!-- Header con breadcrumb -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Gestión de Usuarios</li>
-                        </ol>
-                    </nav>
-                    <h2 class="h3 mb-0">
-                        <i class="fas fa-users text-primary me-2"></i>Gestión de Usuarios
-                    </h2>
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #ff8c00, #e67e22); border-radius: 12px;">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-2" style="background: none; padding: 0;">
+                                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">Dashboard</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page" style="color: white;">Gestión de Usuarios</li>
+                                </ol>
+                            </nav>
+                            <h2 class="h3 mb-0" style="color: white;">
+                                <i class="fas fa-users me-2"></i>Gestión de Usuarios
+                            </h2>
+                        </div>
+                        @if(auth()->user()->role === 'administrador')
+                        <button type="button" class="btn btn-light btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#createUserModal" style="background: white; color: #ff8c00; border: none; font-weight: 600;">
+                            <i class="fas fa-plus me-2"></i>Crear Usuario
+                        </button>
+                        @endif
+                    </div>
                 </div>
-                @if(auth()->user()->role === 'administrador')
-                <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                    <i class="fas fa-plus me-2"></i>Crear Usuario
-                </button>
-                @endif
             </div>
         </div>
     </div>
@@ -32,12 +36,12 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light border-0">
-                    <h6 class="card-title mb-0 text-muted">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #ff8c00, #e67e22); color: white;">
+                    <h6 class="card-title mb-0">
                         <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="background: linear-gradient(135deg, #fff4e6, #ffe4cc); border-radius: 0 0 12px 12px;">
                     <div class="row g-3">
                         <div class="col-md-5">
                             <label for="searchInput" class="form-label fw-semibold text-dark">Buscar usuarios</label>
@@ -59,7 +63,7 @@
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-outline-secondary w-100" id="clearFilters">
+                            <button type="button" class="btn btn-outline-warning w-100" id="clearFilters" style="border-color: #ff8c00; color: #ff8c00;">
                                 <i class="fas fa-times me-1"></i>Limpiar Filtros
                             </button>
                         </div>
@@ -73,17 +77,17 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom">
+                <div class="card-header border-0" style="background: linear-gradient(135deg, #ff8c00, #e67e22); color: white;">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
-                            <i class="fas fa-table me-2 text-muted"></i>Lista de Usuarios
+                            <i class="fas fa-table me-2"></i>Lista de Usuarios
                         </h5>
-                        <small class="text-muted">
+                        <small style="color: rgba(255, 255, 255, 0.9);">
                             <i class="fas fa-info-circle me-1"></i>Total: {{ $users->total() }} usuarios
                         </small>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0" style="background: linear-gradient(135deg, #fff4e6, #ffe4cc); border-radius: 0 0 12px 12px;">
                     <div class="table-responsive">
                         <div id="usersTable">
                             @include('users.partials.table', ['users' => $users])
@@ -99,7 +103,7 @@
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #ff8c00, #e67e22);">
                 <h5 class="modal-title" id="createUserModalLabel">
                     <i class="fas fa-user-plus me-2"></i>Crear Nuevo Usuario
                 </h5>
@@ -176,11 +180,11 @@
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-warning text-dark">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #ff8c00, #e67e22);">
                 <h5 class="modal-title" id="editUserModalLabel">
                     <i class="fas fa-user-edit me-2"></i>Editar Usuario
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="editUserForm">
                 @csrf
@@ -242,7 +246,7 @@
                     <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Cancelar
                     </button>
-                    <button type="submit" class="btn btn-warning btn-lg text-dark">
+                    <button type="submit" class="btn btn-lg text-white" style="background: linear-gradient(135deg, #ff8c00, #e67e22);">
                         <i class="fas fa-save me-1"></i>Actualizar Usuario
                     </button>
                 </div>
@@ -287,7 +291,7 @@
 <div class="modal fade" id="viewUserModal" tabindex="-1" aria-labelledby="viewUserModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-info text-white">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #ff8c00, #e67e22);">
                 <h5 class="modal-title" id="viewUserModalLabel">
                     <i class="fas fa-user me-2"></i>Detalles del Usuario
                 </h5>
@@ -835,4 +839,60 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<style>
+/* Estilos adicionales para la gestión de usuarios con tema DRTC naranja */
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.btn[style*="border-color: #ff8c00"]:hover {
+    background: linear-gradient(135deg, #ff8c00, #e67e22) !important;
+    color: white !important;
+    border-color: #ff8c00 !important;
+}
+
+.btn[style*="border-color: #17a2b8"]:hover {
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.btn[style*="border-color: #ffc107"]:hover {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.btn-outline-warning:hover {
+    background: linear-gradient(135deg, #ff8c00, #e67e22) !important;
+    border-color: #ff8c00 !important;
+    color: white !important;
+}
+
+/* Mejorar la tabla */
+.table tbody tr:hover {
+    background-color: rgba(255, 140, 0, 0.05) !important;
+    transform: scale(1.001);
+    transition: all 0.2s ease;
+}
+
+/* Avatar hover effect */
+.avatar-md:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+/* Card hover effects */
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(255, 140, 0, 0.15);
+}
+
+/* Input focus con tema naranja */
+.form-control:focus, .form-select:focus {
+    border-color: #ff8c00;
+    box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25);
+}
+</style>
 @endpush
