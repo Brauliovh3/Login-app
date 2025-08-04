@@ -108,13 +108,16 @@
                                 required>
                             <option value="">Selecciona tu rol</option>
                             <option value="administrador" {{ old('role') == 'administrador' ? 'selected' : '' }}>
-                                <i class="fas fa-crown"></i> Administrador
+                                👑 Administrador
                             </option>
                             <option value="fiscalizador" {{ old('role') == 'fiscalizador' ? 'selected' : '' }}>
-                                <i class="fas fa-search"></i> Fiscalizador
+                                📋 Fiscalizador
                             </option>
                             <option value="ventanilla" {{ old('role') == 'ventanilla' ? 'selected' : '' }}>
-                                <i class="fas fa-desktop"></i> Ventanilla
+                                🏪 Ventanilla
+                            </option>
+                            <option value="inspector" {{ old('role') == 'inspector' ? 'selected' : '' }}>
+                                🔍 Inspector
                             </option>
                         </select>
                         @error('role')

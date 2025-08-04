@@ -58,7 +58,7 @@
                                 <option value="">Todos los roles</option>
                                 <option value="administrador">👑 Administrador</option>
                                 <option value="fiscalizador">📋 Fiscalizador</option>
-                                <option value="ventanilla">🪟 Ventanilla</option>
+                                <option value="ventanilla">🏪 Ventanilla</option>
                                 <option value="inspector">🔍 Inspector</option>
                             </select>
                         </div>
@@ -142,7 +142,7 @@
                                 <option value="">Seleccionar rol...</option>
                                 <option value="administrador">👑 Administrador</option>
                                 <option value="fiscalizador">📋 Fiscalizador</option>
-                                <option value="ventanilla">🪟 Ventanilla</option>
+                                <option value="ventanilla">🏪 Ventanilla</option>
                                 <option value="inspector">🔍 Inspector</option>
                             </select>
                             <div class="invalid-feedback" id="create_role_error"></div>
@@ -220,7 +220,7 @@
                             <select class="form-select form-select-lg" id="edit_role" name="role" required>
                                 <option value="administrador">👑 Administrador</option>
                                 <option value="fiscalizador">📋 Fiscalizador</option>
-                                <option value="ventanilla">🪟 Ventanilla</option>
+                                <option value="ventanilla">🏪 Ventanilla</option>
                                 <option value="inspector">🔍 Inspector</option>
                             </select>
                             <div class="invalid-feedback" id="edit_role_error"></div>
@@ -704,7 +704,7 @@ $(document).ready(function() {
                             roleText = '📋 Fiscalizador';
                             break;
                         case 'ventanilla':
-                            roleText = '🪟 Ventanilla';
+                            roleText = '🏪 Ventanilla';
                             break;
                         case 'inspector':
                             roleText = '🔍 Inspector';

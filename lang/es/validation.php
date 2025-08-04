@@ -1,12 +1,25 @@
 <?php
 return [
-    'required' => 'El campo :attribute es obligatorio.',
-    'email' => 'El campo :attribute debe ser un correo válido.',
-    'confirmed' => 'La confirmación de :attribute no coincide.',
-    // ...agrega más reglas según necesites...
+    'unique' => 'El campo :attribute ya ha sido tomado.',
+    'in' => 'El :attribute seleccionando es valido.',
+    
+    'custom' => [
+        'username' => [
+            'unique' => 'El nombre ya esta en uso.',
+        ],
+        'email' => [
+            'unique' => 'El correo electronico ya esta en uso.',
+        ],
+        'role' => [
+            'in' => 'El rol seleccionado no es valido.',
+        ],
+    ],
     'attributes' => [
-        'password' => 'contraseña',
+        'username' => 'nombre de usuario',
         'email' => 'correo electrónico',
+        'role' => 'rol',
+        'password' => 'contraseña',
+        'name' => 'nombre',
         // ...otros atributos personalizados...
     ],
 ];

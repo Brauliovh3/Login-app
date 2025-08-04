@@ -139,6 +139,25 @@ Route::middleware(['auth', 'role:ventanilla'])->group(function () {
     })->name('ventanilla.cola-espera');
 });
 
+Route::middleware(['auth', 'role:inspector'])->group(function () {
+    // Dashboard de inspector
+    Route::get('/inspector/dashboard', [DashboardController::class, 'inspectorDashboard'])->name('inspector.dashboard');
+    
+    // Nueva inspección
+    Route::get('/inspector/nueva-inspeccion', [DashboardController::class, 'inspectorNuevaInspeccion'])->name('inspector.nueva-inspeccion');
+    Route::post('/inspector/nueva-inspeccion', [DashboardController::class, 'inspectorNuevaInspeccionStore'])->name('inspector.nueva-inspeccion.store');
+    
+    // Gestión de inspecciones
+    Route::get('/inspector/inspecciones', [DashboardController::class, 'inspectorInspecciones'])->name('inspector.inspecciones');
+    
+    // Gestión de vehículos
+    Route::get('/inspector/vehiculos', [DashboardController::class, 'inspectorVehiculos'])->name('inspector.vehiculos');
+    
+    // Reportes
+    Route::get('/inspector/reportes', [DashboardController::class, 'inspectorReportes'])->name('inspector.reportes');
+});
+
+
 // Rutas API para AJAX (Fiscalizador)
 Route::middleware(['auth', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
     // Rutas para Actas

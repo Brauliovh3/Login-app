@@ -439,6 +439,8 @@
                 <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('fiscalizador.dashboard') }}">
             @elseif(auth()->user()->role == 'ventanilla')
                 <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('ventanilla.dashboard') }}">
+            @elseif(auth()->user()->role == 'inspector')
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('inspector.dashboard') }}">
             @else
                 <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
             @endif
@@ -469,6 +471,11 @@
                         </a>
                     @elseif(auth()->user()->role == 'ventanilla')
                         <a class="nav-link {{ request()->routeIs('ventanilla.dashboard') ? 'active' : '' }}" href="{{ route('ventanilla.dashboard') }}">
+                            <i class="fas fa-fw fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    @elseif(auth()->user()->role == 'inspector')
+                        <a class="nav-link {{ request()->routeIs('inspector.dashboard') ? 'active' : '' }}" href="{{ route('inspector.dashboard') }}">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
@@ -577,6 +584,40 @@
                         <a class="nav-link {{ request()->routeIs('ventanilla.cola-espera') ? 'active' : '' }}" href="{{ route('ventanilla.cola-espera') }}">
                             <i class="fas fa-fw fa-users"></i>
                             <span>Cola de Espera</span>
+                        </a>
+                    </li>
+                @elseif(auth()->user()->role == 'inspector')
+                    <!-- Inspector Menu -->
+                    <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
+                    <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
+                        INSPECCIONES
+                    </div>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('inspector.nueva-inspeccion') ? 'active' : '' }}" href="{{ route('inspector.nueva-inspeccion') }}">
+                            <i class="fas fa-fw fa-plus-circle"></i>
+                            <span>Nueva Inspección</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('inspector.inspecciones') ? 'active' : '' }}" href="{{ route('inspector.inspecciones') }}">
+                            <i class="fas fa-fw fa-list-check"></i>
+                            <span>Mis Inspecciones</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('inspector.vehiculos') ? 'active' : '' }}" href="{{ route('inspector.vehiculos') }}">
+                            <i class="fas fa-fw fa-car"></i>
+                            <span>Vehículos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('inspector.reportes') ? 'active' : '' }}" href="{{ route('inspector.reportes') }}">
+                            <i class="fas fa-fw fa-chart-bar"></i>
+                            <span>Reportes</span>
                         </a>
                     </li>
                 @endif
