@@ -26,23 +26,37 @@ class RegisterController extends Controller
         ]);
 
         $user = User::create([
-            'name' => $request->username, // Usa el username como nombre
+            'name' => $request->username,
             'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'status' => 'pending', // Estado pendiente por defecto
         ]);
 
-        Auth::login($user);
+        // No iniciar sesión automáticamente
+        // Auth::login($user);
 
-        // Crear notificación de bienvenida
+        // Crear notificación para el usuario recién registrado
         Notification::create([
-            'title' => '¡Bienvenido!',
-            'message' => 'Tu cuenta ha sido creada exitosamente. Rol asignado: ' . ucfirst($request->role),
-            'type' => 'success',
+            'title' => 'Solicitud de registro enviada',
+            'message' => 'Tu solicitud de registro ha sido enviada. Un administrador revisará tu cuenta y te notificará cuando sea aprobada.',
+            'type' => 'info',
             'user_id' => $user->id,
         ]);
 
-        return redirect('dashboard');
+        // Notificar a todos los administradores
+        $admins = User::where('role', 'administrador')->where('status', 'approved')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'title' => 'Nueva solicitud de registro',
+                'message' => "Usuario '{$user->username}' ({$user->email}) solicita acceso como {$user->role}. Revisa y aprueba la solicitud en el panel de administración.",
+                'type' => 'warning',
+                'user_id' => $admin->id,
+            ]);
+        }
+
+        // Redirigir con mensaje de éxito
+        return redirect()->route('login')->with('status', 'Registro exitoso. Tu solicitud está pendiente de aprobación por un administrador. Te notificaremos por email cuando sea aprobada.');
     }
 }

@@ -19,6 +19,10 @@
             --drtc-danger: #e74c3c;
             --drtc-light: #ecf0f1;
             --drtc-dark: #2c3e50;
+            --drtc-orange: #ff8c00;
+            --drtc-dark-orange: #e67e22;
+            --drtc-light-orange: #fff4e6;
+            --drtc-navy: #1e3a8a;
         }
 
         html {
@@ -512,12 +516,46 @@
                         GESTIÓN DE ACTAS
                     </div>
 
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.actas-contra') ? 'active' : '' }}" href="{{ route('fiscalizador.actas-contra') }}">
+                    <!-- Menu Principal con Dropdown -->
+                    <li class="nav-item dropdown-hover">
+                        <a class="nav-link dropdown-main {{ request()->routeIs('fiscalizador.actas-contra') ? 'active' : '' }}" href="{{ route('fiscalizador.actas-contra') }}">
                             <i class="fas fa-fw fa-file-contract"></i>
                             <span>Actas Contra</span>
+                            <i class="fas fa-angle-down dropdown-icon"></i>
                         </a>
+                        <!-- Submenu desplegable -->
+                        <ul class="dropdown-submenu">
+                            <li>
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-nueva-acta')">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    <span>Nueva Acta</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-editar-acta')">
+                                    <i class="fas fa-edit me-2"></i>
+                                    <span>Editar Acta</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-eliminar-acta')">
+                                    <i class="fas fa-trash-alt me-2"></i>
+                                    <span>Eliminar Acta</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-consultas')">
+                                    <i class="fas fa-search me-2"></i>
+                                    <span>Consultas y Reportes</span>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
+
+                    <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
+                    <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
+                        OTROS MÓDULOS
+                    </div>
 
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('fiscalizador.carga-paga') ? 'active' : '' }}" href="{{ route('fiscalizador.carga-paga') }}">
@@ -530,18 +568,6 @@
                         <a class="nav-link {{ request()->routeIs('fiscalizador.empresas') ? 'active' : '' }}" href="{{ route('fiscalizador.empresas') }}">
                             <i class="fas fa-fw fa-building"></i>
                             <span>Empresas</span>
-                        </a>
-                    </li>
-
-                    <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
-                    <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
-                        CONSULTAS Y REPORTES
-                    </div>
-
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.consultas') ? 'active' : '' }}" href="{{ route('fiscalizador.consultas') }}">
-                            <i class="fas fa-fw fa-search"></i>
-                            <span>Consultas</span>
                         </a>
                     </li>
 
@@ -840,9 +866,413 @@
             transform: translateX(-5px);
             transition: transform 0.2s ease;
         }
+
+        /* Estilos para dropdown con hover */
+        .dropdown-hover {
+            position: relative;
+        }
+
+        .dropdown-main {
+            position: relative;
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none !important;
+        }
+
+        .dropdown-main:hover {
+            text-decoration: none !important;
+        }
+
+        .dropdown-icon {
+            margin-left: auto;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .dropdown-hover:hover .dropdown-icon {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+
+        .dropdown-submenu {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 8px;
+            min-width: 240px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin: 0;
+            padding: 8px 0;
+            list-style: none;
+            border: 2px solid rgba(255, 140, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .dropdown-hover:hover .dropdown-submenu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .submenu-item {
+            display: block;
+            padding: 14px 18px;
+            color: rgba(255, 255, 255, 0.9) !important;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+        }
+
+        .submenu-item:last-child {
+            border-bottom: none;
+        }
+
+        .submenu-item:hover {
+            background: linear-gradient(135deg, #ff8c00, #e67e22);
+            color: white !important;
+            transform: translateX(5px);
+            text-decoration: none;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .submenu-item i {
+            width: 22px;
+            text-align: center;
+            color: #ff8c00;
+            margin-right: 8px;
+        }
+
+        .submenu-item:hover i {
+            color: white;
+        }
+
+        /* Prevenir que el hover del dropdown interfiera con el clic */
+        .dropdown-main span {
+            pointer-events: none;
+        }
+
+        .dropdown-main i:not(.dropdown-icon) {
+            pointer-events: none;
+        }
+
+        /* Animación para el submenu */
+        @keyframes slideInSubmenu {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .dropdown-hover:hover .dropdown-submenu {
+            animation: slideInSubmenu 0.3s ease-out;
+        }
+
+        /* Responsive para dropdown */
+        @media (max-width: 768px) {
+            .dropdown-submenu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 0;
+                margin-top: 8px;
+                border: none;
+                border-left: 3px solid var(--drtc-orange);
+            }
+            
+            .dropdown-icon {
+                display: none;
+            }
+        }
+
+        /* Estilos para modales flotantes de pantalla completa */
+        .floating-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .floating-modal.show {
+            display: block;
+            animation: fadeInModal 0.3s ease-out;
+        }
+
+        .floating-modal .modal-content-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideInModal 0.3s ease-out;
+            min-height: calc(100vh - 40px);
+            position: relative;
+        }
+
+        .floating-modal .modal-header-custom {
+            background: linear-gradient(135deg, #ff8c00, #e67e22);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .floating-modal .modal-body-custom {
+            padding: 30px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .floating-modal .close-modal {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .floating-modal .close-modal:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInModal {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Responsive para modales */
+        @media (max-width: 768px) {
+            .floating-modal {
+                padding: 10px;
+            }
+            
+            .floating-modal .modal-content-wrapper {
+                min-height: calc(100vh - 20px);
+            }
+            
+            .floating-modal .modal-header-custom {
+                padding: 15px 20px;
+            }
+            
+            .floating-modal .modal-body-custom {
+                padding: 20px;
+                max-height: calc(100vh - 120px);
+            }
+        }
     </style>
 
     @stack('scripts')
     @yield('scripts')
+
+    <!-- Scripts para modales flotantes -->
+    <script>
+        // Funciones para gestionar modales flotantes
+        function abrirModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                
+                // Auto-llenar fecha y hora en modales de nueva acta
+                if (modalId === 'modal-nueva-acta') {
+                    const ahora = new Date();
+                    const fecha = ahora.toISOString().split('T')[0];
+                    const hora = ahora.toTimeString().split(' ')[0].substring(0, 5);
+                    
+                    const fechaInput = modal.querySelector('input[name="fecha_intervencion"]');
+                    const horaInput = modal.querySelector('input[name="hora_intervencion"]');
+                    
+                    if (fechaInput) fechaInput.value = fecha;
+                    if (horaInput) horaInput.value = hora;
+                }
+            }
+        }
+
+        function cerrarModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('floating-modal')) {
+                const modalId = e.target.id;
+                cerrarModal(modalId);
+            }
+        });
+
+        // Cerrar modal con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modalesAbiertos = document.querySelectorAll('.floating-modal.show');
+                modalesAbiertos.forEach(modal => {
+                    cerrarModal(modal.id);
+                });
+            }
+        });
+
+        // Funciones específicas para las funcionalidades de fiscalización
+        function buscarActaEditar() {
+            const criterio = document.getElementById('buscar-editar').value.trim();
+            if (!criterio) {
+                showWarning('Por favor ingrese un criterio de búsqueda');
+                return;
+            }
+            
+            // Simular búsqueda (aquí iría la lógica AJAX real)
+            setTimeout(() => {
+                document.getElementById('resultado-editar').style.display = 'block';
+                document.getElementById('acta-numero-editar').textContent = 'DRTC-APU-2024-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                showSuccess('Acta encontrada y cargada para edición');
+            }, 1000);
+        }
+
+        function buscarActaEliminar() {
+            const criterio = document.getElementById('buscar-eliminar').value.trim();
+            if (!criterio) {
+                showWarning('Por favor ingrese un criterio de búsqueda');
+                return;
+            }
+            
+            // Simular búsqueda (aquí iría la lógica AJAX real)
+            setTimeout(() => {
+                document.getElementById('resultado-eliminar').style.display = 'block';
+                showInfo('Acta encontrada. Revise los datos antes de proceder.');
+            }, 1000);
+        }
+
+        function ejecutarConsulta() {
+            // Simular consulta
+            document.getElementById('resumen-consulta').style.display = 'block';
+            document.getElementById('total-actas').textContent = '125';
+            document.getElementById('actas-procesadas').textContent = '98';
+            document.getElementById('actas-pendientes').textContent = '20';
+            document.getElementById('actas-anuladas').textContent = '7';
+            
+            showSuccess('Consulta ejecutada correctamente');
+        }
+
+        function exportarExcel() {
+            showInfo('Generando archivo Excel...');
+            // Aquí iría la lógica de exportación
+        }
+
+        function exportarPDF() {
+            showInfo('Generando archivo PDF...');
+            // Aquí iría la lógica de exportación
+        }
+
+        function generarReporte() {
+            showInfo('Generando reporte estadístico...');
+            // Aquí iría la lógica de generación de reportes
+        }
+
+        function cancelarEdicion() {
+            document.getElementById('resultado-editar').style.display = 'none';
+            document.getElementById('buscar-editar').value = '';
+            showInfo('Edición cancelada');
+        }
+
+        function cancelarEliminacion() {
+            document.getElementById('resultado-eliminar').style.display = 'none';
+            document.getElementById('buscar-eliminar').value = '';
+            showInfo('Operación de eliminación cancelada');
+        }
+
+        function confirmarEliminacion() {
+            const motivo = document.getElementById('motivo-eliminacion').value;
+            const codigo = document.getElementById('codigo-autorizacion').value;
+            const supervisor = document.getElementById('supervisor-autorizante').value;
+            
+            if (!motivo || !codigo || !supervisor) {
+                showError('Todos los campos son obligatorios para proceder con la eliminación');
+                return;
+            }
+            
+            // Mostrar confirmación adicional
+            if (confirm('¿Está COMPLETAMENTE SEGURO de que desea eliminar esta acta? Esta acción es IRREVERSIBLE.')) {
+                showSuccess('Acta eliminada correctamente del sistema');
+                setTimeout(() => {
+                    cerrarModal('modal-eliminar-acta');
+                }, 2000);
+            }
+        }
+
+        // Función para manejar navegación con modales automáticos
+        function navegarYAbrirModal(url, modalId) {
+            // Si ya estamos en la página correcta, solo abrir el modal
+            if (window.location.pathname.includes('actas-contra')) {
+                setTimeout(() => {
+                    abrirModal(modalId);
+                }, 100);
+            } else {
+                // Si no, navegar primero y luego abrir el modal
+                window.location.href = url + '?modal=' + modalId;
+            }
+        }
+
+        // Detectar si hay un modal en la URL al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const modalToOpen = urlParams.get('modal');
+            
+            if (modalToOpen) {
+                setTimeout(() => {
+                    abrirModal(modalToOpen);
+                    // Limpiar el parámetro de la URL sin recargar
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                }, 500);
+            }
+        });
+    </script>
 </body>
 </html>

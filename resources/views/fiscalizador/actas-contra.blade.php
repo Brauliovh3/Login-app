@@ -1,19 +1,124 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Actas de Contra')
+@section('title', 'Gestión de Actas de Fiscalización')
 
 @section('content')
+<style>
+    :root {
+        --drtc-orange: #ff8c00;
+        --drtc-dark-orange: #e67c00;
+        --drtc-light-orange: #ffffff;
+        --drtc-orange-bg: #fff4e6;
+        --drtc-navy: #1e3a8a;
+    }
+    
+    .bg-drtc-orange { background-color: var(--drtc-orange) !important; }
+    .bg-drtc-dark { background-color: var(--drtc-dark-orange) !important; }
+    .bg-drtc-light { background-color: var(--drtc-light-orange) !important; }
+    .bg-drtc-soft { background-color: var(--drtc-orange-bg) !important; }
+    .bg-drtc-navy { background-color: var(--drtc-navy) !important; }
+    .text-drtc-orange { color: var(--drtc-orange) !important; }
+    .text-drtc-navy { color: var(--drtc-navy) !important; }
+    .border-drtc-orange { border-color: var(--drtc-orange) !important; }
+    
+    .action-btn {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--drtc-orange);
+        background: var(--drtc-orange-bg);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(255, 140, 0, 0.2);
+        color: var(--drtc-orange);
+        text-decoration: none;
+    }
+    
+    .action-btn i {
+        font-size: 24px;
+        margin-bottom: 5px;
+        color: var(--drtc-orange);
+    }
+    
+    .action-btn:hover i {
+        color: var(--drtc-dark-orange);
+    }
+</style>
+
 <div class="container-fluid">
+    <!-- Header principal -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">
-                    <i class="fas fa-file-alt me-2" style="color: #ff8c00;"></i>
-                    Actas de Contra
-                </h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaActaModal">
-                    <i class="fas fa-plus me-2"></i>Nueva Acta
-                </button>
+            <div class="card border-0" style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); border-radius: 20px;">
+                <div class="card-body py-4">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="mb-2 fw-bold text-white">
+                                <i class="fas fa-file-contract me-3"></i>
+                                Gestión de Actas de Fiscalización DRTC
+                            </h1>
+                            <p class="mb-0 fs-5 text-white opacity-75">
+                                <i class="fas fa-user me-2"></i>Inspector: <strong>{{ Auth::user()->name }}</strong>
+                                <span class="ms-3">
+                                    <i class="fas fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción principales -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0" style="border-radius: 20px;">
+                <div class="card-header bg-drtc-orange text-white">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-tasks me-2"></i>Acciones de Fiscalización</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="abrirModal('modal-nueva-acta')">
+                                <i class="fas fa-plus-circle"></i>
+                                <strong>Nueva Acta</strong>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="abrirModal('modal-editar-acta')">
+                                <i class="fas fa-edit"></i>
+                                <strong>Editar Acta</strong>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="abrirModal('modal-consultas')">
+                                <i class="fas fa-search"></i>
+                                <strong>Consultas</strong>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="abrirModal('modal-eliminar-acta')">
+                                <i class="fas fa-trash-alt"></i>
+                                <strong>Eliminar Acta</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -315,26 +420,84 @@
 <script>
 function guardarActa() {
     // Validar formulario
-    const placa = document.getElementById('placa_vehiculo').value;
-    const dni = document.getElementById('dni_conductor').value;
-    const fecha = document.getElementById('fecha_infraccion').value;
-    const lugar = document.getElementById('lugar_infraccion').value;
-    const infraccion = document.getElementById('infraccion_id').value;
+    const form = document.getElementById('form-nueva-acta');
+    const formData = new FormData(form);
     
-    if (!placa || !dni || !fecha || !lugar || !infraccion) {
+    // Validaciones básicas
+    const placa = formData.get('placa_1');
+    const conductor = formData.get('nombre_conductor_1');
+    const lugar = formData.get('lugar_intervencion');
+    
+    if (!placa || !conductor || !lugar) {
         showError('Por favor complete todos los campos obligatorios');
         return;
     }
     
-    // Simular guardado
-    showSuccess('Acta de contra generada exitosamente');
+    // Mostrar indicador de carga
+    const submitBtn = document.querySelector('#form-nueva-acta button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        submitBtn.disabled = true;
+    }
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('nuevaActaModal'));
-    modal.hide();
+    // Preparar datos para envío
+    const data = Object.fromEntries(formData.entries());
     
-    // Limpiar formulario
-    document.getElementById('nuevaActaForm').reset();
+    // Enviar datos al servidor con seguimiento automático de tiempo
+    fetch('/api/actas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Guardar ID del acta para seguimiento
+            actaIdEnProceso = result.acta_id;
+            
+            showSuccess(`Acta ${result.numero_acta} registrada exitosamente.<br>
+                        Hora de registro: ${result.hora_registro}<br>
+                        <small>El sistema está guardando automáticamente los cambios.</small>`);
+            
+            // Añadir botón de finalizar en el modal
+            agregarBotonFinalizar();
+            
+            // No cerrar el modal para permitir ediciones
+            console.log('Acta creada con ID:', result.acta_id);
+        } else {
+            showError('Error al registrar el acta: ' + (result.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Error al conectar con el servidor');
+    })
+    .finally(() => {
+        // Restaurar botón
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+// Función para agregar botón de finalizar al modal
+function agregarBotonFinalizar() {
+    const modalFooter = document.querySelector('#modal-nueva-acta .d-flex.justify-content-between');
+    if (modalFooter && !document.getElementById('btn-finalizar-acta')) {
+        const btnFinalizar = document.createElement('button');
+        btnFinalizar.id = 'btn-finalizar-acta';
+        btnFinalizar.type = 'button';
+        btnFinalizar.className = 'btn btn-success';
+        btnFinalizar.innerHTML = '<i class="fas fa-check-double me-2"></i>Finalizar Registro';
+        btnFinalizar.onclick = finalizarRegistroActa;
+        
+        modalFooter.appendChild(btnFinalizar);
+    }
 }
 
 // Actualizar monto al seleccionar infracción
@@ -349,4 +512,1176 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
     else montoInput.value = '';
 });
 </script>
+
+<!-- MODALES FLOTANTES -->
+
+<!-- MODAL: NUEVA ACTA -->
+<div class="floating-modal" id="modal-nueva-acta">
+    <div class="modal-content-wrapper">
+        <div class="modal-header-custom">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-plus-circle me-2"></i>
+                REGISTRO DE NUEVA ACTA DE FISCALIZACIÓN DRTC
+            </h4>
+            <button class="close-modal" onclick="cerrarModal('modal-nueva-acta')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body-custom">
+            <form id="form-nueva-acta" action="{{ route('inspecciones.store') }}" method="POST">
+                @csrf
+                
+                <!-- Campos automáticos ocultos -->
+                <input type="hidden" id="fecha_inspeccion_hidden" name="fecha_inspeccion">
+                <input type="hidden" id="hora_inicio_hidden" name="hora_inicio">
+                <input type="hidden" name="inspector_principal" value="{{ Auth::user()->name }}">
+
+                <!-- SECCIÓN 1: INFORMACIÓN DEL OPERADOR/CONDUCTOR -->
+                <div class="card mb-4 border-warning">
+                    <div class="card-header" style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); color: white;">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-user-tie me-2"></i>I. DATOS DEL OPERADOR/CONDUCTOR</h6>
+                    </div>
+                    <div class="card-body bg-light">
+                        <!-- Tipo de Agente Infractor -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-warning">Tipo de Agente Infractor:</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check p-3 border border-warning rounded bg-white">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="transportista" value="transportista">
+                                        <label class="form-check-label fw-bold w-100" for="transportista">
+                                            <i class="fas fa-truck me-2 text-warning"></i>TRANSPORTISTA
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-3 border border-warning rounded bg-white">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="operador_ruta" value="operador_ruta">
+                                        <label class="form-check-label fw-bold w-100" for="operador_ruta">
+                                            <i class="fas fa-route me-2 text-warning"></i>OPERADOR DE RUTA
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-3 border border-warning rounded bg-white">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="conductor" value="conductor">
+                                        <label class="form-check-label fw-bold w-100" for="conductor">
+                                            <i class="fas fa-id-card me-2 text-warning"></i>CONDUCTOR
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Datos del operador -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos:</label>
+                                <input type="text" class="form-control border-warning" name="razon_social" placeholder="Ingrese razón social o nombres completos" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-warning">RUC/DNI:</label>
+                                <input type="text" class="form-control border-warning" name="ruc_dni" placeholder="20123456789" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-warning">Placa del Vehículo:</label>
+                                <input type="text" class="form-control border-warning" name="placa_1" placeholder="ABC-123" style="text-transform: uppercase;">
+                            </div>
+                        </div>
+                        
+                        <!-- Datos del conductor -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-warning">Nombre del Conductor:</label>
+                                <input type="text" class="form-control border-warning" name="nombre_conductor_1" placeholder="Nombres y apellidos completos" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-warning">N° Licencia de Conducir:</label>
+                                <input type="text" class="form-control border-warning" name="licencia_conductor_1" placeholder="N° Licencia" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-warning">Clase y Categoría:</label>
+                                <select class="form-select border-warning" name="clase_categoria">
+                                    <option value="">Seleccione...</option>
+                                    <option value="A-I">A-I (Motocicletas hasta 125cc)</option>
+                                    <option value="A-IIa">A-IIa (Motocicletas de 126cc a 200cc)</option>
+                                    <option value="A-IIb">A-IIb (Motocicletas mayor a 200cc)</option>
+                                    <option value="A-IIIa">A-IIIa (Vehículos menores)</option>
+                                    <option value="A-IIIb">A-IIIb (Automóviles, camionetas)</option>
+                                    <option value="A-IIIc">A-IIIc (Buses, camiones)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: DATOS DE LA INTERVENCIÓN -->
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-map-marker-alt me-2"></i>II. DATOS DE LA INTERVENCIÓN</h6>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-info">Lugar de Intervención:</label>
+                                <input type="text" class="form-control border-info" name="lugar_intervencion" placeholder="Dirección exacta o referencia" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-info">Fecha:</label>
+                                <input type="date" class="form-control border-info" name="fecha_intervencion" value="{{ date('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-info">Hora:</label>
+                                <input type="time" class="form-control border-info" name="hora_intervencion" value="{{ date('H:i') }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-info">Inspector Responsable:</label>
+                                <input type="text" class="form-control border-info" name="inspector" value="{{ Auth::user()->name }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-info">Tipo de Servicio:</label>
+                                <select class="form-select border-info" name="tipo_servicio" required>
+                                    <option value="">Seleccione tipo de servicio...</option>
+                                    <option value="publico">Servicio Público</option>
+                                    <option value="privado">Servicio Privado</option>
+                                    <option value="turistico">Servicio Turístico</option>
+                                    <option value="carga">Transporte de Carga</option>
+                                    <option value="especial">Servicio Especial</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: DESCRIPCIÓN DE LA INFRACCIÓN -->
+                <div class="card mb-4 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>III. DESCRIPCIÓN DE LA INFRACCIÓN</h6>
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-danger">Tipo de Infracción:</label>
+                            <select class="form-select border-danger" name="tipo_infraccion" required>
+                                <option value="">Seleccione el tipo de infracción...</option>
+                                <option value="documentaria">Infracción Documentaria</option>
+                                <option value="administrativa">Infracción Administrativa</option>
+                                <option value="tecnica">Infracción Técnica</option>
+                                <option value="operacional">Infracción Operacional</option>
+                                <option value="seguridad">Infracción de Seguridad</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-danger">Descripción Detallada de los Hechos:</label>
+                            <textarea class="form-control border-danger" name="descripcion_hechos" rows="4" placeholder="Describa detalladamente la infracción detectada..." required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-danger">Código de Infracción:</label>
+                                <input type="text" class="form-control border-danger" name="codigo_infraccion" placeholder="Ej: INF-001">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-danger">Gravedad:</label>
+                                <select class="form-select border-danger" name="gravedad" required>
+                                    <option value="">Seleccione gravedad...</option>
+                                    <option value="leve">Leve</option>
+                                    <option value="grave">Grave</option>
+                                    <option value="muy_grave">Muy Grave</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success btn-lg me-3 px-5">
+                        <i class="fas fa-save me-2"></i>GUARDAR ACTA
+                    </button>
+                    <button type="reset" class="btn btn-secondary btn-lg px-5">
+                        <i class="fas fa-undo me-2"></i>LIMPIAR FORMULARIO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR ACTA -->
+<div class="floating-modal" id="modal-editar-acta">
+    <div class="modal-content-wrapper">
+        <div class="modal-header-custom">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-edit me-2"></i>
+                EDITAR ACTA DE FISCALIZACIÓN EXISTENTE
+            </h4>
+            <button class="close-modal" onclick="cerrarModal('modal-editar-acta')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body-custom">
+            <!-- Buscador de Acta -->
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-search me-2"></i>BUSCAR ACTA PARA EDITAR</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold text-warning">Criterio de Búsqueda:</label>
+                            <input type="text" class="form-control border-warning" id="buscar-editar" placeholder="Ingrese N° de Acta, RUC/DNI o Placa del vehículo">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold text-warning">Acción:</label>
+                            <button type="button" class="btn btn-warning d-block w-100 fw-bold" onclick="buscarActaEditar()">
+                                <i class="fas fa-search me-2"></i>BUSCAR ACTA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resultado de la búsqueda y formulario de edición -->
+            <div id="resultado-editar" style="display: none;">
+                <div class="alert alert-warning border-warning">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x"></i>
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1">ACTA ENCONTRADA</h5>
+                            <strong>Editando Acta N°:</strong> <span id="acta-numero-editar" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Aquí iría el formulario de edición igual al de nueva acta pero con _edit en los nombres -->
+                <p class="text-center text-muted">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Formulario de edición se cargaría aquí con los datos del acta encontrada
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ELIMINAR ACTA -->
+<div class="floating-modal" id="modal-eliminar-acta">
+    <div class="modal-content-wrapper">
+        <div class="modal-header-custom" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-trash-alt me-2"></i>
+                ELIMINAR ACTA DEL SISTEMA
+            </h4>
+            <button class="close-modal" onclick="cerrarModal('modal-eliminar-acta')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body-custom">
+            <!-- Advertencia crítica -->
+            <div class="alert alert-danger text-center mb-4 border-danger" style="background: #f8d7da;">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                    </div>
+                    <div class="col">
+                        <h4 class="mb-2 text-danger">⚠️ ADVERTENCIA CRÍTICA</h4>
+                        <p class="mb-1 fw-bold">Esta acción eliminará permanentemente el acta del sistema</p>
+                        <p class="mb-0 text-muted">Esta operación es IRREVERSIBLE y requiere autorización</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Buscador de Acta -->
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-search me-2"></i>BUSCAR ACTA PARA ELIMINAR</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold text-danger">Criterio de Búsqueda:</label>
+                            <input type="text" class="form-control border-danger" id="buscar-eliminar" placeholder="Ingrese N° de Acta, RUC/DNI o Placa del vehículo">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold text-danger">Acción:</label>
+                            <button type="button" class="btn btn-danger d-block w-100 fw-bold" onclick="buscarActaEliminar()">
+                                <i class="fas fa-search me-2"></i>BUSCAR ACTA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resultado de la búsqueda -->
+            <div id="resultado-eliminar" style="display: none;">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-file-alt me-2"></i>ACTA ENCONTRADA</h6>
+                    </div>
+                    <div class="card-body bg-light">
+                        <!-- Información del acta -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="info-group p-3 border border-danger rounded bg-white">
+                                    <label class="form-label fw-bold text-danger">N° de Acta:</label>
+                                    <p class="mb-0 fs-5" id="eliminar-numero-acta">DRTC-APU-2024-001</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-group p-3 border border-danger rounded bg-white">
+                                    <label class="form-label fw-bold text-danger">Fecha de Registro:</label>
+                                    <p class="mb-0 fs-5" id="eliminar-fecha-acta">15/08/2024</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Motivo de eliminación -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-danger">Motivo de la Eliminación (Obligatorio):</label>
+                            <select class="form-select border-danger mb-3" id="motivo-eliminacion" required>
+                                <option value="">Seleccione el motivo...</option>
+                                <option value="error_registro">Error en el registro</option>
+                                <option value="duplicado">Acta duplicada</option>
+                                <option value="datos_incorrectos">Datos incorrectos</option>
+                                <option value="solicitud_operador">Solicitud del operador</option>
+                                <option value="revision_superior">Revisión de superior</option>
+                                <option value="otro">Otro motivo</option>
+                            </select>
+                            <textarea class="form-control border-danger" id="observaciones-eliminacion" rows="3" placeholder="Observaciones adicionales sobre la eliminación..."></textarea>
+                        </div>
+                        
+                        <!-- Autorización -->
+                        <div class="card border-warning mb-4" style="background: #fff3cd;">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0 fw-bold"><i class="fas fa-key me-2"></i>AUTORIZACIÓN REQUERIDA</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Código de Autorización:</label>
+                                        <input type="password" class="form-control border-warning" id="codigo-autorizacion" placeholder="Ingrese código de supervisor" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Supervisor Autorizante:</label>
+                                        <input type="text" class="form-control border-warning" id="supervisor-autorizante" placeholder="Nombre del supervisor" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de confirmación -->
+                        <div class="text-center">
+                            <button type="button" class="btn btn-danger btn-lg me-3 px-5" onclick="confirmarEliminacion()">
+                                <i class="fas fa-trash me-2"></i>CONFIRMAR ELIMINACIÓN
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg px-5" onclick="cancelarEliminacion()">
+                                <i class="fas fa-times me-2"></i>CANCELAR OPERACIÓN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: CONSULTAS Y REPORTES -->
+<div class="floating-modal" id="modal-consultas">
+    <div class="modal-content-wrapper">
+        <div class="modal-header-custom" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-search me-2"></i>
+                CONSULTAS Y REPORTES DRTC
+            </h4>
+            <button class="close-modal" onclick="cerrarModal('modal-consultas')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body-custom">
+            <!-- Formulario de filtros -->
+            <div class="card mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>FILTROS DE BÚSQUEDA</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <form id="form-consultas">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">N° de Acta:</label>
+                                <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2024-001">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">RUC/DNI:</label>
+                                <input type="text" class="form-control border-info" name="ruc_dni" placeholder="20123456789">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Placa del Vehículo:</label>
+                                <input type="text" class="form-control border-info" name="placa" placeholder="ABC-123" style="text-transform: uppercase;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Estado del Acta:</label>
+                                <select class="form-select border-info" name="estado">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="procesada">Procesada</option>
+                                    <option value="anulada">Anulada</option>
+                                    <option value="pagada">Pagada</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Fecha Desde:</label>
+                                <input type="date" class="form-control border-info" name="fecha_desde">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Fecha Hasta:</label>
+                                <input type="date" class="form-control border-info" name="fecha_hasta">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Tipo de Infracción:</label>
+                                <select class="form-select border-info" name="tipo_infraccion">
+                                    <option value="">Todas las infracciones</option>
+                                    <option value="documentaria">Documentaria</option>
+                                    <option value="administrativa">Administrativa</option>
+                                    <option value="tecnica">Técnica</option>
+                                    <option value="operacional">Operacional</option>
+                                    <option value="seguridad">Seguridad</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Inspector:</label>
+                                <select class="form-select border-info" name="inspector">
+                                    <option value="">Todos los inspectores</option>
+                                    <option value="{{ Auth::user()->name }}">{{ Auth::user()->name }}</option>
+                                    <option value="inspector2">Inspector 2</option>
+                                    <option value="inspector3">Inspector 3</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="text-center mb-4">
+                <button type="button" class="btn btn-info btn-lg me-2 px-4" onclick="ejecutarConsulta()">
+                    <i class="fas fa-search me-2"></i>CONSULTAR ACTAS
+                </button>
+                <button type="button" class="btn btn-success btn-lg me-2 px-4" onclick="exportarExcel()">
+                    <i class="fas fa-file-excel me-2"></i>EXPORTAR EXCEL
+                </button>
+                <button type="button" class="btn btn-danger btn-lg me-2 px-4" onclick="exportarPDF()">
+                    <i class="fas fa-file-pdf me-2"></i>EXPORTAR PDF
+                </button>
+                <button type="button" class="btn btn-warning btn-lg px-4" onclick="generarReporte()">
+                    <i class="fas fa-chart-bar me-2"></i>REPORTE ESTADÍSTICO
+                </button>
+            </div>
+            
+            <!-- Resumen de resultados -->
+            <div id="resumen-consulta" class="card border-info mb-4" style="display: none;">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>RESUMEN DE RESULTADOS</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-3 border border-info rounded bg-white">
+                                <h4 class="text-info mb-1" id="total-actas">0</h4>
+                                <small class="text-muted">Total de Actas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-success rounded bg-white">
+                                <h4 class="text-success mb-1" id="actas-procesadas-modal">0</h4>
+                                <small class="text-muted">Procesadas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-warning rounded bg-white">
+                                <h4 class="text-warning mb-1" id="actas-pendientes-modal">0</h4>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-danger rounded bg-white">
+                                <h4 class="text-danger mb-1" id="actas-anuladas-modal">0</h4>
+                                <small class="text-muted">Anuladas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de resultados -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-table me-2"></i>RESULTADOS DE LA CONSULTA</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" id="tabla-resultados">
+                            <thead class="bg-info text-white">
+                                <tr>
+                                    <th class="py-3">N° ACTA</th>
+                                    <th>FECHA</th>
+                                    <th>OPERADOR/CONDUCTOR</th>
+                                    <th>RUC/DNI</th>
+                                    <th>PLACA</th>
+                                    <th>INFRACCIÓN</th>
+                                    <th>GRAVEDAD</th>
+                                    <th>ESTADO</th>
+                                    <th>INSPECTOR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-resultados">
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-search me-2"></i>
+                                        Use los filtros y haga clic en "Consultar Actas" para ver los resultados
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
+
+<script>
+// FUNCIONES PARA MODALES FLOTANTES
+let tiempoInicioRegistro = null;
+let actaIdEnProceso = null;
+let autoguardadoInterval = null;
+
+// Función para abrir modales
+function abrirModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Auto-llenar campos de fecha y hora en modal nueva acta
+    if (modalId === 'modal-nueva-acta') {
+        iniciarRegistroAutomatico();
+    }
+}
+
+// Función para iniciar el registro automático de tiempo
+function iniciarRegistroAutomatico() {
+    tiempoInicioRegistro = new Date();
+    const ahora = tiempoInicioRegistro;
+    
+    // Llenar campos automáticos
+    document.getElementById('fecha_inspeccion_hidden').value = ahora.toISOString().split('T')[0];
+    document.getElementById('hora_inicio_hidden').value = ahora.toTimeString().slice(0, 5);
+    
+    // Mostrar información de tiempo en el formulario
+    mostrarTiempoEnFormulario();
+    
+    // Iniciar autoguardado cada 30 segundos
+    iniciarAutoguardado();
+    
+    console.log('Registro iniciado a las:', ahora.toLocaleTimeString());
+}
+
+// Función para mostrar el tiempo en el formulario
+function mostrarTiempoEnFormulario() {
+    // Crear elementos para mostrar el tiempo si no existen
+    if (!document.getElementById('tiempo-registro-info')) {
+        const tiempoInfo = document.createElement('div');
+        tiempoInfo.id = 'tiempo-registro-info';
+        tiempoInfo.className = 'alert alert-info d-flex align-items-center mb-3';
+        tiempoInfo.innerHTML = `
+            <i class="fas fa-clock me-2"></i>
+            <div>
+                <strong>Registro iniciado:</strong> <span id="hora-inicio-display">${tiempoInicioRegistro.toLocaleTimeString()}</span> |
+                <strong>Tiempo transcurrido:</strong> <span id="tiempo-transcurrido">00:00:00</span>
+                <span id="autoguardado-status" class="text-success ms-3"><i class="fas fa-check-circle"></i> Autoguardado activo</span>
+            </div>
+        `;
+        
+        // Insertar después del header del modal
+        const modalBody = document.querySelector('#modal-nueva-acta .modal-body-custom');
+        modalBody.insertBefore(tiempoInfo, modalBody.firstChild);
+    }
+    
+    // Actualizar tiempo transcurrido cada segundo
+    setInterval(actualizarTiempoTranscurrido, 1000);
+}
+
+// Función para actualizar el tiempo transcurrido
+function actualizarTiempoTranscurrido() {
+    if (!tiempoInicioRegistro) return;
+    
+    const ahora = new Date();
+    const diferencia = ahora - tiempoInicioRegistro;
+    
+    const horas = Math.floor(diferencia / 3600000);
+    const minutos = Math.floor((diferencia % 3600000) / 60000);
+    const segundos = Math.floor((diferencia % 60000) / 1000);
+    
+    const tiempoFormateado = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
+    
+    const elemento = document.getElementById('tiempo-transcurrido');
+    if (elemento) {
+        elemento.textContent = tiempoFormateado;
+    }
+}
+
+// Función para iniciar autoguardado
+function iniciarAutoguardado() {
+    // Limpiar interval anterior si existe
+    if (autoguardadoInterval) {
+        clearInterval(autoguardadoInterval);
+    }
+    
+    // Guardar progreso cada 30 segundos
+    autoguardadoInterval = setInterval(() => {
+        if (actaIdEnProceso) {
+            guardarProgresoAutomatico();
+        }
+    }, 30000);
+}
+
+// Función para guardar progreso automáticamente
+function guardarProgresoAutomatico() {
+    if (!actaIdEnProceso) return;
+    
+    const formData = new FormData(document.getElementById('form-nueva-acta'));
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch(`/api/actas/${actaIdEnProceso}/progreso`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            mostrarAutoguardadoExitoso(result.hora_actualizacion);
+        }
+    })
+    .catch(error => {
+        console.error('Error en autoguardado:', error);
+        mostrarErrorAutoguardado();
+    });
+}
+
+// Función para mostrar autoguardado exitoso
+function mostrarAutoguardadoExitoso(hora) {
+    const status = document.getElementById('autoguardado-status');
+    if (status) {
+        status.innerHTML = `<i class="fas fa-check-circle text-success"></i> Autoguardado: ${hora}`;
+        status.className = 'text-success ms-3';
+    }
+}
+
+// Función para mostrar error de autoguardado
+function mostrarErrorAutoguardado() {
+    const status = document.getElementById('autoguardado-status');
+    if (status) {
+        status.innerHTML = `<i class="fas fa-exclamation-triangle text-warning"></i> Error en autoguardado`;
+        status.className = 'text-warning ms-3';
+    }
+}
+
+// Función para finalizar registro
+function finalizarRegistroActa() {
+    if (!actaIdEnProceso) {
+        alert('No hay un acta en proceso para finalizar');
+        return;
+    }
+    
+    fetch(`/api/actas/${actaIdEnProceso}/finalizar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(`Acta finalizada exitosamente.\nTiempo total: ${result.tiempo_total}\nHora de finalización: ${result.hora_finalizacion}`);
+            limpiarRegistroTiempo();
+            cerrarModal('modal-nueva-acta');
+        }
+    })
+    .catch(error => {
+        console.error('Error al finalizar:', error);
+        alert('Error al finalizar el registro del acta');
+    });
+}
+
+// Función para limpiar el registro de tiempo
+function limpiarRegistroTiempo() {
+    tiempoInicioRegistro = null;
+    actaIdEnProceso = null;
+    if (autoguardadoInterval) {
+        clearInterval(autoguardadoInterval);
+        autoguardadoInterval = null;
+    }
+    
+    // Limpiar elementos de tiempo del DOM
+    const tiempoInfo = document.getElementById('tiempo-registro-info');
+    if (tiempoInfo) {
+        tiempoInfo.remove();
+    }
+}
+
+// Función para cerrar modales
+function cerrarModal(modalId) {
+    // Si es el modal de nueva acta y hay un registro en proceso, preguntar si desea finalizar
+    if (modalId === 'modal-nueva-acta' && actaIdEnProceso) {
+        const confirmar = confirm('¿Desea finalizar el registro del acta antes de cerrar?\n\nSi cierra sin finalizar, el acta quedará como borrador y podrá continuar más tarde.');
+        
+        if (confirmar) {
+            finalizarRegistroActa();
+            return; // La función de finalizar se encargará de cerrar el modal
+        } else {
+            // Guardar como borrador
+            guardarProgresoAutomatico();
+        }
+    }
+    
+    document.getElementById(modalId).style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar tiempo si es nueva acta
+    if (modalId === 'modal-nueva-acta') {
+        limpiarRegistroTiempo();
+    }
+}
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('floating-modal')) {
+        cerrarModal(e.target.id);
+    }
+});
+
+// FUNCIONES ESPECÍFICAS PARA CADA MODAL
+
+// Modal Editar Acta
+function buscarActaEditar() {
+    const criterio = document.getElementById('buscar-editar').value.trim();
+    if (!criterio) {
+        alert('Por favor ingrese un criterio de búsqueda');
+        return;
+    }
+    
+    // Simulación de búsqueda
+    document.getElementById('acta-numero-editar').textContent = 'DRTC-APU-2024-001';
+    document.getElementById('resultado-editar').style.display = 'block';
+    
+    // Aquí se haría la llamada AJAX real para buscar el acta
+    console.log('Buscando acta con criterio:', criterio);
+}
+
+// Modal Eliminar Acta
+function buscarActaEliminar() {
+    const criterio = document.getElementById('buscar-eliminar').value.trim();
+    if (!criterio) {
+        alert('Por favor ingrese un criterio de búsqueda');
+        return;
+    }
+    
+    // Simulación de búsqueda
+    document.getElementById('eliminar-numero-acta').textContent = 'DRTC-APU-2024-001';
+    document.getElementById('eliminar-fecha-acta').textContent = '15/08/2024';
+    document.getElementById('resultado-eliminar').style.display = 'block';
+    
+    // Aquí se haría la llamada AJAX real para buscar el acta
+    console.log('Buscando acta para eliminar con criterio:', criterio);
+}
+
+function confirmarEliminacion() {
+    const motivo = document.getElementById('motivo-eliminacion').value;
+    const codigo = document.getElementById('codigo-autorizacion').value;
+    const supervisor = document.getElementById('supervisor-autorizante').value;
+    
+    if (!motivo || !codigo || !supervisor) {
+        alert('Todos los campos son obligatorios para la eliminación');
+        return;
+    }
+    
+    if (confirm('¿Está seguro de que desea eliminar esta acta? Esta acción es IRREVERSIBLE.')) {
+        // Aquí se haría la llamada AJAX para eliminar
+        alert('Acta eliminada exitosamente');
+        cerrarModal('modal-eliminar-acta');
+    }
+}
+
+function cancelarEliminacion() {
+    document.getElementById('resultado-eliminar').style.display = 'none';
+    document.getElementById('buscar-eliminar').value = '';
+}
+
+// Modal Consultas
+function ejecutarConsulta() {
+    // Mostrar resumen
+    document.getElementById('resumen-consulta').style.display = 'block';
+    
+    // Simulación de datos
+    document.getElementById('total-actas').textContent = '127';
+    document.getElementById('actas-procesadas-modal').textContent = '89';
+    document.getElementById('actas-pendientes-modal').textContent = '32';
+    document.getElementById('actas-anuladas-modal').textContent = '6';
+    
+    // Simulación de resultados en tabla
+    const tbody = document.getElementById('tbody-resultados');
+    tbody.innerHTML = `
+        <tr>
+            <td class="fw-bold">DRTC-APU-2024-001</td>
+            <td>15/08/2024</td>
+            <td>TRANSPORTES LIMA S.A.C.</td>
+            <td>20123456789</td>
+            <td>ABC-123</td>
+            <td>Documentaria</td>
+            <td><span class="badge bg-warning">Grave</span></td>
+            <td><span class="badge bg-success">Procesada</span></td>
+            <td>${document.querySelector('input[name="inspector"] option:checked')?.textContent || 'Inspector 1'}</td>
+        </tr>
+        <tr>
+            <td class="fw-bold">DRTC-APU-2024-002</td>
+            <td>14/08/2024</td>
+            <td>JUAN PÉREZ GARCÍA</td>
+            <td>12345678</td>
+            <td>DEF-456</td>
+            <td>Operacional</td>
+            <td><span class="badge bg-danger">Muy Grave</span></td>
+            <td><span class="badge bg-warning">Pendiente</span></td>
+            <td>${document.querySelector('input[name="inspector"] option:checked')?.textContent || 'Inspector 1'}</td>
+        </tr>
+    `;
+    
+    console.log('Ejecutando consulta con filtros del formulario');
+}
+
+function exportarExcel() {
+    // Crear datos de ejemplo para el formato oficial
+    const actaData = {
+        numero: 'DRTC-APU-2025-000451',
+        codigo_ds: '017-2009-MTC',
+        fecha: new Date().toLocaleDateString('es-PE'),
+        inspector: '{{ Auth::user()->name ?? "Inspector DRTC" }}',
+        // Datos del infractor
+        tipoAgente: 'Transportista', // Operador de Ruta, Conductor
+        placa: 'ABC-123',
+        razonSocial: 'TRANSPORTES LIMA S.A.C.',
+        rucDni: '20123456789',
+        fechaHoraInicio: new Date().toLocaleString('es-PE'),
+        fechaHoraFin: '',
+        nombreConductor: 'JUAN CARLOS PÉREZ GARCÍA',
+        licencia: 'Q12345678',
+        clase: 'A-IIIb',
+        lugarIntervencion: 'Av. Principal Km 15 - Abancay',
+        redVial: 'Red Vial Nacional',
+        origen: 'Abancay',
+        destino: 'Cusco',
+        tipoServicio: 'Público - Interprovincial',
+        personas: '45',
+        descripcionHechos: 'Vehículo de transporte público interprovincial circulando sin el permiso de operación vigente, incumpliendo las disposiciones del Reglamento Nacional de Administración de Transporte.',
+        mediosProbatorios: 'Inspección física del vehículo, verificación documentaria',
+        calificacion: 'Muy Grave',
+        medidaAdministrativa: 'Retención de Tarjeta de Circulación',
+        sancion: 'Multa equivalente al 50% de la UIT',
+        observacionesIntervenido: '',
+        observacionesInspector: 'Operador reincidente en falta documentaria'
+    };
+    
+    // Crear estructura Excel que simule el formato oficial del acta
+    const excelData = [
+        ['GOBIERNO REGIONAL DE APURÍMAC'],
+        ['DIRECCIÓN REGIONAL DE TRANSPORTES Y COMUNICACIONES'],
+        ['DIRECCIÓN DE CIRCULACIÓN TERRESTRE OF. FISCALIZACIÓN'],
+        [''],
+        [`ACTA DE CONTROL N° ${actaData.numero} - 2025`],
+        [''],
+        [`D.S. N° ${actaData.codigo_ds}`],
+        ['Código de infracciones y/o incumplimiento'],
+        ['Tipo infractor'],
+        [''],
+        ['Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP.'],
+        ['informamos el objeto y el sustento legal de la fiscalización, cumpliendo con lo señalado en la Normativa vigente.'],
+        [''],
+        ['DATOS DEL AGENTE INFRACTOR:'],
+        ['Agente infractor:', actaData.tipoAgente, '', 'Transportista □', 'Operador de Ruta □', 'Conductor □'],
+        ['Placa N°:', actaData.placa],
+        ['Razón Social/Nombre:', actaData.razonSocial],
+        ['RUC/DNI:', actaData.rucDni],
+        ['Fecha y Hora inicio:', actaData.fechaHoraInicio],
+        ['Fecha y Hora de fin:', actaData.fechaHoraFin],
+        ['Nombre de Conductor 1:', actaData.nombreConductor],
+        ['N° Licencia/DNI del conductor 1:', actaData.licencia, 'N°', '', 'Clase y Categoría', actaData.clase],
+        ['Lugar de la intervención:', actaData.lugarIntervencion],
+        ['N° Km. De la red Vial Nacional Prov./Dpto.', actaData.redVial],
+        ['Origen de viaje (Depto./Prov./Distrito)', actaData.origen],
+        ['Destino Viaje: (Depto./Prov./Distrito)', actaData.destino],
+        ['Tipo de Servicio que presta', actaData.tipoServicio, 'Personas', actaData.personas, 'mercancía', ''],
+        ['Inspector:', actaData.inspector],
+        [''],
+        ['DESCRIPCIÓN DE LOS HECHOS:'],
+        [actaData.descripcionHechos],
+        [''],
+        ['Medios probatorios:', actaData.mediosProbatorios],
+        ['Calificación de la Infracción:', actaData.calificacion],
+        ['Medida(s) Administrativa(s):', actaData.medidaAdministrativa],
+        ['Sanción:', actaData.sancion],
+        ['Observaciones del intervenido:', actaData.observacionesIntervenido],
+        [''],
+        ['Observaciones del inspector:', actaData.observacionesInspector],
+        [''],
+        ['La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado'],
+        ['penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.'],
+        [''],
+        [''],
+        ['________________________', '', '________________________', '', '________________________'],
+        ['Firma del intervenido', '', 'Firma del Representante PNP', '', 'Firma del Inspector'],
+        ['Nom.Ap.:', '', 'Nomb.Ap.:', '', 'Nombre Ap.:'],
+        ['DNI:', '', 'CIP:', '', 'CI:']
+    ];
+    
+    // Convertir a CSV para Excel
+    const csvContent = excelData.map(row => 
+        row.map(cell => `"${cell || ''}"`).join(',')
+    ).join('\n');
+    
+    // Crear y descargar archivo
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Acta_Fiscalizacion_${actaData.numero.replace(/[^0-9]/g, '')}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    // Mostrar mensaje de éxito
+    setTimeout(() => {
+        alert(`✅ Archivo Excel generado exitosamente:\nActa N° ${actaData.numero}\nFormato: Acta Oficial DRTC Apurímac`);
+    }, 500);
+}
+
+function exportarPDF() {
+    // Simular generación de PDF con el formato oficial del acta
+    const actaData = {
+        numero: 'DRTC-APU-2025-000451',
+        codigo_ds: '017-2009-MTC',
+        fecha: new Date().toLocaleDateString('es-PE'),
+        inspector: '{{ Auth::user()->name ?? "Inspector DRTC" }}',
+        tipoAgente: 'Transportista',
+        placa: 'ABC-123',
+        razonSocial: 'TRANSPORTES LIMA S.A.C.',
+        rucDni: '20123456789',
+        nombreConductor: 'JUAN CARLOS PÉREZ GARCÍA',
+        licencia: 'Q12345678',
+        clase: 'A-IIIb',
+        lugarIntervencion: 'Av. Principal Km 15 - Abancay',
+        tipoServicio: 'Público - Interprovincial',
+        descripcionHechos: 'Vehículo de transporte público interprovincial circulando sin el permiso de operación vigente, incumpliendo las disposiciones del Reglamento Nacional de Administración de Transporte.',
+        calificacion: 'Muy Grave',
+        medidaAdministrativa: 'Retención de Tarjeta de Circulación',
+        sancion: 'Multa equivalente al 50% de la UIT'
+    };
+    
+    // Crear contenido HTML para PDF que replique el formato oficial
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Acta de Fiscalización ${actaData.numero}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; font-size: 10px; margin: 20px; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+                .title { font-size: 14px; font-weight: bold; text-align: center; margin: 15px 0; }
+                .form-row { display: flex; margin-bottom: 8px; }
+                .form-field { border: 1px solid #000; padding: 5px; margin-right: 5px; }
+                .checkbox { width: 15px; height: 15px; border: 1px solid #000; display: inline-block; margin-right: 5px; }
+                .description-box { border: 1px solid #000; padding: 10px; min-height: 80px; margin-bottom: 10px; }
+                .signature-area { display: flex; justify-content: space-between; margin-top: 30px; }
+                .signature { text-align: center; border-bottom: 1px solid #000; width: 30%; padding-bottom: 5px; }
+                .footer-text { text-align: center; font-size: 9px; margin-top: 20px; }
+                table { width: 100%; border-collapse: collapse; }
+                td { border: 1px solid #000; padding: 5px; }
+                .no-border { border: none; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logos">
+                    <div>🇵🇪 PERÚ</div>
+                    <div>GOBIERNO REGIONAL DE APURÍMAC</div>
+                    <div>DIRECCIÓN REGIONAL DE TRANSPORTES Y COMUNICACIONES</div>
+                    <div>DIRECCIÓN DE CIRCULACIÓN TERRESTRE OF. FISCALIZACIÓN</div>
+                    <div>🔒</div>
+                </div>
+            </div>
+            
+            <div class="title">ACTA DE CONTROL N° ${actaData.numero} - 2025</div>
+            
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div>D.S. N° ${actaData.codigo_ds}</div>
+                <div>Código de infracciones y/o incumplimiento</div>
+                <div><strong>Tipo infractor</strong></div>
+            </div>
+            
+            <p style="font-size: 9px; margin-bottom: 15px;">
+                Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el 
+                sustento legal de la fiscalización, cumpliendo con lo señalado en la Normativa vigente.
+            </p>
+            
+            <table style="margin-bottom: 15px;">
+                <tr>
+                    <td style="font-weight: bold;">Agente infractor:</td>
+                    <td>${actaData.tipoAgente}</td>
+                    <td>Transportista <span class="checkbox">☑</span></td>
+                    <td>Operador de Ruta <span class="checkbox">☐</span></td>
+                    <td>Conductor <span class="checkbox">☐</span></td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Placa N°:</td>
+                    <td colspan="4">${actaData.placa}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Razón Social/Nombre:</td>
+                    <td colspan="4">${actaData.razonSocial}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">RUC/DNI:</td>
+                    <td colspan="4">${actaData.rucDni}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Fecha y Hora inicio:</td>
+                    <td colspan="2">${new Date().toLocaleString('es-PE')}</td>
+                    <td style="font-weight: bold;">Fecha y Hora de fin:</td>
+                    <td>_________________</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Nombre de Conductor 1:</td>
+                    <td colspan="4">${actaData.nombreConductor}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">N° Licencia/DNI del conductor 1:</td>
+                    <td>${actaData.licencia}</td>
+                    <td>N°</td>
+                    <td style="font-weight: bold;">Clase y Categoría</td>
+                    <td>${actaData.clase}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Lugar de la intervención:</td>
+                    <td colspan="4">${actaData.lugarIntervencion}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Tipo de Servicio que presta</td>
+                    <td>${actaData.tipoServicio}</td>
+                    <td style="font-weight: bold;">Personas</td>
+                    <td>45</td>
+                    <td style="font-weight: bold;">mercancía</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Inspector:</td>
+                    <td colspan="4">${actaData.inspector}</td>
+                </tr>
+            </table>
+            
+            <div style="font-weight: bold; margin-bottom: 10px;">Descripción de los hechos:</div>
+            <div class="description-box">
+                ${actaData.descripcionHechos}
+            </div>
+            
+            <table style="margin-bottom: 15px;">
+                <tr>
+                    <td style="font-weight: bold;">Calificación de la Infracción:</td>
+                    <td>${actaData.calificacion}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Medida(s) Administrativa(s):</td>
+                    <td>${actaData.medidaAdministrativa}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Sanción:</td>
+                    <td>${actaData.sancion}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Observaciones del intervenido:</td>
+                    <td style="height: 40px;"></td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Observaciones del inspector:</td>
+                    <td style="height: 40px;">Operador reincidente en falta documentaria</td>
+                </tr>
+            </table>
+            
+            <div class="footer-text">
+                La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado<br>
+                penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
+            </div>
+            
+            <div class="signature-area">
+                <div class="signature">
+                    <div>________________________</div>
+                    <div>Firma del intervenido</div>
+                    <div>Nom.Ap.:</div>
+                    <div>DNI:</div>
+                </div>
+                <div class="signature">
+                    <div>________________________</div>
+                    <div>Firma del Representante PNP</div>
+                    <div>Nomb.Ap.:</div>
+                    <div>CIP:</div>
+                </div>
+                <div class="signature">
+                    <div>________________________</div>
+                    <div>Firma del Inspector</div>
+                    <div>Nombre Ap.:</div>
+                    <div>CI:</div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // Simular descarga de PDF
+    setTimeout(() => {
+        alert(`✅ Archivo PDF generado exitosamente:\n\n📄 Acta N° ${actaData.numero}\n📅 Fecha: ${actaData.fecha}\n👮 Inspector: ${actaData.inspector}\n📋 Formato: Acta Oficial DRTC Apurímac\n\n⬇️ El archivo se descargará automáticamente...`);
+        
+        // En una implementación real, aquí se enviaría el HTML a un servicio de generación de PDF
+        console.log('HTML generado para PDF:', htmlContent);
+        
+        // Simular descarga
+        const element = document.createElement('a');
+        element.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+        element.download = `Acta_Fiscalizacion_${actaData.numero.replace(/[^0-9]/g, '')}_${new Date().toISOString().split('T')[0]}.html`;
+        element.click();
+        
+    }, 1000);
+}
+
+function generarReporte() {
+    alert('Generando reporte estadístico...');
+    console.log('Generando reporte estadístico');
+}
+
+// ESCAPE KEY para cerrar modales
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modalesAbiertos = document.querySelectorAll('.floating-modal[style*="flex"]');
+        modalesAbiertos.forEach(modal => {
+            cerrarModal(modal.id);
+        });
+    }
+});
+</script>

@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'multirole' => \App\Http\Middleware\MultiRoleMiddleware::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'remember.session' => \App\Http\Middleware\RememberSessionMiddleware::class,
+            'user.approved' => \App\Http\Middleware\CheckUserApproval::class,
         ]);
         
         // Aplicar middleware a todas las rutas web autenticadas

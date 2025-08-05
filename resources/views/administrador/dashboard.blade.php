@@ -161,6 +161,25 @@
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-user-check fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">Aprobar Usuarios</h5>
+                                    <p class="card-text">Revisar y aprobar solicitudes de registro</p>
+                                    @php
+                                        $pendingCount = \App\Models\User::where('status', 'pending')->count();
+                                    @endphp
+                                    @if($pendingCount > 0)
+                                        <span class="badge bg-danger mb-2">{{ $pendingCount }} pendientes</span>
+                                    @endif
+                                    <br>
+                                    <a href="{{ route('admin.users.approval') }}" class="btn btn-warning">
+                                        <i class="fas fa-user-check me-1"></i>Revisar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <div class="card h-100 border-success">
                                 <div class="card-body text-center">
                                     <i class="fas fa-cog fa-3x text-success mb-3"></i>
@@ -170,6 +189,8 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-4 mb-3">
                             <div class="card h-100 border-danger">
                                 <div class="card-body text-center">
@@ -177,6 +198,19 @@
                                     <h5 class="card-title">Infracciones</h5>
                                     <p class="card-text">Gestionar infracciones de tránsito</p>
                                     <a href="{{ route('infracciones.index') }}" class="btn btn-danger">Ver Infracciones</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users-cog fa-3x text-info mb-3"></i>
+                                    <h5 class="card-title">Mantenimientos</h5>
+                                    <p class="card-text">Gestionar conductores e inspectores</p>
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ route('admin.mantenimiento.conductor') }}" class="btn btn-outline-info btn-sm">Conductores</a>
+                                        <a href="{{ route('admin.mantenimiento.fiscal') }}" class="btn btn-outline-info btn-sm">Inspectores</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status',
     ];
 
     /**
@@ -44,6 +45,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'approved_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -78,5 +80,37 @@ class User extends Authenticatable
     public function isVentanilla()
     {
         return $this->role === 'ventanilla';
+    }
+    
+    /**
+     * Verificar si el usuario está aprobado
+     */
+    public function isApproved()
+    {
+        return $this->status === 'approved';
+    }
+    
+    /**
+     * Verificar si el usuario está pendiente de aprobación
+     */
+    public function isPending()
+    {
+        return $this->status === 'pending';
+    }
+    
+    /**
+     * Verificar si el usuario fue rechazado
+     */
+    public function isRejected()
+    {
+        return $this->status === 'rejected';
+    }
+    
+    /**
+     * Relación con el usuario que aprobó
+     */
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

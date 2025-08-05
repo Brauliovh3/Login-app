@@ -25,8 +25,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
 
-// Rutas protegidas por autenticación
-Route::middleware(['auth'])->group(function () {
+// Rutas protegidas por autenticación y aprobación
+Route::middleware(['auth', 'user.approved'])->group(function () {
     // Dashboard principal - redirige según el rol
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
@@ -47,21 +47,29 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class);
         Route::put('users/{id}/change-password', [UserController::class, 'changePassword'])->name('users.change-password');
         Route::put('users/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        
+        // Gestión de aprobación de usuarios
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('/users/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('users.approval');
+            Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('users.approve');
+            Route::post('/users/{user}/reject', [App\Http\Controllers\Admin\UserApprovalController::class, 'reject'])->name('users.reject');
+            Route::get('/users/{user}/details', [App\Http\Controllers\Admin\UserApprovalController::class, 'show'])->name('users.details');
+        });
     });
 });
 
 // Rutas para administradores y fiscalizadores (infracciones)
-Route::middleware(['auth', 'multirole:administrador,fiscalizador'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
     Route::resource('infracciones', InfraccionController::class);
 });
 
 // Rutas para inspecciones (administrador, fiscalizador, ventanilla)
-Route::middleware(['auth', 'multirole:administrador,fiscalizador,ventanilla'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador,ventanilla'])->group(function () {
     Route::resource('inspecciones', InspeccionController::class);
 });
 
 // Rutas específicas por rol con middleware de protección
-Route::middleware(['auth', 'role:administrador'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
     // Dashboard de administrador
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
 
@@ -85,7 +93,7 @@ Route::middleware(['auth', 'role:administrador'])->group(function () {
     Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
 });
 
-Route::middleware(['auth', 'role:fiscalizador'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
     // Dashboard de fiscalizador
     Route::get('/fiscalizador/dashboard', [DashboardController::class, 'fiscalizadorDashboard'])->name('fiscalizador.dashboard');
     
@@ -122,7 +130,7 @@ Route::middleware(['auth', 'role:fiscalizador'])->group(function () {
     })->name('fiscalizador.reportes');
 });
 
-Route::middleware(['auth', 'role:ventanilla'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'role:ventanilla'])->group(function () {
     // Dashboard de ventanilla
     Route::get('/ventanilla/dashboard', [DashboardController::class, 'ventanillaDashboard'])->name('ventanilla.dashboard');
     Route::get('/ventanilla/nueva-atencion', function () {
@@ -139,7 +147,7 @@ Route::middleware(['auth', 'role:ventanilla'])->group(function () {
     })->name('ventanilla.cola-espera');
 });
 
-Route::middleware(['auth', 'role:inspector'])->group(function () {
+Route::middleware(['auth', 'user.approved', 'role:inspector'])->group(function () {
     // Dashboard de inspector
     Route::get('/inspector/dashboard', [DashboardController::class, 'inspectorDashboard'])->name('inspector.dashboard');
     
@@ -159,11 +167,13 @@ Route::middleware(['auth', 'role:inspector'])->group(function () {
 
 
 // Rutas API para AJAX (Fiscalizador)
-Route::middleware(['auth', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
-    // Rutas para Actas
+Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
+    // Rutas para Actas con seguimiento automático de tiempo
     Route::post('/actas', [ActaController::class, 'store']);
     Route::get('/actas/pendientes', [ActaController::class, 'getPendientes']);
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
+    Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
+    Route::post('/actas/{id}/progreso', [ActaController::class, 'guardarProgreso']);
     
     // Rutas para datos de formularios
     Route::get('/vehiculos-activos', function () {
@@ -185,13 +195,14 @@ Route::middleware(['auth', 'multirole:administrador,fiscalizador'])->prefix('api
         return response()->json(['conductores' => $conductores]);
     });
     Route::get('/infracciones', function () {
-        $infracciones = \App\Models\Infraccion::where('estado', 'activo')
-            ->select('id', 'codigo_infraccion as codigo', 'descripcion', 'multa_soles')
+        $infracciones = \DB::table('infracciones')
+            ->select('id', 'codigo_infraccion as codigo', 'descripcion', 'multa_soles', 'tipo_infraccion')
             ->get();
         return response()->json(['infracciones' => $infracciones]);
     });
     Route::get('/inspectores-activos', function () {
-        $inspectores = \App\Models\Inspector::where('estado', 'activo')
+        $inspectores = \DB::table('inspectores')
+            ->where('estado', 'activo')
             ->select('id', 'nombres', 'apellidos', 'codigo_inspector')
             ->get()
             ->map(function($inspector) {

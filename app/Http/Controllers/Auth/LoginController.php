@@ -33,26 +33,44 @@ class LoginController extends Controller
         // Verificar si se marcó "Recordarme"
         $remember = $request->has('remember');
 
-        if (Auth::attempt($credentials, $remember)) {
-            $request->session()->regenerate();
-            
-            // Configurar la duración de la sesión basada en "Recordarme"
-            if (!$remember) {
-                // Si no se marcó "Recordarme", la sesión expira al cerrar el navegador
-                config(['session.expire_on_close' => true]);
+        // Primero verificar si las credenciales son correctas
+        $user = User::where($loginType, $request->login)->first();
+        
+        if ($user && Hash::check($request->password, $user->password)) {
+            // Verificar el estado de aprobación
+            if ($user->status === 'pending') {
+                return back()->withErrors([
+                    'login' => 'Tu cuenta está pendiente de aprobación por un administrador. Recibirás una notificación cuando sea aprobada.',
+                ])->onlyInput('login');
             }
             
-            // Crear notificación de inicio de sesión
-            Notification::create([
-                'title' => 'Inicio de sesión exitoso',
-                'message' => $remember 
-                    ? 'Has iniciado sesión correctamente. Tu sesión se mantendrá activa.' 
-                    : 'Has iniciado sesión correctamente. La sesión expirará al cerrar el navegador.',
-                'type' => 'success',
-                'user_id' => Auth::id(),
-            ]);
+            if ($user->status === 'rejected') {
+                return back()->withErrors([
+                    'login' => 'Tu solicitud de registro fue rechazada. Contacta al administrador para más información.',
+                ])->onlyInput('login');
+            }
+            
+            // Si el usuario está aprobado, proceder con el login
+            if (Auth::attempt($credentials, $remember)) {
+                $request->session()->regenerate();
+                
+                // Configurar la duración de la sesión basada en "Recordarme"
+                if (!$remember) {
+                    config(['session.expire_on_close' => true]);
+                }
+                
+                // Crear notificación de inicio de sesión
+                Notification::create([
+                    'title' => 'Inicio de sesión exitoso',
+                    'message' => $remember 
+                        ? 'Has iniciado sesión correctamente. Tu sesión se mantendrá activa.' 
+                        : 'Has iniciado sesión correctamente. La sesión expirará al cerrar el navegador.',
+                    'type' => 'success',
+                    'user_id' => Auth::id(),
+                ]);
 
-            return redirect()->intended('dashboard');
+                return redirect()->intended('dashboard');
+            }
         }
 
         return back()->withErrors([

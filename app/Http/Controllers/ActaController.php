@@ -51,36 +51,107 @@ class ActaController extends Controller
             'monto_multa' => 'required|numeric|min:0',
         ]);
 
+        // Obtener la hora actual exacta para el registro
+        $horaActual = Carbon::now();
+        
+        // Generar número de acta único
+        $numeroActa = 'DRTC-APU-' . date('Y') . '-' . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+
         $actaId = DB::table('actas')->insertGetId([
-            'numero_acta' => 'ACT-' . date('Y') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+            'numero_acta' => $numeroActa,
             'vehiculo_id' => $request->vehiculo_id,
             'conductor_id' => $request->conductor_id,
             'infraccion_id' => $request->infraccion_id,
             'inspector_id' => $request->inspector_id,
-            'fecha_infraccion' => now(),
+            'fecha_infraccion' => $horaActual->toDateString(),
+            'hora_infraccion' => $horaActual->toTimeString(),
+            'hora_inicio_registro' => $horaActual->toDateTimeString(), // Hora exacta del inicio
             'ubicacion' => $request->ubicacion,
             'descripcion' => $request->descripcion,
             'monto_multa' => $request->monto_multa,
             'estado' => 'pendiente',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'user_id' => Auth::id(),
+            'created_at' => $horaActual->toDateTimeString(),
+            'updated_at' => $horaActual->toDateTimeString(),
         ]);
 
         // Crear notificación
         DB::table('notifications')->insert([
             'user_id' => Auth::id(),
             'title' => 'Nueva Acta Registrada',
-            'message' => 'Se ha registrado una nueva acta de infracción #ACT-' . date('Y') . '-' . str_pad($actaId, 4, '0', STR_PAD_LEFT),
+            'message' => "Se ha registrado una nueva acta de infracción #{$numeroActa} a las {$horaActual->format('H:i:s')}",
             'type' => 'info',
             'read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => $horaActual->toDateTimeString(),
+            'updated_at' => $horaActual->toDateTimeString(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Acta registrada exitosamente',
-            'acta_id' => $actaId
+            'acta_id' => $actaId,
+            'numero_acta' => $numeroActa,
+            'hora_registro' => $horaActual->format('d/m/Y H:i:s')
+        ]);
+    }
+
+    /**
+     * Actualizar el acta con la hora final de registro
+     */
+    public function finalizarRegistro(Request $request, $id)
+    {
+        $horaFinal = Carbon::now();
+        
+        $acta = DB::table('actas')->where('id', $id)->first();
+        if (!$acta) {
+            return response()->json(['error' => 'Acta no encontrada'], 404);
+        }
+
+        // Calcular tiempo total de registro
+        $horaInicio = Carbon::parse($acta->hora_inicio_registro ?? $acta->created_at);
+        $tiempoTotal = $horaInicio->diffInMinutes($horaFinal);
+
+        DB::table('actas')
+            ->where('id', $id)
+            ->update([
+                'hora_fin_registro' => $horaFinal->toDateTimeString(),
+                'tiempo_total_registro' => $tiempoTotal, // en minutos
+                'estado' => 'completada',
+                'updated_at' => $horaFinal->toDateTimeString()
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registro de acta finalizado',
+            'hora_finalizacion' => $horaFinal->format('d/m/Y H:i:s'),
+            'tiempo_total' => $tiempoTotal . ' minutos'
+        ]);
+    }
+
+    /**
+     * Guardar progreso del llenado en tiempo real
+     */
+    public function guardarProgreso(Request $request, $id)
+    {
+        $horaActual = Carbon::now();
+        
+        // Preparar datos de progreso
+        $datosProgreso = $request->only([
+            'vehiculo_id', 'conductor_id', 'infraccion_id', 'inspector_id',
+            'ubicacion', 'descripcion', 'monto_multa'
+        ]);
+        
+        $datosProgreso['ultima_actualizacion'] = $horaActual->toDateTimeString();
+        $datosProgreso['updated_at'] = $horaActual->toDateTimeString();
+
+        DB::table('actas')
+            ->where('id', $id)
+            ->update($datosProgreso);
+
+        return response()->json([
+            'success' => true,
+            'hora_actualizacion' => $horaActual->format('H:i:s'),
+            'mensaje' => 'Progreso guardado automáticamente'
         ]);
     }
 
