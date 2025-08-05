@@ -505,6 +505,13 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('users.index') ? 'active': '' }}" href="{{ route('users.index')}}" >
+                            <i class="fas fa-fw fa-users-cog"></i>
+                            <span>Gestionar Usuarios</span>
+                        </a>
+                    </li>
+
                 @elseif(auth()->user()->role == 'fiscalizador')
                     <!-- Fiscalizador Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">

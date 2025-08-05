@@ -151,16 +151,6 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-drtc-orange">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-user-plus fa-3x text-drtc-orange mb-3"></i>
-                                    <h5 class="card-title">Gestionar Usuarios</h5>
-                                    <p class="card-text">Crear, editar y eliminar usuarios del sistema</p>
-                                    <a href="{{ route('users.index') }}" class="btn bg-drtc-orange text-white">Gestionar</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
                             <div class="card h-100 border-success">
                                 <div class="card-body text-center">
                                     <i class="fas fa-cog fa-3x text-success mb-3"></i>
@@ -223,6 +213,9 @@
                                                 @break
                                             @case('ventanilla')
                                                 <span class="badge bg-warning">Ventanilla</span>
+                                                @break
+                                            @case('inspector')
+                                                <span class="badge bg-success">Inspector</span>
                                                 @break
                                         @endswitch
                                     </td>
