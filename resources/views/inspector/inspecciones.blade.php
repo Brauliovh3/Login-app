@@ -38,7 +38,7 @@
                 <div class="col-md-3">
                     <label for="filtro_placa" class="form-label">Placa</label>
                     <input type="text" class="form-control" id="filtro_placa" name="filtro_placa" 
-                           placeholder="Buscar por placa">
+                        placeholder="Buscar por placa">
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="button" class="btn btn-primary me-2" onclick="aplicarFiltros()">

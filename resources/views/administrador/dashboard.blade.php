@@ -258,6 +258,9 @@
                                             @case('ventanilla')
                                                 <span class="badge bg-warning">Ventanilla</span>
                                                 @break
+                                            @case('inspector')
+                                                <span class="badge bg-success">Inspector</span>
+                                                @break
                                         @endswitch
                                     </td>
                                     <td>{{ $user->created_at->format('d/m/Y') }}</td>

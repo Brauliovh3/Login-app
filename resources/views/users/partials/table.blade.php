@@ -29,7 +29,11 @@
             @forelse($users as $user)
             <tr class="border-bottom">
                 <td class="text-center">
-                    <span class="badge bg-light text-dark">#{{ $user->id }}</span>
+                    <!--  Cambie esta linea por esto -->
+                    <!-- <span class="badge bg-light text-dark">#{{ $user->id }}</span> -->
+
+                    <!--  POR ESTA: ASi el IDE no esta expuesto numeracion correlativa en ves de ID -->
+                    <span class="badge bg-light text-dark">#{{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}</span>
                 </td>
                 <td>
                     <div class="d-flex align-items-center">
@@ -38,7 +42,11 @@
                         </div>
                         <div>
                             <div class="fw-bold text-dark">{{ $user->name }}</div>
-                            <small class="text-muted">ID: {{ $user->id }}</small>
+                            <!--  CAMBIAR ESTA LÍNEA -->
+                            <!-- <small class="text-muted">ID: {{ $user->id }}</small> -->
+                            
+                            <!-- ✅ POR ESTA: -->
+                            <small class="text-muted">Reg: {{ $user->created_at->format('d/m/Y') }}</small>
                         </div>
                     </div>
                 </td>
