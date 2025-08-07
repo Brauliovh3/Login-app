@@ -12,12 +12,7 @@ class UserApprovalController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (!Auth::user() || !Auth::user()->isAdmin()) {
-                abort(403, 'Acceso no autorizado');
-            }
-            return $next($request);
-        });
+        $this->middleware(['auth', 'admin']);
     }
 
     /**
@@ -46,7 +41,7 @@ class UserApprovalController extends Controller
             'approved_by' => Auth::id(),
         ]);
 
-        // Notificar al usuario aprobado
+        // Crear una sola notificación para el usuario aprobado
         Notification::create([
             'title' => '¡Cuenta aprobada!',
             'message' => 'Tu cuenta ha sido aprobada por un administrador. Ya puedes iniciar sesión en el sistema.',
@@ -54,15 +49,14 @@ class UserApprovalController extends Controller
             'user_id' => $user->id,
         ]);
 
-        // Notificar al administrador
-        Notification::create([
-            'title' => 'Usuario aprobado',
-            'message' => "Has aprobado la cuenta de {$user->username} ({$user->email}).",
-            'type' => 'success',
-            'user_id' => Auth::id(),
+        return back()->with([
+            'success' => "Usuario {$user->username} aprobado exitosamente.",
+            'toast' => [
+                'type' => 'success',
+                'title' => '¡Usuario Aprobado!',
+                'message' => "El usuario {$user->username} ha sido aprobado y puede acceder al sistema."
+            ]
         ]);
-
-        return back()->with('success', "Usuario {$user->username} aprobado exitosamente.");
     }
 
     /**
@@ -100,7 +94,14 @@ class UserApprovalController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        return back()->with('success', "Usuario {$user->username} rechazado.");
+        return back()->with([
+            'success' => "Usuario {$user->username} rechazado.",
+            'toast' => [
+                'type' => 'warning',
+                'title' => 'Usuario Rechazado',
+                'message' => "La solicitud de {$user->username} ha sido rechazada."
+            ]
+        ]);
     }
 
     /**

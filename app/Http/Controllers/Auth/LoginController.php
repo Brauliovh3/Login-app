@@ -37,20 +37,22 @@ class LoginController extends Controller
         $user = User::where($loginType, $request->login)->first();
         
         if ($user && Hash::check($request->password, $user->password)) {
-            // Verificar el estado de aprobación
-            if ($user->status === 'pending') {
-                return back()->withErrors([
-                    'login' => 'Tu cuenta está pendiente de aprobación por un administrador. Recibirás una notificación cuando sea aprobada.',
-                ])->onlyInput('login');
+            // Verificar el estado de aprobación solo si el campo existe
+            if (isset($user->status)) {
+                if ($user->status === 'pending') {
+                    return back()->withErrors([
+                        'login' => 'Tu cuenta está pendiente de aprobación por un administrador. Recibirás una notificación cuando sea aprobada.',
+                    ])->onlyInput('login');
+                }
+                
+                if ($user->status === 'rejected') {
+                    return back()->withErrors([
+                        'login' => 'Tu solicitud de registro fue rechazada. Contacta al administrador para más información.',
+                    ])->onlyInput('login');
+                }
             }
             
-            if ($user->status === 'rejected') {
-                return back()->withErrors([
-                    'login' => 'Tu solicitud de registro fue rechazada. Contacta al administrador para más información.',
-                ])->onlyInput('login');
-            }
-            
-            // Si el usuario está aprobado, proceder con el login
+            // Si el usuario está aprobado o no tiene campo status (usuarios antiguos), proceder con el login
             if (Auth::attempt($credentials, $remember)) {
                 $request->session()->regenerate();
                 

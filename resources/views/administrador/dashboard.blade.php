@@ -130,7 +130,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h5 class="card-title">Notificaciones</h5>
-                            <h2 class="mb-0">{{ \App\Models\Notification::where('user_id', Auth::id())->where('read', false)->count() }}</h2>
+                            <h2 class="mb-0">{{ \App\Models\Notification::where('user_id', Auth::id())->where('read_status', false)->count() }}</h2>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-bell fa-2x"></i>

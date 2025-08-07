@@ -56,7 +56,15 @@ class RegisterController extends Controller
             ]);
         }
 
-        // Redirigir con mensaje de éxito
-        return redirect()->route('login')->with('status', 'Registro exitoso. Tu solicitud está pendiente de aprobación por un administrador. Te notificaremos por email cuando sea aprobada.');
+        // Redirigir directamente al login con mensaje de éxito
+        return redirect()->route('login')->with([
+            'status' => 'Registro exitoso. Tu solicitud está pendiente de aprobación por un administrador. Te notificaremos por email cuando sea aprobada.',
+            'toast' => [
+                'type' => 'success',
+                'title' => '¡Registro Exitoso!',
+                'message' => 'Tu solicitud ha sido enviada. Espera la aprobación del administrador para poder iniciar sesión.',
+                'duration' => 8000
+            ]
+        ]);
     }
 }

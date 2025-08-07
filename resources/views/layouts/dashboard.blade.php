@@ -516,6 +516,19 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.users.approval') ? 'active': '' }}" href="{{ route('admin.users.approval')}}" >
+                            <i class="fas fa-fw fa-user-check"></i>
+                            <span>Aprobar Usuarios</span>
+                            @php
+                                $pendingCount = \App\Models\User::where('status', 'pending')->count();
+                            @endphp
+                            @if($pendingCount > 0)
+                                <span class="badge bg-warning text-dark ms-2">{{ $pendingCount }}</span>
+                            @endif
+                        </a>
+                    </li>
+
                 @elseif(auth()->user()->role == 'fiscalizador')
                     <!-- Fiscalizador Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
@@ -1279,6 +1292,48 @@
                     window.history.replaceState({}, document.title, newUrl);
                 }, 500);
             }
+        });
+    </script>
+
+    <!-- Toast Notifications Component -->
+    @include('components.toast-notifications')
+
+    <!-- Scripts específicos de cada página -->
+    @yield('scripts')
+
+    <!-- Script para mostrar mensajes flash como toasts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                showToast('¡Éxito!', '{{ session('success') }}', 'success');
+            @endif
+
+            @if(session('error'))
+                showToast('Error', '{{ session('error') }}', 'error');
+            @endif
+
+            @if(session('warning'))
+                showToast('Advertencia', '{{ session('warning') }}', 'warning');
+            @endif
+
+            @if(session('info'))
+                showToast('Información', '{{ session('info') }}', 'info');
+            @endif
+
+            @if(session('status'))
+                showToast('Estado', '{{ session('status') }}', 'info');
+            @endif
+
+            // Toast especial con datos personalizados
+            @if(session('toast'))
+                @php $toast = session('toast'); @endphp
+                showToast(
+                    '{{ $toast['title'] ?? 'Notificación' }}', 
+                    '{{ $toast['message'] ?? '' }}', 
+                    '{{ $toast['type'] ?? 'info' }}',
+                    {{ $toast['duration'] ?? 5000 }}
+                );
+            @endif
         });
     </script>
 </body>

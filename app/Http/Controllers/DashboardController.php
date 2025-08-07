@@ -40,7 +40,7 @@ class DashboardController extends Controller
             'fiscalizador_users' => User::where('role', 'fiscalizador')->count(),
             'ventanilla_users' => User::where('role', 'ventanilla')->count(),
             'total_notifications' => \App\Models\Notification::count(),
-            'unread_notifications' => $user->notifications()->where('read', false)->count(),
+            'unread_notifications' => $user->notifications()->where('read_status', false)->count(),
             // Datos reales de la base de datos poblada
             'total_empresas' => \DB::table('empresas')->count(),
             'total_vehiculos' => \DB::table('vehiculos')->count(),
@@ -67,7 +67,7 @@ class DashboardController extends Controller
             'actasProcesadas' => \DB::table('actas')->where('estado', 'procesada')->count(),
             'actasPendientes' => \DB::table('actas')->where('estado', 'pendiente')->count(),
             'actasHoy' => \DB::table('actas')->whereDate('created_at', today())->count(),
-            'unread_notifications' => $user->notifications()->where('read', false)->count(),
+            'unread_notifications' => $user->notifications()->where('read_status', false)->count(),
             
             // Datos simplificados para gráficos (valores estáticos para evitar errores)
             'infracciones_por_tipo' => [
@@ -98,7 +98,7 @@ class DashboardController extends Controller
             'licencias_vigentes' => \DB::table('conductores')->where('estado_licencia', 'vigente')->count(),
             'licencias_vencidas' => \DB::table('conductores')->where('estado_licencia', 'vencida')->count(),
             'solicitudes_pendientes' => 15, // Este valor puede venir de una tabla de solicitudes
-            'unread_notifications' => $user->notifications()->where('read', false)->count()
+            'unread_notifications' => $user->notifications()->where('read_status', false)->count()
         ];
         
         return view('ventanilla.dashboard', compact('notifications', 'stats'));
@@ -116,7 +116,7 @@ class DashboardController extends Controller
             'total_actas' => \DB::table('actas')->count(),
             'actas_procesadas' => \DB::table('actas')->where('estado', 'procesada')->count(),
             'actas_pendientes' => \DB::table('actas')->where('estado', 'pendiente')->count(),
-            'unread_notifications' => $user->notifications()->where('read', false)->count()
+            'unread_notifications' => $user->notifications()->where('read_status', false)->count()
         ];
         
         return view('inspector.dashboard', compact('notifications', 'stats'));

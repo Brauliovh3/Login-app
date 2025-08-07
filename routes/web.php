@@ -24,6 +24,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
+Route::get('/register/success', function () {
+    return view('auth.register-success');
+})->name('register.success');
 
 // Rutas protegidas por autenticación y aprobación
 Route::middleware(['auth', 'user.approved'])->group(function () {

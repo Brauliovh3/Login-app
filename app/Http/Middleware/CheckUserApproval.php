@@ -18,8 +18,9 @@ class CheckUserApproval
         if (auth()->check()) {
             $user = auth()->user();
             
-            // Si el usuario no está aprobado, cerrar sesión y redirigir
-            if ($user->status !== 'approved') {
+            // Si el usuario no tiene el campo status o no está aprobado
+            // Para usuarios antiguos sin status, permitir acceso
+            if (isset($user->status) && $user->status !== 'approved') {
                 auth()->logout();
                 
                 $message = match($user->status) {
