@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Models\Notification;
 
 class LoginController extends Controller
 {
@@ -60,16 +59,6 @@ class LoginController extends Controller
                 if (!$remember) {
                     config(['session.expire_on_close' => true]);
                 }
-                
-                // Crear notificación de inicio de sesión
-                Notification::create([
-                    'title' => 'Inicio de sesión exitoso',
-                    'message' => $remember 
-                        ? 'Has iniciado sesión correctamente. Tu sesión se mantendrá activa.' 
-                        : 'Has iniciado sesión correctamente. La sesión expirará al cerrar el navegador.',
-                    'type' => 'success',
-                    'user_id' => Auth::id(),
-                ]);
 
                 return redirect()->intended('dashboard');
             }
@@ -83,15 +72,6 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         // Crear notificación de cierre de sesión
-        if (Auth::check()) {
-            Notification::create([
-                'title' => 'Sesión cerrada',
-                'message' => 'Has cerrado sesión correctamente.',
-                'type' => 'info',
-                'user_id' => Auth::id(),
-            ]);
-        }
-
         Auth::logout();
 
         $request->session()->invalidate();

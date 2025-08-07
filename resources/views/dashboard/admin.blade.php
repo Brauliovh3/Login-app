@@ -58,8 +58,7 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">
-                <i class="fas fa-crown text-warning"></i> 
-                Panel de Administrador DRTC
+                <i class="fas fa-road text-primary"></i> Panel de Administrador DRTC
             </h1>
             <p class="text-muted">Bienvenido {{ auth()->user()->username }} - Dirección Regional de Transportes y Comunicaciones Apurímac</p>
         </div>

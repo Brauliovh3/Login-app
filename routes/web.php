@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\NotificationController;
+// use App\Http\Controllers\NotificationController; // CONTROLADOR ELIMINADO
 use App\Http\Controllers\InfraccionController;
 use App\Http\Controllers\InspeccionController;
 use App\Http\Controllers\UserController;
@@ -33,12 +33,12 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
     // Dashboard principal - redirige según el rol
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Notificaciones
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    // Notificaciones - SISTEMA ELIMINADO
+    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    // Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    // Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    // Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    // Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     
     // Información de sesión
     Route::get('/session-info', function () {

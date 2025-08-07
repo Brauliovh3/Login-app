@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 
 class UserApprovalController extends Controller
@@ -41,14 +40,6 @@ class UserApprovalController extends Controller
             'approved_by' => Auth::id(),
         ]);
 
-        // Crear una sola notificación para el usuario aprobado
-        Notification::create([
-            'title' => '¡Cuenta aprobada!',
-            'message' => 'Tu cuenta ha sido aprobada por un administrador. Ya puedes iniciar sesión en el sistema.',
-            'type' => 'success',
-            'user_id' => $user->id,
-        ]);
-
         return back()->with([
             'success' => "Usuario {$user->username} aprobado exitosamente.",
             'toast' => [
@@ -76,22 +67,6 @@ class UserApprovalController extends Controller
             'status' => 'rejected',
             'rejection_reason' => $request->rejection_reason,
             'approved_by' => Auth::id(),
-        ]);
-
-        // Notificar al usuario rechazado
-        Notification::create([
-            'title' => 'Solicitud rechazada',
-            'message' => "Tu solicitud de registro ha sido rechazada. Motivo: {$request->rejection_reason}",
-            'type' => 'danger',
-            'user_id' => $user->id,
-        ]);
-
-        // Notificar al administrador
-        Notification::create([
-            'title' => 'Usuario rechazado',
-            'message' => "Has rechazado la cuenta de {$user->username} ({$user->email}).",
-            'type' => 'info',
-            'user_id' => Auth::id(),
         ]);
 
         return back()->with([

@@ -122,8 +122,7 @@ html, body {
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div class="flex-grow-1">
             <h1 class="h3 mb-0 text-gray-800">
-                <i class="fas fa-search text-success"></i> 
-                Panel de Fiscalizador DRTC
+                <i class="fas fa-road text-primary"></i> Panel de Fiscalizador DRTC
             </h1>
             <p class="text-muted">Bienvenido {{ auth()->user()->username }} - Control y Supervisión de Transporte Apurímac</p>
         </div>
@@ -388,35 +387,6 @@ html, body {
                 </div>
             </div>
 
-            <!-- Notificaciones recientes -->
-            @if($notifications && $notifications->count() > 0)
-            <div class="card shadow mt-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-bell"></i> Notificaciones Recientes
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @foreach($notifications->take(3) as $notification)
-                    <div class="media mb-3">
-                        <div class="mr-3">
-                            <div class="icon-circle bg-warning">
-                                <i class="fas fa-exclamation-triangle text-white"></i>
-                            </div>
-                        </div>
-                        <div class="media-body">
-                            <div class="small text-gray-500">{{ $notification->created_at->diffForHumans() }}</div>
-                            <strong>{{ $notification->title }}</strong>
-                            <p class="mb-0 small">{{ Str::limit($notification->message, 50) }}</p>
-                        </div>
-                    </div>
-                    @endforeach
-                    <div class="text-center">
-                        <a class="small" href="#">Ver todas las notificaciones</a>
-                    </div>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 </div>

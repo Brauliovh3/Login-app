@@ -198,6 +198,14 @@
             box-shadow: 0 6px 20px rgba(255, 140, 0, 0.4);
         }
         
+        /* Estilos para el logo oficial */
+        .logo-oficial {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+        
         /* Responsividad para elementos del header */
         @media (max-width: 576px) {
             .auth-header {
@@ -688,20 +696,9 @@
             }
         }
         
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: red;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+                }
+        
+        /* Navbar usuario */
         
         /* Corregir dropdown que se corta */
         .navbar {
@@ -912,27 +909,11 @@
             
             <div class="navbar-nav ms-auto" style="position: relative;">
                 <div class="nav-item dropdown" style="position: relative;">
-                    <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-bell"></i>
-                        <span id="notification-badge" class="notification-badge d-none">0</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" style="width: 300px; position: absolute; top: 100%; right: 0; z-index: 1055;">
-                        <li><h6 class="dropdown-header">Notificaciones</h6></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ route('notifications.index') }}">Ver todas</a></li>
-                    </ul>
-                </div>
-                
-                <div class="nav-item dropdown" style="position: relative;">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-user"></i> {{ auth()->user()->name }}
                         <span class="badge bg-secondary">{{ ucfirst(auth()->user()->role) }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" style="position: absolute; top: 100%; right: 0; z-index: 1055; min-width: 200px;">
-                        <li><a class="dropdown-item" href="{{ route('notifications.index') }}">
-                            <i class="fas fa-bell"></i> Notificaciones
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <form action="{{ route('logout') }}" method="POST" class="d-inline">
                                 @csrf
@@ -984,27 +965,6 @@
                 icon.classList.add('fa-eye');
             }
         }
-        
-        // Actualizar contador de notificaciones
-        @auth
-        function updateNotificationCount() {
-            fetch('{{ route("notifications.unread-count") }}')
-                .then(response => response.json())
-                .then(data => {
-                    const badge = document.getElementById('notification-badge');
-                    if (badge && data.count > 0) {
-                        badge.textContent = data.count;
-                        badge.classList.remove('d-none');
-                    } else if (badge) {
-                        badge.classList.add('d-none');
-                    }
-                });
-        }
-
-        // Actualizar cada 30 segundos
-        updateNotificationCount();
-        setInterval(updateNotificationCount, 30000);
-        @endauth
         
         // Corregir posicionamiento de dropdowns
         document.addEventListener('DOMContentLoaded', function() {
