@@ -5,13 +5,12 @@
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center align-items-center min-vh-100">
-        <div class="col-md-4">
+        <div class="col-12 col-sm-10 col-md-6 col-lg-5 col-xl-4">
             <div class="auth-container">
                 <div class="auth-header">
-                    <div style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto 20px; box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);">
-                        <div class="text-center">
+                    <div class="logo-container">
+                        <div class="logo-circle">
                             <i class="fas fa-road"></i>
-                            <div style="font-size: 10px; line-height: 1;">DRTC</div>
                         </div>
                     </div>
                     <h2>SISTEMA DRTC APURÍMAC</h2>
