@@ -304,4 +304,20 @@ class UserController extends Controller
         
         return redirect()->route('users.index')->with('success', $message);
     }
+
+    public function reject(Request $request, User $user)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'status' => 'rejected',
+            'rejection_reason' => $request->rejection_reason,
+            'approved_at' => null,
+            'approved_by' => null,
+        ]);
+
+        return back()->with('success', 'Usuario rechazado correctamente.');
+    }
 }

@@ -28,63 +28,6 @@ class DashboardController extends Controller
         }
     }
 
-    public function adminDashboard()
-    {
-        $user = Auth::user();
-        
-        $stats = [
-            'total_users' => User::count(),
-            'admin_users' => User::where('role', 'administrador')->count(),
-            'fiscalizador_users' => User::where('role', 'fiscalizador')->count(),
-            'ventanilla_users' => User::where('role', 'ventanilla')->count(),
-            // Datos simulados para evitar errores de base de datos
-            'total_empresas' => 25,
-            'total_vehiculos' => 150,
-            'vehiculos_activos' => 120,
-            'total_conductores' => 180,
-            'conductores_activos' => 160,
-            'total_infracciones' => 45,
-            'total_inspectores' => 8,
-            'inspectores_activos' => 6
-        ];
-        
-        return view('administrador.dashboard', compact('stats'));
-    }
-
-    public function fiscalizadorDashboard()
-    {
-        $user = Auth::user();
-        
-        $stats = [
-            'actas_registradas' => 45,
-            'procesadas' => 32,
-            'pendientes' => 13,
-            'total_infracciones' => 28,
-            'vehiculos_activos' => 150,
-            'conductores_vigentes' => 120,
-            'empresas_registradas' => 25,
-            'vehiculos_inspeccion' => 8
-        ];
-        
-        return view('fiscalizador.dashboard_clean', compact('stats'));
-    }
-
-    public function ventanillaDashboard()
-    {
-        $user = Auth::user();
-        
-        $stats = [
-            'empresas_activas' => 25,
-            'total_vehiculos' => 150,
-            'conductores_registrados' => 180,
-            'licencias_vigentes' => 160,
-            'licencias_vencidas' => 20,
-            'solicitudes_pendientes' => 15
-        ];
-        
-        return view('ventanilla.dashboard', compact('stats'));
-    }
-
     public function inspectorDashboard()
     {
         $user = Auth::user();
@@ -98,7 +41,58 @@ class DashboardController extends Controller
             'actas_pendientes' => 12
         ];
         
-        return view('inspector.dashboard', compact('stats'));
+        // Agregar notificaciones (por ahora vacías para evitar el error)
+        $notifications = collect([]); // Una colección vacía
+        
+        return view('inspector.dashboard', compact('stats', 'notifications'));
+    }
+
+    public function adminDashboard()
+    {
+        $user = Auth::user();
+        
+        $stats = [
+            'total_usuarios' => 156,
+            'usuarios_activos' => 142,
+            'usuarios_pendientes' => 14,
+            'total_roles' => 4
+        ];
+        
+        $notifications = collect([]);
+        
+        return view('administrador.dashboard', compact('stats', 'notifications'));
+    }
+
+    public function fiscalizadorDashboard()
+    {
+        $user = Auth::user();
+        
+        $stats = [
+            'total_infracciones' => 89,
+            'infracciones_procesadas' => 67,
+            'infracciones_pendientes' => 22,
+            'total_multas' => 45000
+        ];
+        
+        $notifications = collect([]);
+        
+        return view('fiscalizador.dashboard_clean', compact('stats', 'notifications'));
+    }
+
+    public function ventanillaDashboard()
+    {
+        $user = Auth::user();
+        
+        $stats = [
+            'atenciones_hoy' => 23,
+            'cola_espera' => 5,
+            'tramites_completados' => 18,
+            'tiempo_promedio' => 15
+        ];
+        
+        $notifications = collect([]);
+        
+        return view('ventanilla.dashboard', compact('stats', 'notifications'));
     }
 
     public function inspectorNuevaInspeccion()

@@ -14,104 +14,104 @@
                 </div>
 
                 @if ($errors->any())
-                    <div class="alert alert-danger">
-                        @foreach ($errors->all() as $error)
-                            <div>{{ $error }}</div>
-                        @endforeach
-                    </div>
+                <div class="alert alert-danger">
+                    @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                    @endforeach
+                </div>
                 @endif
 
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
-                    
+
                     <div class="form-group">
                         <label for="name" class="form-label">Nombre Completo</label>
-                        <input id="name" 
-                               type="text" 
-                               class="form-control @error('name') is-invalid @enderror" 
-                               name="name" 
-                               value="{{ old('name') }}" 
-                               required 
-                               autocomplete="name" 
-                               placeholder="Ingresa tu nombre completo"
-                               autofocus>
+                        <input id="name"
+                            type="text"
+                            class="form-control @error('name') is-invalid @enderror"
+                            name="name"
+                            value="{{ old('name') }}"
+                            required
+                            autocomplete="name"
+                            placeholder="Ingresa tu nombre completo"
+                            autofocus>
                         @error('name')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="username" class="form-label">Nombre de Usuario</label>
-                        <input id="username" 
-                               type="text" 
-                               class="form-control @error('username') is-invalid @enderror" 
-                               name="username" 
-                               value="{{ old('username') }}" 
-                               required 
-                               autocomplete="username" 
-                               placeholder="Elige un nombre de usuario único">
+                        <input id="username"
+                            type="text"
+                            class="form-control @error('username') is-invalid @enderror"
+                            name="username"
+                            value="{{ old('username') }}"
+                            required
+                            autocomplete="username"
+                            placeholder="Elige un nombre de usuario único">
                         @error('username')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="email" class="form-label">Correo Electrónico</label>
-                        <input id="email" 
-                               type="email" 
-                               class="form-control @error('email') is-invalid @enderror" 
-                               name="email" 
-                               value="{{ old('email') }}" 
-                               required 
-                               autocomplete="email"
-                               placeholder="tu@ejemplo.com">
+                        <input id="email"
+                            type="email"
+                            class="form-control @error('email') is-invalid @enderror"
+                            name="email"
+                            value="{{ old('email') }}"
+                            required
+                            autocomplete="email"
+                            placeholder="tu@ejemplo.com">
                         @error('email')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="password" class="form-label">Contraseña</label>
                         <div class="position-relative">
-                            <input id="password" 
-                                   type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" 
-                                   required 
-                                   autocomplete="new-password"
-                                   placeholder="Mínimo 8 caracteres">
-                            <button type="button" 
-                                    class="password-toggle" 
-                                    onclick="togglePassword('password', 'password-icon')">
+                            <input id="password"
+                                type="password"
+                                class="form-control @error('password') is-invalid @enderror"
+                                name="password"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Mínimo 8 caracteres">
+                            <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('password', 'password-icon')">
                                 <i id="password-icon" class="fas fa-eye"></i>
                             </button>
                         </div>
                         @error('password')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="password-confirm" class="form-label">Confirmar Contraseña</label>
                         <div class="position-relative">
-                            <input id="password-confirm" 
-                                   type="password" 
-                                   class="form-control" 
-                                   name="password_confirmation" 
-                                   required 
-                                   autocomplete="new-password"
-                                   placeholder="Repite la contraseña">
-                            <button type="button" 
-                                    class="password-toggle" 
-                                    onclick="togglePassword('password-confirm', 'password-confirm-icon')">
+                            <input id="password-confirm"
+                                type="password"
+                                class="form-control"
+                                name="password_confirmation"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Repite la contraseña">
+                            <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('password-confirm', 'password-confirm-icon')">
                                 <i id="password-confirm-icon" class="fas fa-eye"></i>
                             </button>
                         </div>
@@ -119,10 +119,10 @@
 
                     <div class="form-group">
                         <label for="role" class="form-label">Rol</label>
-                        <select id="role" 
-                                class="form-control @error('role') is-invalid @enderror" 
-                                name="role" 
-                                required>
+                        <select id="role"
+                            class="form-control @error('role') is-invalid @enderror"
+                            name="role"
+                            required>
                             <option value="">Selecciona tu rol</option>
                             <option value="administrador" {{ old('role') == 'administrador' ? 'selected' : '' }}>
                                 <i class="fas fa-crown"></i> Administrador
@@ -133,11 +133,14 @@
                             <option value="ventanilla" {{ old('role') == 'ventanilla' ? 'selected' : '' }}>
                                 <i class="fas fa-desktop"></i> Ventanilla
                             </option>
+                            <option value="inspector" {{ old('role') == 'inspector' ? 'selected' : '' }}>
+                                <i class="fas fa-clipboard-check"></i> Inspector
+                            </option>
                         </select>
                         @error('role')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 

@@ -24,6 +24,10 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'approved_at',
+        'approved_by',
+        'rejection_reason', // campo agregado para que verifique la razon 
+        'blocked_at',
     ];
 
     /**

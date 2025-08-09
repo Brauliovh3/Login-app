@@ -19,78 +19,78 @@
                 </div>
 
                 @if (session('status'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-left: 4px solid #28a745; background: linear-gradient(135deg, #d4edda, #c3e6cb); border-radius: 8px;">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle me-2" style="color: #28a745; font-size: 18px;"></i>
-                            <div>
-                                <strong>¡Registro Exitoso!</strong><br>
-                                <small>{{ session('status') }}</small>
-                            </div>
+                <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-left: 4px solid #28a745; background: linear-gradient(135deg, #d4edda, #c3e6cb); border-radius: 8px;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle me-2" style="color: #28a745; font-size: 18px;"></i>
+                        <div>
+                            <strong>¡Registro Exitoso!</strong><br>
+                            <small>{{ session('status') }}</small>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        @foreach ($errors->all() as $error)
-                            <div><i class="fas fa-exclamation-circle me-2"></i>{{ $error }}</div>
-                        @endforeach
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @foreach ($errors->all() as $error)
+                    <div><i class="fas fa-exclamation-circle me-2"></i>{{ $error }}</div>
+                    @endforeach
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
                 @endif
 
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
-                    
+
                     <div class="form-group">
                         <label for="login" class="form-label">Usuario o Email</label>
-                        <input id="login" 
-                               type="text" 
-                               class="form-control @error('login') is-invalid @enderror" 
-                               name="login" 
-                               value="{{ old('login') }}" 
-                               required 
-                               autocomplete="login" 
-                               placeholder="Ingresa tu usuario o email"
-                               autofocus>
+                        <input id="login"
+                            type="text"
+                            class="form-control @error('login') is-invalid @enderror"
+                            name="login"
+                            value="{{ old('login') }}"
+                            required
+                            autocomplete="login"
+                            placeholder="Ingresa tu usuario o email"
+                            autofocus>
                         @error('login')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="password" class="form-label">Contraseña</label>
                         <div class="position-relative">
-                            <input id="password" 
-                                   type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   name="password" 
-                                   required 
-                                   autocomplete="current-password"
-                                   placeholder="Ingresa tu contraseña">
-                            <button type="button" 
-                                    class="password-toggle" 
-                                    onclick="togglePassword('password', 'password-icon')">
+                            <input id="password"
+                                type="password"
+                                class="form-control @error('password') is-invalid @enderror"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                                placeholder="Ingresa tu contraseña">
+                            <button type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('password', 'password-icon')">
                                 <i id="password-icon" class="fas fa-eye"></i>
                             </button>
                         </div>
                         @error('password')
-                            <div class="invalid-feedback">
-                                <strong>{{ $message }}</strong>
-                            </div>
+                        <div class="invalid-feedback">
+                            <strong>{{ $message }}</strong>
+                        </div>
                         @enderror
                     </div>
 
                     <div class="form-group">
                         <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" 
-                                   type="checkbox" 
-                                   name="remember" 
-                                   id="remember" 
-                                   {{ old('remember') ? 'checked' : '' }}>
+                            <input class="form-check-input me-2"
+                                type="checkbox"
+                                name="remember"
+                                id="remember"
+                                {{ old('remember') ? 'checked' : '' }}>
                             <label class="form-check-label text-muted" for="remember">
                                 <i class="fas fa-clock me-1"></i>Recordarme en este dispositivo
                             </label>

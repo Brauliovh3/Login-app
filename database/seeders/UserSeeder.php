@@ -15,38 +15,54 @@ class UserSeeder extends Seeder
     {
         // Crear usuario administrador
         User::create([
-            'name' => 'Administrador Principal',
+            'name' => 'Administrador',
             'username' => 'admin',
             'email' => 'admin@sistema.com',
             'password' => Hash::make('admin123'),
             'role' => 'administrador',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
         ]);
 
         // Crear usuario fiscalizador
         User::create([
-            'name' => 'Juan Fiscalizador',
-            'username' => 'fiscalizador1',
+            'name' => 'Fiscalizador',
+            'username' => 'fiscalizador',
             'email' => 'fiscalizador@sistema.com',
             'password' => Hash::make('fiscal123'),
             'role' => 'fiscalizador',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
         ]);
 
         // Crear usuario ventanilla
         User::create([
-            'name' => 'María Ventanilla',
-            'username' => 'ventanilla1',
+            'name' => 'Ventanilla',
+            'username' => 'ventanilla',
             'email' => 'ventanilla@sistema.com',
             'password' => Hash::make('ventanilla123'),
             'role' => 'ventanilla',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
         ]);
 
         // Crear usuario inspector
         User::create([
-            'name' => 'Carlos Inspector',
-            'username' => 'inspector1',
+            'name' => 'Inspector',
+            'username' => 'inspector',
             'email' => 'inspector@sistema.com',
             'password' => Hash::make('inspector123'),
             'role' => 'inspector',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
         ]);
     }
 }
