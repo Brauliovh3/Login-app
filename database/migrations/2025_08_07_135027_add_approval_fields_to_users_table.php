@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Solo agregar si no existe
+            
             if (!Schema::hasColumn('users', 'approved_at')) {
                 $table->timestamp('approved_at')->nullable()->after('status');
             }

@@ -89,7 +89,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
+                        <tr class="hover-row">
                             <td><strong>20123456789</strong></td>
                             <td>Transportes del Sur SAC</td>
                             <td><span class="badge bg-info">Público Regular</span></td>
@@ -98,18 +98,34 @@
                             <td><span class="badge bg-primary">25</span></td>
                             <td><span class="badge bg-success">Activo</span></td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" title="Documentos">
-                                    <i class="fas fa-folder"></i>
-                                </button>
+                                <div class="action-menu">
+                                    <button class="btn btn-sm btn-outline-primary action-trigger" title="Ver acciones">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <div class="action-dropdown">
+                                        <button class="btn btn-sm btn-outline-primary mb-1">
+                                            <i class="fas fa-eye me-1"></i>Ver Detalle
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success mb-1">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info mb-1">
+                                            <i class="fas fa-folder me-1"></i>Documentos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning mb-1">
+                                            <i class="fas fa-tools me-1"></i>Mantenimiento
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary mb-1">
+                                            <i class="fas fa-truck me-1"></i>Vehículos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-ban me-1"></i>Suspender
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="hover-row">
                             <td><strong>20987654321</strong></td>
                             <td>Empresa Andina EIRL</td>
                             <td><span class="badge bg-warning">Turístico</span></td>
@@ -118,18 +134,34 @@
                             <td><span class="badge bg-primary">12</span></td>
                             <td><span class="badge bg-success">Activo</span></td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" title="Documentos">
-                                    <i class="fas fa-folder"></i>
-                                </button>
+                                <div class="action-menu">
+                                    <button class="btn btn-sm btn-outline-primary action-trigger" title="Ver acciones">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <div class="action-dropdown">
+                                        <button class="btn btn-sm btn-outline-primary mb-1">
+                                            <i class="fas fa-eye me-1"></i>Ver Detalle
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success mb-1">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info mb-1">
+                                            <i class="fas fa-folder me-1"></i>Documentos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning mb-1">
+                                            <i class="fas fa-tools me-1"></i>Mantenimiento
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary mb-1">
+                                            <i class="fas fa-truck me-1"></i>Vehículos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-ban me-1"></i>Suspender
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="hover-row">
                             <td><strong>20456789123</strong></td>
                             <td>Cargo Express SA</td>
                             <td><span class="badge bg-dark">Carga</span></td>
@@ -138,15 +170,31 @@
                             <td><span class="badge bg-primary">45</span></td>
                             <td><span class="badge bg-warning">Suspendido</span></td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" title="Reactivar">
-                                    <i class="fas fa-play"></i>
-                                </button>
+                                <div class="action-menu">
+                                    <button class="btn btn-sm btn-outline-primary action-trigger" title="Ver acciones">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <div class="action-dropdown">
+                                        <button class="btn btn-sm btn-outline-primary mb-1">
+                                            <i class="fas fa-eye me-1"></i>Ver Detalle
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success mb-1">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info mb-1">
+                                            <i class="fas fa-folder me-1"></i>Documentos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning mb-1">
+                                            <i class="fas fa-tools me-1"></i>Mantenimiento
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary mb-1">
+                                            <i class="fas fa-truck me-1"></i>Vehículos
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-play me-1"></i>Reactivar
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -236,5 +284,106 @@ function guardarEmpresa() {
     
     document.getElementById('nuevaEmpresaForm').reset();
 }
+
+// Asegurar que los menús desplegables funcionen
+document.addEventListener('DOMContentLoaded', function() {
+    const actionMenus = document.querySelectorAll('.action-menu');
+    
+    actionMenus.forEach(menu => {
+        const trigger = menu.querySelector('.action-trigger');
+        const dropdown = menu.querySelector('.action-dropdown');
+        
+        if (trigger && dropdown) {
+            // Mostrar menú al pasar el mouse
+            menu.addEventListener('mouseenter', function() {
+                dropdown.style.display = 'flex';
+            });
+            
+            // Ocultar menú al salir
+            menu.addEventListener('mouseleave', function() {
+                dropdown.style.display = 'none';
+            });
+            
+            // Mantener visible mientras esté sobre el dropdown
+            dropdown.addEventListener('mouseenter', function() {
+                dropdown.style.display = 'flex';
+            });
+        }
+    });
+});
 </script>
+
+<style>
+.hover-row {
+    transition: background-color 0.3s ease;
+}
+
+.hover-row:hover {
+    background-color: #fff3e0 !important;
+}
+
+.action-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.action-dropdown {
+    position: absolute;
+    top: 100%;
+    left: -50px;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    min-width: 160px;
+    padding: 10px;
+    background-color: white;
+    border: 2px solid #ff8c00;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.3);
+}
+
+.action-menu:hover .action-dropdown {
+    display: flex !important;
+}
+
+.action-trigger {
+    cursor: pointer;
+    position: relative;
+}
+
+.action-trigger:hover {
+    background-color: #ff8c00 !important;
+    color: white !important;
+    border-color: #ff8c00 !important;
+}
+
+.action-dropdown button {
+    width: 100%;
+    text-align: left;
+    font-size: 12px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+    border-radius: 4px;
+}
+
+.action-dropdown button:hover {
+    transform: translateX(4px);
+    transition: all 0.3s ease;
+    border-color: #ff8c00;
+    background-color: #fff3e0;
+}
+
+.action-dropdown button i {
+    width: 18px;
+    text-align: center;
+}
+
+/* Asegurar que el menú aparezca */
+.action-menu:hover .action-dropdown,
+.action-menu .action-dropdown:hover {
+    display: flex !important;
+}
+</style>
+
 @endsection
