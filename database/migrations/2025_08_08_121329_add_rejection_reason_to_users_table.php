@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
+        // Determinar qué tabla usar (para compatibilidad)
+        $tableName = Schema::hasTable('usuarios') ? 'usuarios' : 'users';
+        
+        Schema::table($tableName, function (Blueprint $table) {
+            // Esta migración está incluida en la de campos de aprobación
         });
     }
 
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
+        // Determinar qué tabla usar (para compatibilidad)
+        $tableName = Schema::hasTable('usuarios') ? 'usuarios' : 'users';
+        
+        Schema::table($tableName, function (Blueprint $table) {
+            // Esta migración está incluida en la de campos de aprobación
         });
     }
 };

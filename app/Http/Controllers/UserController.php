@@ -57,8 +57,8 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users',
-            'email' => 'required|email|max:255|unique:users',
+            'username' => 'required|string|max:255|unique:usuarios',
+            'email' => 'required|email|max:255|unique:usuarios',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:administrador,ventanilla,fiscalizador,inspector',
         ]);
@@ -79,6 +79,10 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'approval_status' => 'approved', // Aprobación automática
+            'approved_at' => now(), // Fecha de aprobación
+            'approved_by' => Auth::id(), // ID del administrador que lo crea
+            'status' => 'approved', // Estado aprobado
         ]);
         
         if ($request->ajax()) {
@@ -128,8 +132,8 @@ class UserController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', Rule::unique('usuarios')->ignore($user->id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('usuarios')->ignore($user->id)],
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:administrador,ventanilla,fiscalizador,inspector',
         ]);

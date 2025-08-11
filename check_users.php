@@ -8,7 +8,7 @@ $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 echo "Usuarios en el sistema:\n";
 echo "=====================\n";
 
-$users = DB::table('users')->get();
+$users = DB::table('usuarios')->get();
 
 foreach($users as $user) {
     echo "ID: {$user->id}\n";
