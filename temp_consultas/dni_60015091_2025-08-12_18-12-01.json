@@ -1,0 +1,16 @@
+{
+    "success": true,
+    "dni": "60015091",
+    "nombre_completo": "RAMIREZ MARTINEZ, MIGUEL",
+    "nombres": "MIGUEL",
+    "apellido_paterno": "RAMIREZ",
+    "apellido_materno": "MARTINEZ",
+    "departamento": "AYACUCHO",
+    "provincia": "AYACUCHO",
+    "distrito": "AYACUCHO",
+    "direccion": "AV. PRINCIPAL S\/N",
+    "sexo": "M",
+    "fecha_nacimiento": "1990-01-01",
+    "fuente": "Generado Automáticamente - DRTC",
+    "timestamp": "2025-08-12 18:12:01"
+}

@@ -76,7 +76,7 @@ class DashboardController extends Controller
         
         $notifications = collect([]);
         
-        return view('fiscalizador.dashboard_clean', compact('stats', 'notifications'));
+        return view('fiscalizador.dashboard', compact('stats', 'notifications'));
     }
 
     public function ventanillaDashboard()

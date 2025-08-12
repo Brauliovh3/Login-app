@@ -45,6 +45,11 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
         return view('auth.session-info');
     })->name('session.info');
     
+    // Ruta temporal para evitar errores de notificaciones
+    Route::get('/notifications/unread-count', function () {
+        return response()->json(['count' => 0, 'latest' => null]);
+    })->name('notifications.unread-count');
+    
     // Gestión de usuarios (solo para administradores)
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::resource('users', UserController::class);

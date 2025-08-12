@@ -88,7 +88,10 @@ class ToastNotification {
 
     async checkForNewNotifications() {
         try {
-            const response = await fetch('/notifications/unread-count');
+            // Sistema de notificaciones deshabilitado
+            return;
+            
+            /*const response = await fetch('/notifications/unread-count');
             const data = await response.json();
             
             // Actualizar contador de notificaciones en la interfaz si existe
@@ -103,6 +106,7 @@ class ToastNotification {
             // Si hay notificaciones nuevas, mostrar una de ellas como toast
             if (data.count > 0 && data.latest) {
                 this.showLatestNotification(data.latest);
+            }*/
             }
         } catch (error) {
             console.error('Error checking notifications:', error);

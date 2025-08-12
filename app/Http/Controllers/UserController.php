@@ -79,10 +79,6 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'approval_status' => 'approved', // Aprobación automática
-            'approved_at' => now(), // Fecha de aprobación
-            'approved_by' => Auth::id(), // ID del administrador que lo crea
-            'status' => 'approved', // Estado aprobado
         ]);
         
         if ($request->ajax()) {

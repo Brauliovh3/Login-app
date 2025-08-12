@@ -368,7 +368,7 @@
                             <hr>
                             <div class="mb-3">
                                 <label for="fecha_infraccion" class="form-label">Fecha y Hora *</label>
-                                <input type="datetime-local" class="form-control" id="fecha_infraccion" required>
+                                <input type="datetime-local" class="form-control bg-light" id="fecha_infraccion" value="{{ now()->format('Y-m-d\TH:i') }}" readonly>
                             </div>
                             <div class="mb-3">
                                 <label for="lugar_infraccion" class="form-label">Lugar de la Infracción *</label>
@@ -536,6 +536,100 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                 <input type="hidden" id="hora_inicio_hidden" name="hora_inicio">
                 <input type="hidden" name="inspector_principal" value="{{ Auth::user()->name }}">
 
+                <!-- CABEZAL OFICIAL DEL ACTA -->
+                <div class="card mb-4 border-3 border-dark" style="background: #ffffff;">
+                    <div class="card-body py-2">
+                        <!-- Fila superior con cuadros según la imagen oficial -->
+                        <div class="row g-0 mb-2">
+                            <!-- Logo/Escudo del Perú (izquierdo) -->
+                            <div class="col-1 d-flex align-items-center justify-content-center">
+                                <div class="text-center p-1" style="border: 2px solid #000; background: #ffffff; border-radius: 10px; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <img src="{{ asset('images/escudo_peru.png') }}" alt="Escudo del Perú" style="max-width: 45px; max-height: 45px; object-fit: contain;">
+                                </div>
+                            </div>
+                            
+                            <!-- Cuadros centrales -->
+                            <div class="col-10">
+                                <div class="row g-0">
+                                    <div class="col-2">
+                                        <div class="p-2 text-center" style="background-color: #dc143c; color: white; border: 2px solid #000; font-weight: bold; font-size: 16px; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                                            PERÚ
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="p-2 text-center" style="background-color: #ffffff; color: #000; border: 2px solid #000; border-left: none; font-weight: bold; font-size: 14px; min-height: 60px; display: flex; align-items: center; justify-content: center; line-height: 1.2;">
+                                            GOBIERNO REGIONAL<br>DE APURÍMAC
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-2 text-center" style="background-color: #dc143c; color: white; border: 2px solid #000; border-left: none; font-weight: bold; font-size: 13px; min-height: 60px; display: flex; align-items: center; justify-content: center; line-height: 1.2;">
+                                            DIRECCIÓN REGIONAL DE<br>TRANSPORTES Y COMUNICACIONES
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="p-2 text-center" style="background-color: #ffffff; color: #000; border: 2px solid #000; border-left: none; font-weight: bold; font-size: 12px; min-height: 60px; display: flex; align-items: center; justify-content: center; line-height: 1.1;">
+                                            DIRECCIÓN DE CIRCULACIÓN<br>TERRESTRE OF. FISCALIZACIÓN
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Logo Regional (derecho) -->
+                            <div class="col-1 d-flex align-items-center justify-content-center">
+                                <div class="text-center p-1" style="background: #ffffff; border: 2px solid #000; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                    <img src="{{ asset('images/logo-gobierno.png') }}" alt="Logo Gobierno Regional" style="max-width: 50px; max-height: 50px; object-fit: contain;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección del número de acta centrada -->
+                        <div class="row mt-3">
+                            <div class="col-12 text-center">
+                                <div class="d-flex align-items-center justify-content-center mb-2">
+                                    <h3 class="mb-0 fw-bold text-dark me-3">ACTA DE CONTROL</h3>
+                                    <span class="me-2 fw-bold text-dark" style="font-size: 18px;">Nº</span>
+                                    <input type="text" class="form-control d-inline-block me-2" 
+                                           name="numero_acta" 
+                                           placeholder="000451"
+                                           style="width: 120px; border: 3px solid #000; text-align: center; font-weight: bold; font-size: 18px; background-color: #fff;">
+                                    <span class="fw-bold text-dark" style="font-size: 18px;">- {{ date('Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información del decreto -->
+                        <div class="row mt-2">
+                            <div class="col-12 text-center">
+                                <div class="d-inline-block p-2" style="border: 2px solid #000; background-color: #ffffff;">
+                                    <div class="fw-bold text-dark mb-1">D.S. Nº 017-2009-MTC</div>
+                                    <div style="font-size: 12px; color: #000;">Código de infracciones y/o incumplimiento</div>
+                                    <div style="font-size: 12px; color: #000; font-weight: bold;">Tipo infractor</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información adicional del documento -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-bold me-2">Fecha:</span> 
+                                    <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
+                                        {{ now()->format('d/m/Y') }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-bold me-2">Hora:</span> 
+                                    <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
+                                        {{ now()->format('H:i') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SECCIÓN 1: INFORMACIÓN DEL OPERADOR/CONDUCTOR -->
                 <div class="card mb-4 border-warning">
                     <div class="card-header" style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); color: white;">
@@ -573,23 +667,35 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             </div>
                         </div>
                         
-                        <!-- Datos del operador -->
+                        <!-- Datos del operador/conductor -->
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos:</label>
-                                <input type="text" class="form-control border-warning" name="razon_social" placeholder="Ingrese razón social o nombres completos" required>
-                            </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-warning">RUC/DNI:</label>
-                                <input type="text" class="form-control border-warning" name="ruc_dni" placeholder="20123456789" required>
+                                <input type="text" class="form-control border-warning" name="ruc_dni" id="ruc_dni" placeholder="20123456789 o 12345678" maxlength="11" required>
+                                <div class="form-text">
+                                    <small class="text-muted">DNI: 8 dígitos | RUC: 11 dígitos</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos:</label>
+                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT" readonly>
+                                <div id="loading-data" class="form-text text-info" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i> Consultando datos...
+                                </div>
+                                <div class="form-text mt-1">
+                                    <small class="text-muted">Datos obtenidos de APIs oficiales</small>
+                                    <a href="/ver-consultas.html" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">
+                                        <i class="fas fa-database me-1"></i>Ver Consultas
+                                    </a>
+                                </div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-warning">Placa del Vehículo:</label>
-                                <input type="text" class="form-control border-warning" name="placa_1" placeholder="ABC-123" style="text-transform: uppercase;">
+                                <input type="text" class="form-control border-warning" name="placa_1" placeholder="ABC-123" style="text-transform: uppercase;" required>
                             </div>
                         </div>
                         
-                        <!-- Datos del conductor -->
+                        <!-- Datos adicionales del conductor -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-warning">Nombre del Conductor:</label>
@@ -601,7 +707,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-warning">Clase y Categoría:</label>
-                                <select class="form-select border-warning" name="clase_categoria">
+                                <select class="form-select border-warning" name="clase_categoria" required>
                                     <option value="">Seleccione...</option>
                                     <option value="A-I">A-I (Motocicletas hasta 125cc)</option>
                                     <option value="A-IIa">A-IIa (Motocicletas de 126cc a 200cc)</option>
@@ -628,11 +734,11 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-info">Fecha:</label>
-                                <input type="date" class="form-control border-info" name="fecha_intervencion" value="{{ date('Y-m-d') }}" required>
+                                <input type="date" class="form-control border-info bg-light" name="fecha_intervencion" value="{{ date('Y-m-d') }}" readonly>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-info">Hora:</label>
-                                <input type="time" class="form-control border-info" name="hora_intervencion" value="{{ date('H:i') }}" required>
+                                <input type="time" class="form-control border-info bg-light" name="hora_intervencion" value="{{ date('H:i') }}" readonly>
                             </div>
                         </div>
                         
@@ -1060,7 +1166,692 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
 @endsection
 
 <script>
-// FUNCIONES PARA MODALES FLOTANTES
+// FUNCIONES PARA APIs DE CONSULTA DNI/RUC
+document.addEventListener('DOMContentLoaded', function() {
+    // API para consulta de RUC/DNI único
+    const rucDniInput = document.getElementById('ruc_dni');
+    const razonSocialInput = document.getElementById('razon_social');
+    const loadingData = document.getElementById('loading-data');
+    
+    // Función para consultar RUC en SUNAT (con API de Decolecta mejorada)
+    async function consultarRUC(ruc) {
+        try {
+            loadingData.style.display = 'block';
+            razonSocialInput.value = '';
+            
+            // Lista de APIs a probar en orden (API ultra-robusta como principal)
+            const apis = [
+                // API ULTRA-ROBUSTA PRINCIPAL - Garantiza JSON válido siempre
+                {
+                    url: `/api/api-ruc-ultra.php?ruc=${ruc}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API RUC Ultra:', data);
+                        if (data && data.success && data.razon_social) {
+                            return {
+                                razonSocial: data.razon_social,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null,
+                                departamento: data.departamento || null,
+                                fuente: data.fuente || 'API Ultra'
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API HÍBRIDA PRINCIPAL - APISPERU + Local como fallback
+                {
+                    url: `/api/api-ruc-hibrido.php?ruc=${ruc}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API RUC Híbrida:', data);
+                        if (data && data.success && data.razon_social) {
+                            return {
+                                razonSocial: data.razon_social,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null,
+                                departamento: data.departamento || null,
+                                fuente: data.fuente || 'API Híbrida'
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API LOCAL PRINCIPAL - Siempre disponible
+                {
+                    url: `/api/api-ruc-local.php?ruc=${ruc}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API RUC Local:', data);
+                        if (data && data.success && data.razon_social) {
+                            return {
+                                razonSocial: data.razon_social,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API proxy PHP local para RUC (respaldo externo)
+                {
+                    url: `/api/test-api-ruc.php?ruc=${ruc}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API RUC Proxy:', data);
+                        if (data && data.success && data.razon_social) {
+                            return {
+                                razonSocial: data.razon_social,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API de APISPERU.com directa para RUC (sin token)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/ruc/${ruc}`,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta APISPERU RUC Directa:', data);
+                        if (data && data.ruc && data.razonSocial) {
+                            return {
+                                razonSocial: data.razonSocial,
+                                nombreComercial: data.nombreComercial,
+                                direccion: data.direccion || null,
+                                departamento: data.departamento,
+                                provincia: data.provincia,
+                                distrito: data.distrito,
+                                estado: data.estado || null,
+                                condicion: data.condicion || null,
+                                capital: data.capital,
+                                ubigeo: data.ubigeo,
+                                telefonos: data.telefonos
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API de Decolecta SUNAT directa
+                {
+                    url: `https://api.decolecta.com/v1/sunat/ruc?numero=${ruc}`,
+                    headers: {
+                        'Referer': 'http://apis.net.pe/api-ruc',
+                        'Authorization': 'Bearer apis-token-1.aTSI1U7KEuT-6bbbCguH-4Y8TI6KS73N'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta Decolecta SUNAT:', data);
+                        if (data && data.data && data.data.razon_social) {
+                            return {
+                                razonSocial: data.data.razon_social,
+                                direccion: data.data.direccion || null,
+                                estado: data.data.estado || null
+                            };
+                        } else if (data && data.razon_social) {
+                            return {
+                                razonSocial: data.razon_social,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // APIs de respaldo
+                {
+                    url: `https://api.apis.net.pe/v1/ruc?numero=${ruc}`,
+                    headers: {},
+                    process: (data) => {
+                        if (data && data.razonSocial) {
+                            return {
+                                razonSocial: data.razonSocial,
+                                direccion: data.direccion || null,
+                                estado: null
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API de APISPERU.com para RUC (sin token - gratis)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/ruc/${ruc}`,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta APISPERU RUC:', data);
+                        if (data && data.ruc && data.razonSocial) {
+                            return {
+                                razonSocial: data.razonSocial,
+                                nombreComercial: data.nombreComercial,
+                                direccion: data.direccion || null,
+                                departamento: data.departamento,
+                                provincia: data.provincia,
+                                distrito: data.distrito,
+                                estado: data.estado || null,
+                                condicion: data.condicion || null,
+                                capital: data.capital,
+                                ubigeo: data.ubigeo,
+                                telefonos: data.telefonos
+                            };
+                        }
+                        return null;
+                    }
+                },
+                // API de respaldo con token (deprecada)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/ruc/${ruc}?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.bb2doqtI_pKcqT3TsCtm9-lFfwHJUkkrOkF_a1r7jW4`,
+                    headers: {},
+                    process: (data) => {
+                        if (data && data.success && data.razonSocial) {
+                            return {
+                                razonSocial: data.razonSocial,
+                                direccion: data.direccion || null,
+                                estado: data.estado || null
+                            };
+                        }
+                        return null;
+                    }
+                }
+            ];
+            
+            let datosEmpresa = null;
+            let apiUsada = '';
+            
+            // Intentar con cada API hasta encontrar una que funcione
+            for (const api of apis) {
+                try {
+                    console.log(`Intentando API RUC: ${api.url}`);
+                    
+                    // Configurar headers según la API
+                    const fetchOptions = {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...api.headers
+                        }
+                    };
+                    
+                    const response = await fetch(api.url, fetchOptions);
+                    const data = await response.json();
+                    
+                    console.log(`Respuesta de ${api.url}:`, data);
+                    
+                    datosEmpresa = api.process(data);
+                    if (datosEmpresa && datosEmpresa.razonSocial) {
+                        apiUsada = api.url.includes('api-ruc-ultra.php') ? 'API Ultra-Robusta DRTC' :
+                                  api.url.includes('api-ruc-hibrido.php') ? 'API Híbrida APISPERU+Local' :
+                                  api.url.includes('api/api-ruc-local.php') ? 'Base de Datos Local SUNAT-DRTC' :
+                                  api.url.includes('api/test-api-ruc.php') ? 'API Proxy (Decolecta SUNAT)' :
+                                  api.url.includes('dniruc.apisperu.com') ? 'APISPERU.com (Oficial)' :
+                                  api.url.includes('decolecta') ? 'Decolecta SUNAT (Oficial)' : 
+                                  api.url.includes('apis.net.pe') ? 'APIs.net.pe' : 
+                                  'API Externa';
+                        break;
+                    }
+                } catch (apiError) {
+                    console.log(`Error con API RUC ${api.url}:`, apiError);
+                    continue;
+                }
+            }
+            
+            if (datosEmpresa && datosEmpresa.razonSocial) {
+                razonSocialInput.value = datosEmpresa.razonSocial;
+                razonSocialInput.style.backgroundColor = '#d4edda';
+                razonSocialInput.style.borderColor = '#28a745';
+                
+                // Construir tooltip con información adicional
+                let tooltip = `Datos obtenidos de: ${apiUsada}`;
+                if (datosEmpresa.direccion) {
+                    tooltip += `\nDirección: ${datosEmpresa.direccion}`;
+                }
+                if (datosEmpresa.estado) {
+                    tooltip += `\nEstado: ${datosEmpresa.estado}`;
+                }
+                razonSocialInput.title = tooltip;
+                
+                // Mostrar éxito en el info
+                const infoData = document.getElementById('info-data');
+                if (infoData) {
+                    infoData.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Datos obtenidos de ${apiUsada}`;
+                    setTimeout(() => {
+                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
+                    }, 3000);
+                }
+            } else {
+                // Si ninguna API funcionó, permitir ingreso manual
+                razonSocialInput.value = '';
+                razonSocialInput.placeholder = 'RUC no encontrado - Ingrese la razón social manualmente';
+                razonSocialInput.style.backgroundColor = '#fff3cd';
+                razonSocialInput.style.borderColor = '#ffc107';
+                razonSocialInput.focus();
+                
+                // Mostrar mensaje informativo
+                const infoData = document.getElementById('info-data');
+                if (infoData) {
+                    infoData.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>RUC no encontrado - Complete manualmente';
+                    setTimeout(() => {
+                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
+                    }, 5000);
+                }
+            }
+        } catch (error) {
+            console.error('Error general consultando RUC:', error);
+            razonSocialInput.value = '';
+            razonSocialInput.placeholder = 'Error de conexión - Ingrese la razón social manualmente';
+            razonSocialInput.style.backgroundColor = '#fff3cd';
+            razonSocialInput.style.borderColor = '#ffc107';
+            razonSocialInput.focus();
+        } finally {
+            loadingData.style.display = 'none';
+        }
+    }
+    
+    // Función para consultar DNI en RENIEC (con API de Decolecta como principal)
+    async function consultarDNI(dni) {
+        try {
+            loadingData.style.display = 'block';
+            razonSocialInput.value = '';
+            
+            // Lista de APIs a probar en orden (API ultra-robusta como principal)
+            const apis = [
+                // API ULTRA-ROBUSTA PRINCIPAL - Garantiza JSON válido siempre
+                {
+                    url: `/api/api-dni-ultra.php?dni=${dni}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API DNI Ultra:', data);
+                        if (data && data.success && data.nombre_completo) {
+                            // Almacenar datos adicionales para uso posterior
+                            window.ultimaConsultaDNI = {
+                                dni: data.dni,
+                                nombre_completo: data.nombre_completo,
+                                nombres: data.nombres,
+                                apellido_paterno: data.apellido_paterno,
+                                apellido_materno: data.apellido_materno,
+                                fuente: data.fuente
+                            };
+                            return data.nombre_completo;
+                        }
+                        return null;
+                    }
+                },
+                // API HÍBRIDA PRINCIPAL - APISPERU + Local como fallback
+                {
+                    url: `/api/api-dni-hibrido.php?dni=${dni}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API DNI Híbrida:', data);
+                        if (data && data.success && data.nombre_completo) {
+                            // Almacenar datos adicionales para uso posterior
+                            window.ultimaConsultaDNI = {
+                                dni: data.dni,
+                                nombre_completo: data.nombre_completo,
+                                nombres: data.nombres,
+                                apellido_paterno: data.apellido_paterno,
+                                apellido_materno: data.apellido_materno,
+                                departamento: data.departamento,
+                                provincia: data.provincia,
+                                distrito: data.distrito,
+                                direccion: data.direccion,
+                                fecha_nacimiento: data.fecha_nacimiento,
+                                estado_civil: data.estado_civil,
+                                fuente: data.fuente
+                            };
+                            return data.nombre_completo;
+                        }
+                        return null;
+                    }
+                },
+                // API LOCAL PRINCIPAL - Siempre disponible
+                {
+                    url: `/api/api-dni-local.php?dni=${dni}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API DNI Local:', data);
+                        if (data && data.success && data.nombre_completo) {
+                            // Almacenar datos adicionales para uso posterior
+                            window.ultimaConsultaDNI = {
+                                dni: data.dni,
+                                nombre_completo: data.nombre_completo,
+                                nombres: data.nombres,
+                                apellido_paterno: data.apellido_paterno,
+                                apellido_materno: data.apellido_materno,
+                                departamento: data.departamento,
+                                provincia: data.provincia,
+                                distrito: data.distrito,
+                                direccion: data.direccion,
+                                fecha_nacimiento: data.fecha_nacimiento,
+                                estado_civil: data.estado_civil,
+                                fuente: data.fuente
+                            };
+                            return data.nombre_completo;
+                        }
+                        return null;
+                    }
+                },
+                // API proxy PHP local (respaldo externo)
+                {
+                    url: `/api/test-api-dni.php?dni=${dni}`,
+                    headers: {},
+                    process: (data) => {
+                        console.log('Respuesta API DNI Proxy:', data);
+                        if (data && data.success && data.nombre_completo) {
+                            return data.nombre_completo;
+                        }
+                        return null;
+                    }
+                },
+                // API de APISPERU.com directa (sin token)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}`,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta APISPERU DNI Directa:', data);
+                        if (data && data.dni && data.nombres) {
+                            const nombreCompleto = `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
+                            
+                            // Almacenar datos adicionales
+                            window.ultimaConsultaDNI = {
+                                dni: data.dni,
+                                nombre_completo: nombreCompleto,
+                                nombres: data.nombres,
+                                apellido_paterno: data.apellidoPaterno,
+                                apellido_materno: data.apellidoMaterno,
+                                cod_verifica: data.codVerifica,
+                                fuente: 'APISPERU.com Directa'
+                            };
+                            
+                            return nombreCompleto;
+                        }
+                        return null;
+                    }
+                },
+                // API de Factiliza directa
+                {
+                    url: `https://api.factiliza.com/v1/dni/info/${dni}`,
+                    headers: {
+                        'Authorization': 'Bearer apis-token-1.aTSI1U7KEuT-6bbbCguH-4Y8TI6KS73N',
+                        'Content-Type': 'application/json'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta Factiliza:', data);
+                        if (data && data.success && data.data) {
+                            const d = data.data;
+                            // Usar el nombre_completo si está disponible, sino construirlo
+                            let nombreCompleto = d.nombre_completo || '';
+                            if (!nombreCompleto && d.nombres) {
+                                nombreCompleto = `${d.nombres} ${d.apellido_paterno || ''} ${d.apellido_materno || ''}`.trim();
+                            }
+                            
+                            // Almacenar datos adicionales para uso posterior
+                            window.ultimaConsultaDNI = {
+                                dni: d.numero,
+                                nombre_completo: nombreCompleto,
+                                nombres: d.nombres,
+                                apellido_paterno: d.apellido_paterno,
+                                apellido_materno: d.apellido_materno,
+                                departamento: d.departamento,
+                                provincia: d.provincia,
+                                distrito: d.distrito,
+                                direccion: d.direccion,
+                                direccion_completa: d.direccion_completa,
+                                ubigeo: d.ubigeo_reniec,
+                                fecha_nacimiento: d.fecha_nacimiento,
+                                sexo: d.sexo
+                            };
+                            
+                            return nombreCompleto;
+                        }
+                        return null;
+                    }
+                },
+                // API de Decolecta como respaldo
+                {
+                    url: `https://api.decolecta.com/v1/reniec/dni?numero=${dni}`,
+                    headers: {
+                        'Referer': 'https://apis.net.pe/consulta-dni-api',
+                        'Authorization': 'Bearer apis-token-1.aTSI1U7KEuT-6bbbCguH-4Y8TI6KS73N'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta Decolecta:', data);
+                        if (data && data.data && data.data.nombre_completo) {
+                            return data.data.nombre_completo;
+                        } else if (data && data.nombres) {
+                            return `${data.nombres} ${data.apellido_paterno || ''} ${data.apellido_materno || ''}`.trim();
+                        }
+                        return null;
+                    }
+                },
+                // API de APISPERU.com (sin token - gratis)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}`,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    process: (data) => {
+                        console.log('Respuesta APISPERU DNI:', data);
+                        if (data && data.dni && data.nombres) {
+                            const nombreCompleto = `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
+                            
+                            // Almacenar datos adicionales
+                            window.ultimaConsultaDNI = {
+                                dni: data.dni,
+                                nombre_completo: nombreCompleto,
+                                nombres: data.nombres,
+                                apellido_paterno: data.apellidoPaterno,
+                                apellido_materno: data.apellidoMaterno,
+                                cod_verifica: data.codVerifica,
+                                fuente: 'APISPERU.com'
+                            };
+                            
+                            return nombreCompleto;
+                        }
+                        return null;
+                    }
+                },
+                // API de respaldo con token (deprecada)
+                {
+                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.bb2doqtI_pKcqT3TsCtm9-lFfwHJUkkrOkF_a1r7jW4`,
+                    headers: {},
+                    process: (data) => {
+                        if (data && data.success && data.nombres) {
+                            return `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
+                        }
+                        return null;
+                    }
+                }
+            ];
+            
+            let nombreCompleto = null;
+            let apiUsada = '';
+            
+            // Intentar con cada API hasta encontrar una que funcione
+            for (const api of apis) {
+                try {
+                    console.log(`Intentando API DNI: ${api.url}`);
+                    
+                    // Configurar headers según la API
+                    const fetchOptions = {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...api.headers
+                        }
+                    };
+                    
+                    const response = await fetch(api.url, fetchOptions);
+                    const data = await response.json();
+                    
+                    console.log(`Respuesta de ${api.url}:`, data);
+                    
+                    nombreCompleto = api.process(data);
+                    if (nombreCompleto) {
+                        apiUsada = api.url.includes('api-dni-ultra.php') ? 'API Ultra-Robusta DRTC' :
+                                  api.url.includes('api-dni-hibrido.php') ? 'API Híbrida APISPERU+Local' :
+                                  api.url.includes('api/api-dni-local.php') ? 'Base de Datos Local RENIEC-DRTC' :
+                                  api.url.includes('api/test-api-dni.php') ? 'API Proxy (Factiliza)' :
+                                  api.url.includes('dniruc.apisperu.com') ? 'APISPERU.com (Oficial)' :
+                                  api.url.includes('factiliza') ? 'Factiliza (Oficial)' :
+                                  api.url.includes('decolecta') ? 'Decolecta (Respaldo)' : 
+                                  'API Externa';
+                        break;
+                    }
+                } catch (apiError) {
+                    console.log(`Error con API ${api.url}:`, apiError);
+                    continue;
+                }
+            }
+            
+            if (nombreCompleto) {
+                razonSocialInput.value = nombreCompleto;
+                razonSocialInput.style.backgroundColor = '#d4edda';
+                razonSocialInput.style.borderColor = '#28a745';
+                razonSocialInput.title = `Datos obtenidos de: ${apiUsada}`;
+                
+                // También completar el nombre del conductor si es persona natural
+                const nombreConductorInput = document.querySelector('input[name="nombre_conductor_1"]');
+                if (nombreConductorInput) {
+                    nombreConductorInput.value = nombreCompleto;
+                    nombreConductorInput.style.backgroundColor = '#e2f3ff';
+                    nombreConductorInput.title = 'Autocompletado desde DNI del operador';
+                }
+                
+                // Mostrar éxito en el info
+                const infoData = document.getElementById('info-data');
+                if (infoData) {
+                    infoData.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Datos obtenidos de ${apiUsada}`;
+                    setTimeout(() => {
+                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
+                    }, 3000);
+                }
+            } else {
+                // Si ninguna API funcionó, permitir ingreso manual
+                razonSocialInput.value = '';
+                razonSocialInput.placeholder = 'DNI no encontrado - Ingrese el nombre manualmente';
+                razonSocialInput.style.backgroundColor = '#fff3cd';
+                razonSocialInput.style.borderColor = '#ffc107';
+                razonSocialInput.focus();
+                
+                // Mostrar mensaje informativo
+                const infoData = document.getElementById('info-data');
+                if (infoData) {
+                    infoData.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>DNI no encontrado - Complete manualmente';
+                    setTimeout(() => {
+                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
+                    }, 5000);
+                }
+            }
+        } catch (error) {
+            console.error('Error general consultando DNI:', error);
+            razonSocialInput.value = '';
+            razonSocialInput.placeholder = 'Error de conexión - Ingrese el nombre manualmente';
+            razonSocialInput.style.backgroundColor = '#fff3cd';
+            razonSocialInput.style.borderColor = '#ffc107';
+            razonSocialInput.focus();
+        } finally {
+            loadingData.style.display = 'none';
+        }
+    }
+    
+    // Event listener para RUC/DNI único
+    rucDniInput.addEventListener('blur', function() {
+        const valor = this.value.trim();
+        
+        // Limpiar estilos previos
+        razonSocialInput.style.backgroundColor = '';
+        razonSocialInput.style.borderColor = '';
+        razonSocialInput.title = '';
+        razonSocialInput.placeholder = 'Se completará automáticamente al ingresar RUC/DNI';
+        
+        if (valor.length === 8 && /^\d{8}$/.test(valor)) {
+            // Es un DNI
+            console.log(`Consultando DNI: ${valor}`);
+            consultarDNI(valor);
+        } else if (valor.length === 11 && /^\d{11}$/.test(valor)) {
+            // Es un RUC
+            console.log(`Consultando RUC: ${valor}`);
+            consultarRUC(valor);
+        } else if (valor.length > 0) {
+            razonSocialInput.value = '';
+            razonSocialInput.placeholder = 'Formato inválido - DNI: 8 dígitos, RUC: 11 dígitos';
+            razonSocialInput.style.backgroundColor = '#f8d7da';
+            razonSocialInput.style.borderColor = '#dc3545';
+        }
+    });
+    
+    // Función para probar APIs manualmente (botón de prueba)
+    function crearBotonPrueba() {
+        const btnPrueba = document.createElement('button');
+        btnPrueba.type = 'button';
+        btnPrueba.className = 'btn btn-sm btn-outline-secondary ms-2';
+        btnPrueba.innerHTML = '<i class="fas fa-search me-1"></i>Probar';
+        btnPrueba.title = 'Probar consulta manualmente';
+        
+        btnPrueba.onclick = function() {
+            const valor = rucDniInput.value.trim();
+            if (valor.length === 8) {
+                consultarDNI(valor);
+            } else if (valor.length === 11) {
+                consultarRUC(valor);
+            } else {
+                alert('Ingrese un DNI (8 dígitos) o RUC (11 dígitos) válido');
+            }
+        };
+        
+        // Agregar el botón al lado del campo RUC/DNI
+        const container = rucDniInput.parentNode;
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group';
+        
+        // Mover el input al grupo
+        container.removeChild(rucDniInput);
+        inputGroup.appendChild(rucDniInput);
+        
+        // Agregar el botón
+        const appendDiv = document.createElement('div');
+        appendDiv.className = 'input-group-append';
+        appendDiv.appendChild(btnPrueba);
+        inputGroup.appendChild(appendDiv);
+        
+        // Agregar el grupo al contenedor
+        const label = container.querySelector('label');
+        container.insertBefore(inputGroup, label.nextSibling);
+    }
+    
+    // Crear el botón de prueba
+    setTimeout(crearBotonPrueba, 100);
+    
+    // Validación en tiempo real para RUC/DNI
+    rucDniInput.addEventListener('input', function() {
+        const valor = this.value;
+        
+        // Solo permitir números
+        this.value = valor.replace(/[^0-9]/g, '');
+        
+        // Validar longitud
+        if (this.value.length > 11) {
+            this.value = this.value.substring(0, 11);
+        }
+        
+        // Indicar el tipo de documento en tiempo real
+        const length = this.value.length;
+        if (length <= 8) {
+            this.placeholder = 'DNI: 12345678';
+            this.style.borderColor = length === 8 ? '#28a745' : '#ffc107';
+        } else {
+            this.placeholder = 'RUC: 20123456789';
+            this.style.borderColor = length === 11 ? '#28a745' : '#ffc107';
+        }
+    });
+});
+
+// FUNCIONES PARA MODALES FLOTANTES (código existente)
 let tiempoInicioRegistro = null;
 let actaIdEnProceso = null;
 let autoguardadoInterval = null;

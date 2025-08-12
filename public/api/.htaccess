@@ -1,0 +1,17 @@
+# Permitir acceso directo a archivos PHP en esta carpeta
+RewriteEngine Off
+
+# Establecer tipo MIME para PHP
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Headers para CORS
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type"
+
+# Si es una petición OPTIONS, responder inmediatamente
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
