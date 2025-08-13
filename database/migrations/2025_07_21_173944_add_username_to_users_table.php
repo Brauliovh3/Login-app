@@ -20,27 +20,27 @@ return new class extends Migration
             Schema::table($tableName, function (Blueprint $table) {
                 $table->string('username')->nullable()->after('name');
             });
+            
+            // Actualizar los usuarios existentes con username basado en email si están vacíos
+            DB::table($tableName)->whereNull('username')->orWhere('username', '')->get()->each(function ($user) use ($tableName) {
+                $username = explode('@', $user->email)[0];
+                $counter = 1;
+                $originalUsername = $username;
+                
+                // Verificar si el username ya existe y agregar número si es necesario
+                while (DB::table($tableName)->where('username', $username)->where('id', '!=', $user->id)->exists()) {
+                    $username = $originalUsername . $counter;
+                    $counter++;
+                }
+                
+                DB::table($tableName)->where('id', $user->id)->update(['username' => $username]);
+            });
+            
+            // Hacer el campo único después de llenar los datos
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->string('username')->nullable(false)->unique()->change();
+            });
         }
-        
-        // Actualizar los usuarios existentes con username basado en email si están vacíos
-        DB::table($tableName)->whereNull('username')->orWhere('username', '')->get()->each(function ($user) use ($tableName) {
-            $username = explode('@', $user->email)[0];
-            $counter = 1;
-            $originalUsername = $username;
-            
-            // Verificar si el username ya existe y agregar número si es necesario
-            while (DB::table($tableName)->where('username', $username)->where('id', '!=', $user->id)->exists()) {
-                $username = $originalUsername . $counter;
-                $counter++;
-            }
-            
-            DB::table($tableName)->where('id', $user->id)->update(['username' => $username]);
-        });
-        
-        // Hacer el campo único después de llenar los datos
-        Schema::table($tableName, function (Blueprint $table) {
-            $table->string('username')->nullable(false)->unique()->change();
-        });
     }
 
     /**

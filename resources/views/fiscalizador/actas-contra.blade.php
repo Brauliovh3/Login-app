@@ -19,6 +19,14 @@
     .bg-drtc-navy { background-color: var(--drtc-navy) !important; }
     .text-drtc-orange { color: var(--drtc-orange) !important; }
     .text-drtc-navy { color: var(--drtc-navy) !important; }
+    
+    /* Fix para SweetAlert z-index */
+    .swal-z-index-high {
+        z-index: 999999 !important;
+    }
+    .swal2-container.swal-z-index-high {
+        z-index: 999999 !important;
+    }
     .border-drtc-orange { border-color: var(--drtc-orange) !important; }
     
     .action-btn {
@@ -56,6 +64,63 @@
     
     .action-btn:hover i {
         color: var(--drtc-dark-orange);
+    }
+    
+    /* Estilos mejorados para la búsqueda */
+    #buscar_general {
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
+    }
+    
+    #buscar_general:focus {
+        border-color: var(--drtc-orange) !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25) !important;
+        transform: translateY(-1px);
+    }
+    
+    .search-highlight {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+    }
+    
+    .btn-group .btn {
+        border: 2px solid;
+    }
+    
+    .btn-primary {
+        background-color: var(--drtc-orange);
+        border-color: var(--drtc-orange);
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--drtc-dark-orange);
+        border-color: var(--drtc-dark-orange);
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(255, 140, 0, 0.05);
+        transform: scale(1.01);
     }
 </style>
 
@@ -106,9 +171,21 @@
                             </div>
                         </div>
                         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="abrirModal('modal-consultas')">
+                                <i class="fas fa-search"></i>
+                                <strong>Consultas</strong>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                             <div class="action-btn" onclick="abrirModal('modal-eliminar-acta')">
                                 <i class="fas fa-trash-alt"></i>
                                 <strong>Eliminar Acta</strong>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <div class="action-btn" onclick="probarConexion()" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                                <i class="fas fa-bug"></i>
+                                <strong>🔧 Debug POST</strong>
                             </div>
                         </div>
                     </div>
@@ -117,59 +194,74 @@
         </div>
     </div>
 
-    <!-- Filtros de búsqueda -->
+    <!-- Búsqueda simplificada -->
     <div class="card mb-4" style="border-color: #ff8c00;">
         <div class="card-header" style="background-color: #ff8c00; color: white;">
             <h5 class="mb-0">
-                <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                <i class="fas fa-search me-2"></i>Búsqueda de Actas
             </h5>
         </div>
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="filtro_numero" class="form-label">N° de Acta</label>
-                    <input type="text" class="form-control" id="filtro_numero" placeholder="ACT-2025-001">
+            <div class="row align-items-end">
+                <div class="col-md-5">
+                    <label for="buscar_general" class="form-label fw-bold">
+                        <i class="fas fa-search me-1"></i>Buscar por: Número de Acta, DNI, Licencia, Placa o Nombre
+                    </label>
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           id="buscar_general" 
+                           placeholder="Ej: DRTC-APU-2025-000001, 12345678, ABC-123, Juan Pérez..."
+                           style="border: 2px solid #ff8c00;">
                 </div>
-                <div class="col-md-3">
-                    <label for="filtro_placa" class="form-label">Placa</label>
-                    <input type="text" class="form-control" id="filtro_placa" placeholder="ABC-123">
-                </div>
-                <div class="col-md-3">
-                    <label for="filtro_fecha" class="form-label">Fecha</label>
-                    <input type="date" class="form-control" id="filtro_fecha">
-                </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="filtro_estado" class="form-label">Estado</label>
                     <select class="form-select" id="filtro_estado">
                         <option value="">Todos</option>
                         <option value="pendiente">Pendiente</option>
-                        <option value="pagada">Pagada</option>
+                        <option value="procesada">Procesada</option>
                         <option value="anulada">Anulada</option>
-                        <option value="en_cobranza">En Cobranza</option>
                     </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="filtro_fecha" class="form-label">Fecha</label>
+                    <input type="date" class="form-select" id="filtro_fecha">
+                </div>
+                <div class="col-md-3">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="btn btn-primary" onclick="buscarActas()">
+                            <i class="fas fa-search me-1"></i>Buscar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="limpiarBusqueda()">
+                            <i class="fas fa-times me-1"></i>Limpiar
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="exportarActas()">
+                            <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="row mt-3">
                 <div class="col-12">
-                    <button class="btn btn-primary me-2">
-                        <i class="fas fa-search me-2"></i>Buscar
-                    </button>
-                    <button class="btn btn-outline-secondary">
-                        <i class="fas fa-times me-2"></i>Limpiar
-                    </button>
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <div>
+                            <strong>Instrucciones de búsqueda:</strong> Escribe el término de búsqueda y haz clic en "Buscar" o presiona Enter. 
+                            Puedes buscar por número de acta, DNI, licencia, placa o nombre.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Estadísticas rápidas -->
+    <!-- Estadísticas dinámicas -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card text-white bg-warning">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4>25</h4>
+                            <h4 id="count-pendientes">{{ $actas->where('estado', 'pendiente')->count() }}</h4>
                             <p class="mb-0">Pendientes</p>
                         </div>
                         <div class="align-self-center">
@@ -184,8 +276,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4>18</h4>
-                            <p class="mb-0">Pagadas</p>
+                            <h4 id="count-procesadas">{{ $actas->where('estado', 'procesada')->count() }}</h4>
+                            <p class="mb-0">Procesadas</p>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-check-circle fa-2x"></i>
@@ -199,26 +291,26 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4>8</h4>
-                            <p class="mb-0">En Cobranza</p>
+                            <h4 id="count-anuladas">{{ $actas->where('estado', 'anulada')->count() }}</h4>
+                            <p class="mb-0">Anuladas</p>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            <i class="fas fa-ban fa-2x"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-secondary">
+            <div class="card text-white bg-info">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4>2</h4>
-                            <p class="mb-0">Anuladas</p>
+                            <h4 id="count-total">{{ $actas->count() }}</h4>
+                            <p class="mb-0">Total</p>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-times-circle fa-2x"></i>
+                            <i class="fas fa-file-alt fa-2x"></i>
                         </div>
                     </div>
                 </div>
@@ -229,9 +321,17 @@
     <!-- Tabla de actas -->
     <div class="card">
         <div class="card-header" style="background-color: #fff3e0; border-color: #ff8c00;">
-            <h5 class="mb-0" style="color: #ff8c00;">
-                <i class="fas fa-list me-2"></i>Lista de Actas de Contra
-            </h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" style="color: #ff8c00;">
+                    <i class="fas fa-list me-2"></i>Lista de Actas de Contra
+                </h5>
+                <div class="text-end">
+                    <small class="text-muted">
+                        <i class="fas fa-database me-1"></i>
+                        Total en base de datos: <strong id="total-actas-db">{{ $actas->count() }}</strong>
+                    </small>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -250,72 +350,59 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @forelse($actas as $acta)
                         <tr>
-                            <td><strong>ACT-2025-001</strong></td>
-                            <td>30/07/2025 08:30</td>
-                            <td><span class="badge bg-dark">ABC-123</span></td>
-                            <td>Juan Pérez Gómez</td>
-                            <td>G.01 - Exceso de velocidad</td>
-                            <td><strong>S/ 462.00</strong></td>
-                            <td>15/08/2025</td>
-                            <td><span class="badge bg-warning">Pendiente</span></td>
+                            <td><strong>{{ $acta->numero_acta }}</strong></td>
+                            <td>{{ \Carbon\Carbon::parse($acta->fecha_intervencion . ' ' . $acta->hora_intervencion)->format('d/m/Y H:i') }}</td>
+                            <td><span class="badge bg-dark">{{ $acta->placa }}</span></td>
+                            <td>{{ $acta->nombre_conductor ?? $acta->razon_social }}</td>
+                            <td>{{ $acta->descripcion_hechos ? \Str::limit($acta->descripcion_hechos, 30) : 'Sin descripción' }}</td>
+                            <td><strong>{{ $acta->sancion ? 'S/ ' . number_format($acta->sancion, 2) : 'Sin sanción' }}</strong></td>
+                            <td>{{ $acta->created_at ? $acta->created_at->addDays(15)->format('d/m/Y') : 'N/A' }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                @switch($acta->estado)
+                                    @case('procesada')
+                                        <span class="badge bg-success">Procesada</span>
+                                        @break
+                                    @case('anulada')
+                                        <span class="badge bg-danger">Anulada</span>
+                                        @break
+                                    @default
+                                        <span class="badge bg-warning">Pendiente</span>
+                                @endswitch
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle" onclick="verDetalleActa({{ $acta->id }})">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success" title="Editar">
+                                @if($acta->estado !== 'anulada')
+                                <button class="btn btn-sm btn-outline-success" title="Editar" onclick="editarActa({{ $acta->id }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-info" title="Imprimir">
+                                <button class="btn btn-sm btn-outline-info" title="Imprimir" onclick="imprimirActa({{ $acta->id }})">
                                     <i class="fas fa-print"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger" title="Anular">
+                                <button class="btn btn-sm btn-outline-danger" title="Anular" onclick="anularActa({{ $acta->id }})">
                                     <i class="fas fa-ban"></i>
                                 </button>
+                                @else
+                                <button class="btn btn-sm btn-outline-secondary" title="Acta anulada" disabled>
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                @endif
                             </td>
                         </tr>
+                        @empty
                         <tr>
-                            <td><strong>ACT-2025-002</strong></td>
-                            <td>30/07/2025 09:15</td>
-                            <td><span class="badge bg-dark">XYZ-789</span></td>
-                            <td>María López Silva</td>
-                            <td>L.02 - Documentos vencidos</td>
-                            <td><strong>S/ 231.00</strong></td>
-                            <td>14/08/2025</td>
-                            <td><span class="badge bg-success">Pagada</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" title="Ver comprobante">
-                                    <i class="fas fa-receipt"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" title="Imprimir">
-                                    <i class="fas fa-print"></i>
-                                </button>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No hay actas registradas</h5>
+                                    <p class="text-muted">Haz clic en "Nueva Acta" para crear la primera acta</p>
+                                </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td><strong>ACT-2025-003</strong></td>
-                            <td>29/07/2025 16:45</td>
-                            <td><span class="badge bg-dark">DEF-456</span></td>
-                            <td>Carlos Ruiz Mendoza</td>
-                            <td>MG.03 - Transporte ilegal</td>
-                            <td><strong>S/ 4,620.00</strong></td>
-                            <td class="text-danger"><strong>13/08/2025</strong></td>
-                            <td><span class="badge bg-danger">En Cobranza</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" title="Gestionar cobranza">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" title="Imprimir">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -412,34 +499,186 @@
 </div>
 
 <script>
+// Función de prueba para verificar conectividad POST
+function probarConexion() {
+    console.log('🔧 Iniciando prueba de conexión...');
+    
+    Swal.fire({
+        title: '🔧 Probando Conexión',
+        text: 'Verificando rutas POST...',
+        allowOutsideClick: false,
+        customClass: {
+            container: 'swal-z-index-high'
+        },
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Probar la ruta de prueba temporal
+    fetch('/fiscalizador/actas-test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            test: 'debug',
+            timestamp: new Date().toISOString()
+        })
+    })
+    .then(response => {
+        console.log('📡 Respuesta recibida:', response);
+        console.log('📊 Status:', response.status);
+        console.log('📝 Status Text:', response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    })
+    .then(result => {
+        console.log('✅ Resultado exitoso:', result);
+        
+        Swal.fire({
+            icon: 'success',
+            title: '✅ Conexión Exitosa',
+            html: `
+                <div class="text-start">
+                    <p><strong>✅ Servidor:</strong> Respondiendo correctamente</p>
+                    <p><strong>✅ Usuario:</strong> ${result.user}</p>
+                    <p><strong>✅ Middleware:</strong> Funcionando</p>
+                    <p><strong>✅ CSRF Token:</strong> Válido</p>
+                    <p><strong>✅ Método POST:</strong> Permitido</p>
+                </div>
+            `,
+            confirmButtonText: '🚀 ¡Probar Acta Real!',
+            customClass: {
+                container: 'swal-z-index-high'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                abrirModal('modal-nueva-acta');
+            }
+        });
+    })
+    .catch(error => {
+        console.error('❌ Error en la prueba:', error);
+        
+        Swal.fire({
+            icon: 'error',
+            title: '❌ Error de Conexión',
+            html: `
+                <div class="text-start">
+                    <p><strong>❌ Error:</strong> ${error.message}</p>
+                    <p><strong>🔍 Debug Info:</strong></p>
+                    <ul class="text-start">
+                        <li>Verifica que estés logueado</li>
+                        <li>Verifica el token CSRF</li>
+                        <li>Revisa la consola del navegador</li>
+                        <li>Verifica que el servidor esté funcionando</li>
+                    </ul>
+                </div>
+            `,
+            confirmButtonText: 'Entendido',
+            customClass: {
+                container: 'swal-z-index-high'
+            }
+        });
+    });
+}
+
 function guardarActa() {
     // Validar formulario
     const form = document.getElementById('form-nueva-acta');
     const formData = new FormData(form);
     
-    // Validaciones básicas
-    const placa = formData.get('placa_1');
-    const conductor = formData.get('nombre_conductor_1');
-    const lugar = formData.get('lugar_intervencion');
+    // Validaciones básicas - solo campos realmente esenciales
+    const lugar = formData.get('lugar_intervencion')?.trim();
+    const fecha = formData.get('fecha_intervencion');
+    const hora = formData.get('hora_intervencion');
+    const tipoServicio = formData.get('tipo_servicio');
+    const tipoAgente = formData.get('tipo_agente');
+    const rucDni = formData.get('ruc_dni')?.trim();
+    const descripcionHechos = formData.get('descripcion_hechos')?.trim();
     
-    if (!placa || !conductor || !lugar) {
-        showError('Por favor complete todos los campos obligatorios');
+    // Lista de campos faltantes - solo los esenciales
+    const camposFaltantes = [];
+    
+    if (!lugar) camposFaltantes.push('Lugar de Intervención');
+    if (!fecha) camposFaltantes.push('Fecha de Intervención');
+    if (!hora) camposFaltantes.push('Hora de Intervención');
+    if (!tipoServicio) camposFaltantes.push('Tipo de Servicio');
+    if (!tipoAgente) camposFaltantes.push('Tipo de Agente');
+    if (!rucDni) camposFaltantes.push('RUC/DNI');
+    if (!descripcionHechos) camposFaltantes.push('Descripción de Hechos');
+    
+    if (camposFaltantes.length > 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Campos Requeridos',
+            html: `
+                <div class="text-start">
+                    <p><strong>Por favor complete los siguientes campos:</strong></p>
+                    <ul class="text-danger">
+                        ${camposFaltantes.map(campo => `<li>${campo}</li>`).join('')}
+                    </ul>
+                </div>
+            `,
+            confirmButtonColor: '#dc3545',
+            customClass: {
+                container: 'swal-z-index-high'
+            }
+        });
         return;
     }
     
     // Mostrar indicador de carga
-    const submitBtn = document.querySelector('#form-nueva-acta button[type="submit"]');
-    const originalText = submitBtn ? submitBtn.innerHTML : '';
-    if (submitBtn) {
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-        submitBtn.disabled = true;
-    }
+    Swal.fire({
+        title: 'Guardando Acta...',
+        text: 'Por favor espere mientras se registra el acta en la base de datos',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        customClass: {
+            container: 'swal-z-index-high'
+        },
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
     
-    // Preparar datos para envío
-    const data = Object.fromEntries(formData.entries());
+    // Preparar datos para envío con valores por defecto
+    const data = {
+        numero_acta: formData.get('numero_acta') || document.getElementById('numero_acta_hidden')?.value,
+        lugar_intervencion: lugar,
+        fecha_intervencion: formData.get('fecha_intervencion') || new Date().toISOString().split('T')[0],
+        hora_intervencion: formData.get('hora_intervencion') || new Date().toTimeString().split(' ')[0].substr(0,5),
+        inspector_responsable: '{{ Auth::user()->name }}', // Siempre usar el usuario logueado
+        tipo_servicio: formData.get('tipo_servicio') || 'Público Regular',
+        tipo_agente: formData.get('tipo_agente') || 'Transportista',
+        placa: formData.get('placa')?.trim()?.toUpperCase() || 'NO APLICA',
+        razon_social: formData.get('razon_social')?.trim()?.toUpperCase() || 'PERSONA NATURAL',
+        ruc_dni: rucDni,
+        nombre_conductor: formData.get('nombre_conductor') || '',
+        licencia: formData.get('licencia') || '',
+        clase_licencia: formData.get('clase_licencia') || '',
+        origen: formData.get('origen') || '',
+        destino: formData.get('destino') || '',
+        numero_personas: formData.get('numero_personas') || null,
+        descripcion_hechos: descripcionHechos,
+        medios_probatorios: formData.get('medios_probatorios') || 'Inspección visual, documentación revisada',
+        calificacion: formData.get('calificacion') || 'Leve',
+        medida_administrativa: formData.get('medida_administrativa') || '',
+        sancion: formData.get('sancion') || '',
+        observaciones_intervenido: formData.get('observaciones_intervenido') || '',
+        observaciones_inspector: formData.get('observaciones_inspector') || ''
+    };
     
-    // Enviar datos al servidor con seguimiento automático de tiempo
-    fetch('/api/actas', {
+    // Enviar datos al servidor
+    console.log('Enviando datos:', data); // Debug
+    fetch('/fiscalizador/actas', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -447,35 +686,76 @@ function guardarActa() {
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Respuesta del servidor:', response); // Debug
+        return response.json();
+    })
     .then(result => {
+        console.log('Resultado procesado:', result); // Debug
+        Swal.close();
+        
         if (result.success) {
-            // Guardar ID del acta para seguimiento
-            actaIdEnProceso = result.acta_id;
-            
-            showSuccess(`Acta ${result.numero_acta} registrada exitosamente.<br>
-                        Hora de registro: ${result.hora_registro}<br>
-                        <small>El sistema está guardando automáticamente los cambios.</small>`);
-            
-            // Añadir botón de finalizar en el modal
-            agregarBotonFinalizar();
-            
-            // No cerrar el modal para permitir ediciones
-            console.log('Acta creada con ID:', result.acta_id);
+            Swal.fire({
+                icon: 'success',
+                title: '¡Acta Registrada!',
+                html: `
+                    <div class="text-center">
+                        <h5 class="text-success">Acta N° ${result.numero_acta}</h5>
+                        <p class="mb-2"><strong>Registrada exitosamente en la base de datos</strong></p>
+                        <div class="border rounded p-3 bg-light">
+                            <small class="text-muted">
+                                <i class="fas fa-database me-1"></i>
+                                ID: ${result.id || 'N/A'}<br>
+                                <i class="fas fa-clock me-1"></i>
+                                ${new Date().toLocaleString('es-PE')}
+                            </small>
+                        </div>
+                    </div>
+                `,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Aceptar',
+                customClass: {
+                    container: 'swal-z-index-high'
+                }
+            }).then(() => {
+                // Cerrar modal y limpiar formulario
+                cerrarModal('modal-nueva-acta');
+                form.reset();
+                
+                // Recargar la página para mostrar la nueva acta
+                window.location.reload();
+            });
         } else {
-            showError('Error al registrar el acta: ' + (result.message || 'Error desconocido'));
+            console.error('Error del servidor:', result); // Debug
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al Registrar',
+                html: `
+                    <p>${result.message || 'Ocurrió un error al guardar el acta en la base de datos'}</p>
+                    <small class="text-muted">Detalles técnicos: ${JSON.stringify(result.errors || {})}</small>
+                `,
+                confirmButtonColor: '#dc3545',
+                customClass: {
+                    container: 'swal-z-index-high'
+                }
+            });
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showError('Error al conectar con el servidor');
-    })
-    .finally(() => {
-        // Restaurar botón
-        if (submitBtn) {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
+        console.error('Error de conexión:', error); // Debug
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            html: `
+                <p>No se pudo conectar con el servidor.</p>
+                <small class="text-muted">Error: ${error.message}</small>
+            `,
+            confirmButtonColor: '#dc3545',
+            customClass: {
+                container: 'swal-z-index-high'
+            }
+        });
     });
 }
 
@@ -522,7 +802,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
             </button>
         </div>
         <div class="modal-body-custom">
-            <form id="form-nueva-acta" action="{{ route('inspecciones.store') }}" method="POST">
+            <form id="form-nueva-acta" method="POST" action="{{ route('actas.store') }}">
                 @csrf
                 
                 <!-- Campos automáticos ocultos -->
@@ -582,11 +862,14 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 <div class="d-flex align-items-center justify-content-center mb-2">
                                     <h3 class="mb-0 fw-bold text-dark me-3">ACTA DE CONTROL</h3>
                                     <span class="me-2 fw-bold text-dark" style="font-size: 18px;">Nº</span>
-                                    <input type="text" class="form-control d-inline-block me-2" 
-                                           name="numero_acta" 
-                                           placeholder="000451"
-                                           style="width: 120px; border: 3px solid #000; text-align: center; font-weight: bold; font-size: 18px; background-color: #fff;">
+                                    <span id="numero_acta_display" 
+                                          class="fw-bold text-dark me-2" 
+                                          style="font-size: 24px; color: #d32f2f; font-family: 'Courier New', monospace;">
+                                        000001
+                                    </span>
                                     <span class="fw-bold text-dark" style="font-size: 18px;">- {{ date('Y') }}</span>
+                                    <!-- Campo oculto para enviar el número en el formulario -->
+                                    <input type="hidden" id="numero_acta_hidden" name="numero_acta" value="">
                                 </div>
                             </div>
                         </div>
@@ -636,7 +919,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-check p-3 border border-warning rounded bg-white">
-                                        <input class="form-check-input" type="radio" name="tipo_agente" id="transportista" value="transportista">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="transportista" value="Transportista" checked>
                                         <label class="form-check-label fw-bold w-100" for="transportista">
                                             <i class="fas fa-truck me-2 text-warning"></i>TRANSPORTISTA
                                         </label>
@@ -644,7 +927,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-check p-3 border border-warning rounded bg-white">
-                                        <input class="form-check-input" type="radio" name="tipo_agente" id="operador_ruta" value="operador_ruta">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="operador_ruta" value="Operador de Ruta">
                                         <label class="form-check-label fw-bold w-100" for="operador_ruta">
                                             <i class="fas fa-route me-2 text-warning"></i>OPERADOR DE RUTA
                                         </label>
@@ -652,7 +935,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-check p-3 border border-warning rounded bg-white">
-                                        <input class="form-check-input" type="radio" name="tipo_agente" id="conductor" value="conductor">
+                                        <input class="form-check-input" type="radio" name="tipo_agente" id="conductor" value="Conductor">
                                         <label class="form-check-label fw-bold w-100" for="conductor">
                                             <i class="fas fa-id-card me-2 text-warning"></i>CONDUCTOR
                                         </label>
@@ -671,8 +954,8 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos:</label>
-                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT" readonly>
+                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos: <small class="text-muted">(Opcional)</small></label>
+                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT o deje vacío">
                                 <div id="loading-data" class="form-text text-info" style="display: none;">
                                     <i class="fas fa-spinner fa-spin"></i> Consultando datos...
                                 </div>
@@ -722,14 +1005,120 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-info">Lugar de Intervención:</label>
                                 <select class="form-select border-info" name="lugar_intervencion" required>
-                                    <option value="">Seleccione provincia de Apurímac...</option>
-                                    <option value="Abancay - Apurímac">Abancay</option>
-                                    <option value="Andahuaylas - Apurímac">Andahuaylas</option>
-                                    <option value="Antabamba - Apurímac">Antabamba</option>
-                                    <option value="Aymaraes - Apurímac">Aymaraes</option>
-                                    <option value="Cotabambas - Apurímac">Cotabambas</option>
-                                    <option value="Chincheros - Apurímac">Chincheros</option>
-                                    <option value="Grau - Apurímac">Grau</option>
+                                    <option value="">Seleccione provincia y distrito de Apurímac...</option>
+                                    
+                                    <!-- PROVINCIA DE ABANCAY -->
+                                    <optgroup label="🏛️ PROVINCIA DE ABANCAY">
+                                        <option value="Abancay - Abancay - Apurímac">Abancay (Capital)</option>
+                                        <option value="Chacoche - Abancay - Apurímac">Chacoche</option>
+                                        <option value="Circa - Abancay - Apurímac">Circa</option>
+                                        <option value="Curahuasi - Abancay - Apurímac">Curahuasi</option>
+                                        <option value="Huanipaca - Abancay - Apurímac">Huanipaca</option>
+                                        <option value="Lambrama - Abancay - Apurímac">Lambrama</option>
+                                        <option value="Pichirhua - Abancay - Apurímac">Pichirhua</option>
+                                        <option value="San Pedro de Cachora - Abancay - Apurímac">San Pedro de Cachora</option>
+                                        <option value="Tamburco - Abancay - Apurímac">Tamburco</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE ANDAHUAYLAS -->
+                                    <optgroup label="🌾 PROVINCIA DE ANDAHUAYLAS">
+                                        <option value="Andahuaylas - Andahuaylas - Apurímac">Andahuaylas (Capital)</option>
+                                        <option value="Andarapa - Andahuaylas - Apurímac">Andarapa</option>
+                                        <option value="Chiara - Andahuaylas - Apurímac">Chiara</option>
+                                        <option value="Huancarama - Andahuaylas - Apurímac">Huancarama</option>
+                                        <option value="Huancaray - Andahuaylas - Apurímac">Huancaray</option>
+                                        <option value="Huayana - Andahuaylas - Apurímac">Huayana</option>
+                                        <option value="Kishuara - Andahuaylas - Apurímac">Kishuara</option>
+                                        <option value="Pacobamba - Andahuaylas - Apurímac">Pacobamba</option>
+                                        <option value="Pacucha - Andahuaylas - Apurímac">Pacucha</option>
+                                        <option value="Pampachiri - Andahuaylas - Apurímac">Pampachiri</option>
+                                        <option value="Pomacocha - Andahuaylas - Apurímac">Pomacocha</option>
+                                        <option value="San Antonio de Cachi - Andahuaylas - Apurímac">San Antonio de Cachi</option>
+                                        <option value="San Jerónimo - Andahuaylas - Apurímac">San Jerónimo</option>
+                                        <option value="San Miguel de Chaccrampa - Andahuaylas - Apurímac">San Miguel de Chaccrampa</option>
+                                        <option value="Santa María de Chicmo - Andahuaylas - Apurímac">Santa María de Chicmo</option>
+                                        <option value="Talavera - Andahuaylas - Apurímac">Talavera</option>
+                                        <option value="Tumay Huaraca - Andahuaylas - Apurímac">Tumay Huaraca</option>
+                                        <option value="Turpo - Andahuaylas - Apurímac">Turpo</option>
+                                        <option value="Kaquiabamba - Andahuaylas - Apurímac">Kaquiabamba</option>
+                                        <option value="José María Arguedas - Andahuaylas - Apurímac">José María Arguedas</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE ANTABAMBA -->
+                                    <optgroup label="⛰️ PROVINCIA DE ANTABAMBA">
+                                        <option value="Antabamba - Antabamba - Apurímac">Antabamba (Capital)</option>
+                                        <option value="El Oro - Antabamba - Apurímac">El Oro</option>
+                                        <option value="Huaquirca - Antabamba - Apurímac">Huaquirca</option>
+                                        <option value="Juan Espinoza Medrano - Antabamba - Apurímac">Juan Espinoza Medrano</option>
+                                        <option value="Oropesa - Antabamba - Apurímac">Oropesa</option>
+                                        <option value="Pachaconas - Antabamba - Apurímac">Pachaconas</option>
+                                        <option value="Sabaino - Antabamba - Apurímac">Sabaino</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE AYMARAES -->
+                                    <optgroup label="🏔️ PROVINCIA DE AYMARAES">
+                                        <option value="Chalhuanca - Aymaraes - Apurímac">Chalhuanca (Capital)</option>
+                                        <option value="Capaya - Aymaraes - Apurímac">Capaya</option>
+                                        <option value="Caraybamba - Aymaraes - Apurímac">Caraybamba</option>
+                                        <option value="Chalhuanca - Aymaraes - Apurímac">Chalhuanca</option>
+                                        <option value="Chapimarca - Aymaraes - Apurímac">Chapimarca</option>
+                                        <option value="Colcabamba - Aymaraes - Apurímac">Colcabamba</option>
+                                        <option value="Cotaruse - Aymaraes - Apurímac">Cotaruse</option>
+                                        <option value="Ihuayllo - Aymaraes - Apurímac">Ihuayllo</option>
+                                        <option value="Justo Apu Sahuaraura - Aymaraes - Apurímac">Justo Apu Sahuaraura</option>
+                                        <option value="Lucre - Aymaraes - Apurímac">Lucre</option>
+                                        <option value="Pocohuanca - Aymaraes - Apurímac">Pocohuanca</option>
+                                        <option value="San Juan de Chacña - Aymaraes - Apurímac">San Juan de Chacña</option>
+                                        <option value="Sañayca - Aymaraes - Apurímac">Sañayca</option>
+                                        <option value="Soraya - Aymaraes - Apurímac">Soraya</option>
+                                        <option value="Tapairihua - Aymaraes - Apurímac">Tapairihua</option>
+                                        <option value="Tintay - Aymaraes - Apurímac">Tintay</option>
+                                        <option value="Toraya - Aymaraes - Apurímac">Toraya</option>
+                                        <option value="Yanaca - Aymaraes - Apurímac">Yanaca</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE COTABAMBAS -->
+                                    <optgroup label="🌿 PROVINCIA DE COTABAMBAS">
+                                        <option value="Tambobamba - Cotabambas - Apurímac">Tambobamba (Capital)</option>
+                                        <option value="Cotabambas - Cotabambas - Apurímac">Cotabambas</option>
+                                        <option value="Coyllurqui - Cotabambas - Apurímac">Coyllurqui</option>
+                                        <option value="Haquira - Cotabambas - Apurímac">Haquira</option>
+                                        <option value="Mara - Cotabambas - Apurímac">Mara</option>
+                                        <option value="Challhuahuacho - Cotabambas - Apurímac">Challhuahuacho</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE CHINCHEROS -->
+                                    <optgroup label="🌺 PROVINCIA DE CHINCHEROS">
+                                        <option value="Chincheros - Chincheros - Apurímac">Chincheros (Capital)</option>
+                                        <option value="Anco Huallo - Chincheros - Apurímac">Anco Huallo</option>
+                                        <option value="Cocharcas - Chincheros - Apurímac">Cocharcas</option>
+                                        <option value="Huaccana - Chincheros - Apurímac">Huaccana</option>
+                                        <option value="Ocobamba - Chincheros - Apurímac">Ocobamba</option>
+                                        <option value="Ongoy - Chincheros - Apurímac">Ongoy</option>
+                                        <option value="Uranmarca - Chincheros - Apurímac">Uranmarca</option>
+                                        <option value="Ranracancha - Chincheros - Apurímac">Ranracancha</option>
+                                        <option value="Rocchacc - Chincheros - Apurímac">Rocchacc</option>
+                                        <option value="El Porvenir - Chincheros - Apurímac">El Porvenir</option>
+                                        <option value="Los Chankas - Chincheros - Apurímac">Los Chankas</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA DE GRAU -->
+                                    <optgroup label="🎯 PROVINCIA DE GRAU">
+                                        <option value="Chuquibambilla - Grau - Apurímac">Chuquibambilla (Capital)</option>
+                                        <option value="Curasco - Grau - Apurímac">Curasco</option>
+                                        <option value="Curpahuasi - Grau - Apurímac">Curpahuasi</option>
+                                        <option value="Gamarra - Grau - Apurímac">Gamarra</option>
+                                        <option value="Huayllati - Grau - Apurímac">Huayllati</option>
+                                        <option value="Mamara - Grau - Apurímac">Mamara</option>
+                                        <option value="Micaela Bastidas - Grau - Apurímac">Micaela Bastidas</option>
+                                        <option value="Pataypampa - Grau - Apurímac">Pataypampa</option>
+                                        <option value="Progreso - Grau - Apurímac">Progreso</option>
+                                        <option value="San Antonio - Grau - Apurímac">San Antonio</option>
+                                        <option value="Santa Rosa - Grau - Apurímac">Santa Rosa</option>
+                                        <option value="Turpay - Grau - Apurímac">Turpay</option>
+                                        <option value="Vilcabamba - Grau - Apurímac">Vilcabamba</option>
+                                        <option value="Virundo - Grau - Apurímac">Virundo</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="col-md-3 mb-3">
@@ -745,7 +1134,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-info">Inspector Responsable:</label>
-                                <input type="text" class="form-control border-info" name="inspector" value="{{ Auth::user()->name }}" readonly>
+                                <input type="text" class="form-control border-info" name="inspector_responsable" id="inspector_responsable" value="{{ Auth::user()->name }}" readonly style="background-color: #f8f9fa; cursor: not-allowed;">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-info">Tipo de Servicio:</label>
@@ -805,7 +1194,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                 
                 <!-- Botones de acción -->
                 <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg me-3 px-5">
+                    <button type="button" class="btn btn-success btn-lg me-3 px-5" onclick="guardarActa()">
                         <i class="fas fa-save me-2"></i>GUARDAR ACTA
                     </button>
                     <button type="reset" class="btn btn-secondary btn-lg px-5">
@@ -998,9 +1387,176 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
 
 @endsection
 
+<!-- MODAL: CONSULTAS Y REPORTES -->
+<div class="floating-modal" id="modal-consultas">
+    <div class="modal-content-wrapper">
+        <div class="modal-header-custom" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-search me-2"></i>
+                CONSULTAS Y REPORTES DRTC
+            </h4>
+            <button class="close-modal" onclick="cerrarModal('modal-consultas')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body-custom">
+            <!-- Formulario de filtros -->
+            <div class="card mb-4 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>FILTROS DE BÚSQUEDA</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <form id="form-consultas">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">N° de Acta:</label>
+                                <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">RUC/DNI:</label>
+                                <input type="text" class="form-control border-info" name="ruc_dni" placeholder="20123456789">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Placa del Vehículo: <small class="text-muted">(Opcional)</small></label>
+                                <input type="text" class="form-control border-info" name="placa" placeholder="ABC-123 o deje vacío si no aplica" style="text-transform: uppercase;">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Estado del Acta:</label>
+                                <select class="form-select border-info" name="estado">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="procesada">Procesada</option>
+                                    <option value="anulada">Anulada</option>
+                                    <option value="pagada">Pagada</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Fecha Desde:</label>
+                                <input type="date" class="form-control border-info" name="fecha_desde">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Fecha Hasta:</label>
+                                <input type="date" class="form-control border-info" name="fecha_hasta">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Inspector:</label>
+                                <select class="form-select border-info" name="inspector">
+                                    <option value="">Todos los inspectores</option>
+                                    <option value="{{ Auth::user()->name }}">{{ Auth::user()->name }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-info">Calificación:</label>
+                                <select class="form-select border-info" name="calificacion">
+                                    <option value="">Seleccione calificación...</option>
+                                    <option value="Leve" selected>Leve</option>
+                                    <option value="Grave">Grave</option>
+                                    <option value="Muy Grave">Muy Grave</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Botones de acción -->
+            <div class="text-center mb-4">
+                <button type="button" class="btn btn-info btn-lg me-2 px-4" onclick="consultarActas()">
+                    <i class="fas fa-search me-2"></i>CONSULTAR ACTAS
+                </button>
+                <button type="button" class="btn btn-success btn-lg me-2 px-4" onclick="exportarExcel()">
+                    <i class="fas fa-file-excel me-2"></i>EXPORTAR EXCEL
+                </button>
+            </div>
+            
+            <!-- Resumen de resultados -->
+            <div id="resumen-consulta" class="card border-info mb-4" style="display: none;">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i>RESUMEN DE RESULTADOS</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-3 border border-info rounded bg-white">
+                                <h4 class="text-info mb-1" id="total-actas">0</h4>
+                                <small class="text-muted">Total de Actas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-success rounded bg-white">
+                                <h4 class="text-success mb-1" id="actas-procesadas-modal">0</h4>
+                                <small class="text-muted">Procesadas</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-warning rounded bg-white">
+                                <h4 class="text-warning mb-1" id="actas-pendientes-modal">0</h4>
+                                <small class="text-muted">Pendientes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 border border-danger rounded bg-white">
+                                <h4 class="text-danger mb-1" id="actas-anuladas-modal">0</h4>
+                                <small class="text-muted">Anuladas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de resultados -->
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-table me-2"></i>RESULTADOS DE LA CONSULTA</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" id="tabla-resultados">
+                            <thead class="bg-info text-white">
+                                <tr>
+                                    <th class="py-3">N° ACTA</th>
+                                    <th>FECHA</th>
+                                    <th>OPERADOR/CONDUCTOR</th>
+                                    <th>RUC/DNI</th>
+                                    <th>PLACA</th>
+                                    <th>DESCRIPCIÓN</th>
+                                    <th>CALIFICACIÓN</th>
+                                    <th>ESTADO</th>
+                                    <th>INSPECTOR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-resultados">
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-search me-2"></i>
+                                        Use los filtros y haga clic en "Consultar Actas" para ver los resultados
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // FUNCIONES PARA APIs DE CONSULTA DNI/RUC
 document.addEventListener('DOMContentLoaded', function() {
+    // Prevenir envío tradicional del formulario
+    const formNuevaActa = document.getElementById('form-nueva-acta');
+    if (formNuevaActa) {
+        formNuevaActa.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('🛑 Envío tradicional del formulario bloqueado - usando JavaScript');
+            return false;
+        });
+    }
+    
     // API para consulta de RUC/DNI único
     const rucDniInput = document.getElementById('ruc_dni');
     const razonSocialInput = document.getElementById('razon_social');
@@ -1697,7 +2253,48 @@ function abrirModal(modalId) {
     // Auto-llenar campos de fecha y hora en modal nueva acta
     if (modalId === 'modal-nueva-acta') {
         iniciarRegistroAutomatico();
+        cargarProximoNumeroActa();
+        
+        // Asegurar que el inspector responsable esté lleno
+        const inspectorField = document.getElementById('inspector_responsable');
+        if (inspectorField) {
+            inspectorField.value = '{{ Auth::user()->name }}';
+        }
     }
+}
+
+// Función para cargar el próximo número de acta automáticamente
+function cargarProximoNumeroActa() {
+    fetch('/fiscalizador/actas-proximo-numero', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const numeroDisplay = document.getElementById('numero_acta_display');
+            const numeroHidden = document.getElementById('numero_acta_hidden');
+            if (numeroDisplay && numeroHidden) {
+                // Mostrar solo el número secuencial (ej: 000451)
+                numeroDisplay.textContent = result.solo_numero;
+                numeroDisplay.title = `Número completo: ${result.numero}`;
+                // Guardar el número completo en el campo oculto para el formulario
+                numeroHidden.value = result.numero;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar número de acta:', error);
+        const numeroDisplay = document.getElementById('numero_acta_display');
+        const numeroHidden = document.getElementById('numero_acta_hidden');
+        if (numeroDisplay && numeroHidden) {
+            numeroDisplay.textContent = '000001';
+            numeroDisplay.title = 'Error al cargar número automático';
+            numeroHidden.value = 'DRTC-APU-' + new Date().getFullYear() + '-000001';
+        }
+    });
 }
 
 // Función para iniciar el registro automático de tiempo
@@ -1954,6 +2551,177 @@ function cancelarEliminacion() {
     document.getElementById('buscar-eliminar').value = '';
 }
 
+// Función para cargar actas desde la base de datos
+function cargarActas() {
+    fetch('/fiscalizador/actas-consultas', {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            actualizarTablaActas(result.actas);
+            actualizarEstadisticas(result.estadisticas);
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar actas:', error);
+    });
+}
+
+// Función para consultar actas con filtros
+function consultarActas() {
+    const formData = new FormData(document.getElementById('form-consultas'));
+    const params = new URLSearchParams();
+    
+    for (let [key, value] of formData.entries()) {
+        if (value) {
+            params.append(key, value);
+        }
+    }
+    
+    Swal.fire({
+        title: 'Consultando...',
+        text: 'Buscando actas en la base de datos',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('/fiscalizador/actas-consultas?' + params.toString(), {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        Swal.close();
+        
+        if (result.success) {
+            actualizarTablaActas(result.actas);
+            actualizarEstadisticas(result.estadisticas);
+            
+            // Mostrar resumen
+            document.getElementById('resumen-consulta').style.display = 'block';
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Consulta Realizada',
+                text: `Se encontraron ${result.total} actas que coinciden con los filtros.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la Consulta',
+                text: result.message || 'Error al consultar las actas'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            text: 'No se pudo realizar la consulta'
+        });
+    });
+}
+
+// Función para exportar a Excel
+function exportarExcel() {
+    const formData = new FormData(document.getElementById('form-consultas'));
+    const params = new URLSearchParams();
+    
+    for (let [key, value] of formData.entries()) {
+        if (value) {
+            params.append(key, value);
+        }
+    }
+    
+    Swal.fire({
+        title: 'Generando Excel...',
+        text: 'Preparando archivo para descarga',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('/fiscalizador/actas-exportar?' + params.toString(), {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        Swal.close();
+        
+        if (result.success) {
+            // Crear y descargar archivo CSV/Excel
+            const csvContent = convertirACSV(result.actas);
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = result.filename || 'Actas_DRTC.csv';
+            link.click();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Excel Generado',
+                text: `Se descargó el archivo con ${result.actas.length} actas`,
+                timer: 3000,
+                showConfirmButton: false
+            });
+        }
+    })
+    .catch(error => {
+        Swal.close();
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al Exportar',
+            text: 'No se pudo generar el archivo Excel'
+        });
+    });
+}
+
+// Función para convertir datos a CSV
+function convertirACSV(actas) {
+    const headers = [
+        'N° ACTA', 'FECHA', 'LUGAR', 'OPERADOR/CONDUCTOR', 'RUC/DNI', 'PLACA', 
+        'DESCRIPCIÓN', 'CALIFICACIÓN', 'ESTADO', 'INSPECTOR'
+    ];
+    
+    const rows = actas.map(acta => [
+        acta.numero_acta,
+        new Date(acta.fecha_intervencion).toLocaleDateString('es-PE'),
+        acta.lugar_intervencion,
+        acta.razon_social,
+        acta.ruc_dni,
+        acta.placa,
+        acta.descripcion_hechos.replace(/[",\n\r]/g, ' '),
+        acta.calificacion,
+        getEstadoText(acta.estado),
+        acta.inspector_responsable
+    ]);
+    
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${cell || ''}"`).join(','))
+        .join('\n');
+    
+    return csvContent;
+}
+
 // ESCAPE KEY para cerrar modales
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -1961,6 +2729,515 @@ document.addEventListener('keydown', function(e) {
         modalesAbiertos.forEach(modal => {
             cerrarModal(modal.id);
         });
+    }
+});
+
+// Funciones auxiliares para la tabla y estados
+function actualizarTablaActas(actas) {
+    const tbody = document.getElementById('tbody-resultados');
+    if (!tbody) return;
+    
+    if (actas.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    <i class="fas fa-search me-2"></i>
+                    No se encontraron actas con los filtros aplicados
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = actas.map(acta => `
+        <tr>
+            <td class="fw-bold">${acta.numero_acta}</td>
+            <td>${new Date(acta.fecha_intervencion).toLocaleDateString('es-PE')}</td>
+            <td>${acta.razon_social}</td>
+            <td>${acta.ruc_dni}</td>
+            <td>${acta.placa}</td>
+            <td>${acta.descripcion_hechos.substring(0, 50)}...</td>
+            <td><span class="badge bg-${getBadgeColor(acta.calificacion)}">${acta.calificacion}</span></td>
+            <td><span class="badge bg-${getEstadoColor(acta.estado)}">${getEstadoText(acta.estado)}</span></td>
+            <td>${acta.inspector_responsable}</td>
+        </tr>
+    `).join('');
+}
+
+function actualizarEstadisticas(stats) {
+    if (document.getElementById('total-actas')) {
+        document.getElementById('total-actas').textContent = stats.total_actas || 0;
+        document.getElementById('actas-procesadas-modal').textContent = stats.procesadas || 0;
+        document.getElementById('actas-pendientes-modal').textContent = stats.pendientes || 0;
+        document.getElementById('actas-anuladas-modal').textContent = stats.anuladas || 0;
+    }
+}
+
+function getBadgeColor(calificacion) {
+    switch(calificacion) {
+        case 'Leve': return 'warning';
+        case 'Grave': return 'danger';
+        case 'Muy Grave': return 'dark';
+        default: return 'secondary';
+    }
+}
+
+function getEstadoColor(estado) {
+    switch(estado) {
+        case 'pendiente': return 'warning';
+        case 'procesada': return 'success';
+        case 'anulada': return 'danger';
+        case 'pagada': return 'info';
+        default: return 'secondary';
+    }
+}
+
+function getEstadoText(estado) {
+    switch(estado) {
+        case 'pendiente': return 'Pendiente';
+        case 'procesada': return 'Procesada';
+        case 'anulada': return 'Anulada';
+        case 'pagada': return 'Pagada';
+        default: return estado;
+    }
+}
+
+// Funciones para gestión de actas en la tabla
+function verDetalleActa(id) {
+    fetch(`/fiscalizador/actas/${id}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.acta) {
+            // Mostrar modal con detalles del acta
+            mostrarDetalleActa(data.acta);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al cargar los detalles del acta', 'error');
+    });
+}
+
+function editarActa(id) {
+    fetch(`/fiscalizador/actas/${id}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.acta) {
+            // Llenar el formulario de edición con los datos del acta
+            llenarFormularioEdicion(data.acta);
+            abrirModal('modal-nueva-acta');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al cargar los datos del acta', 'error');
+    });
+}
+
+function imprimirActa(id) {
+    Swal.fire({
+        title: 'Imprimir Acta',
+        text: '¿Deseas generar el PDF del acta?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ff8c00',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, generar PDF',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Aquí implementarías la generación del PDF
+            window.open(`/fiscalizador/actas/${id}/pdf`, '_blank');
+        }
+    });
+}
+
+function anularActa(id) {
+    Swal.fire({
+        title: '¿Anular esta acta?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/fiscalizador/actas/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Anulada', data.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message || 'Error al anular el acta', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error al anular el acta', 'error');
+            });
+        }
+    });
+}
+
+function mostrarDetalleActa(acta) {
+    const detalleHtml = `
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Número:</strong> ${acta.numero_acta}</p>
+                <p><strong>Fecha:</strong> ${new Date(acta.fecha_intervencion).toLocaleDateString('es-PE')}</p>
+                <p><strong>Hora:</strong> ${acta.hora_intervencion}</p>
+                <p><strong>Lugar:</strong> ${acta.lugar_intervencion}</p>
+                <p><strong>Inspector:</strong> ${acta.inspector_responsable}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Placa:</strong> ${acta.placa}</p>
+                <p><strong>Conductor:</strong> ${acta.nombre_conductor || 'N/A'}</p>
+                <p><strong>Razón Social:</strong> ${acta.razon_social}</p>
+                <p><strong>RUC/DNI:</strong> ${acta.ruc_dni}</p>
+                <p><strong>Estado:</strong> <span class="badge bg-${getEstadoColor(acta.estado)}">${getEstadoText(acta.estado)}</span></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <p><strong>Descripción de los hechos:</strong></p>
+                <p>${acta.descripcion_hechos || 'Sin descripción'}</p>
+                <p><strong>Calificación:</strong> ${acta.calificacion || 'No especificada'}</p>
+                <p><strong>Sanción:</strong> ${acta.sancion ? 'S/ ' + parseFloat(acta.sancion).toFixed(2) : 'Sin sanción'}</p>
+                ${acta.observaciones_inspector ? `<p><strong>Observaciones:</strong> ${acta.observaciones_inspector}</p>` : ''}
+            </div>
+        </div>
+    `;
+
+    Swal.fire({
+        title: 'Detalle del Acta',
+        html: detalleHtml,
+        width: '800px',
+        showConfirmButton: true,
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#ff8c00'
+    });
+}
+
+function llenarFormularioEdicion(acta) {
+    // Llenar todos los campos del formulario con los datos del acta
+    document.getElementById('lugar_intervencion').value = acta.lugar_intervencion || '';
+    document.getElementById('fecha_intervencion').value = acta.fecha_intervencion || '';
+    document.getElementById('hora_intervencion').value = acta.hora_intervencion || '';
+    document.getElementById('inspector_responsable').value = acta.inspector_responsable || '';
+    document.getElementById('tipo_servicio').value = acta.tipo_servicio || '';
+    document.getElementById('tipo_agente').value = acta.tipo_agente || '';
+    document.getElementById('placa').value = acta.placa || '';
+    document.getElementById('razon_social').value = acta.razon_social || '';
+    document.getElementById('ruc_dni').value = acta.ruc_dni || '';
+    document.getElementById('nombre_conductor').value = acta.nombre_conductor || '';
+    document.getElementById('licencia').value = acta.licencia || '';
+    document.getElementById('clase_licencia').value = acta.clase_licencia || '';
+    document.getElementById('origen').value = acta.origen || '';
+    document.getElementById('destino').value = acta.destino || '';
+    document.getElementById('numero_personas').value = acta.numero_personas || '';
+    document.getElementById('descripcion_hechos').value = acta.descripcion_hechos || '';
+    document.getElementById('medios_probatorios').value = acta.medios_probatorios || '';
+    document.getElementById('calificacion').value = acta.calificacion || '';
+    document.getElementById('medida_administrativa').value = acta.medida_administrativa || '';
+    document.getElementById('sancion').value = acta.sancion || '';
+    document.getElementById('observaciones_intervenido').value = acta.observaciones_intervenido || '';
+    document.getElementById('observaciones_inspector').value = acta.observaciones_inspector || '';
+    
+    // Mostrar el número del acta en modo edición
+    const numeroDisplay = document.getElementById('numero_acta_display');
+    const numeroHidden = document.getElementById('numero_acta_hidden');
+    if (numeroDisplay && numeroHidden) {
+        const soloNumero = acta.numero_acta.split('-')[3];
+        numeroDisplay.textContent = soloNumero;
+        numeroHidden.value = acta.numero_acta;
+    }
+    
+    // Cambiar el título del modal y botón para indicar edición
+    document.querySelector('#modal-nueva-acta .modal-title').textContent = 'Editar Acta de Control';
+    document.querySelector('#modal-nueva-acta .btn-primary').textContent = 'Actualizar Acta';
+    
+    // Guardar el ID del acta para la actualización
+    document.getElementById('acta-form').setAttribute('data-acta-id', acta.id);
+}
+
+// Funciones simplificadas para búsqueda
+function buscarActas() {
+    const buscar = document.getElementById('buscar_general').value;
+    const estado = document.getElementById('filtro_estado').value;
+    const fecha = document.getElementById('filtro_fecha').value;
+
+    // Mostrar indicador de carga
+    mostrarCargando(true);
+
+    // Crear objeto con parámetros de búsqueda
+    const params = new URLSearchParams();
+    if (buscar.trim()) params.append('buscar', buscar.trim());
+    if (estado) params.append('estado', estado);
+    if (fecha) params.append('fecha', fecha);
+
+    // Realizar búsqueda AJAX
+    fetch(`/fiscalizador/actas-consultas?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            actualizarTablaActas(data.actas);
+            actualizarEstadisticas(data.estadisticas);
+            mostrarResultadosBusqueda(data.actas.length, buscar);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al realizar la búsqueda', 'error');
+    })
+    .finally(() => {
+        mostrarCargando(false);
+    });
+}
+
+function mostrarCargando(mostrar) {
+    const btnBuscar = document.querySelector('button[onclick="buscarActas()"]');
+    if (mostrar) {
+        btnBuscar.innerHTML = '<span class="loading-spinner me-1"></span>Buscando...';
+        btnBuscar.disabled = true;
+    } else {
+        btnBuscar.innerHTML = '<i class="fas fa-search me-1"></i>Buscar';
+        btnBuscar.disabled = false;
+    }
+}
+
+function limpiarBusqueda() {
+    document.getElementById('buscar_general').value = '';
+    document.getElementById('filtro_estado').value = '';
+    document.getElementById('filtro_fecha').value = '';
+    
+    // Recargar la página para mostrar todas las actas
+    window.location.reload();
+}
+
+function exportarActas() {
+    const buscar = document.getElementById('buscar_general').value;
+    const estado = document.getElementById('filtro_estado').value;
+    const fecha = document.getElementById('filtro_fecha').value;
+
+    // Crear objeto con parámetros de búsqueda
+    const params = new URLSearchParams();
+    if (buscar.trim()) params.append('buscar', buscar.trim());
+    if (estado) params.append('estado', estado);
+    if (fecha) params.append('fecha', fecha);
+
+    // Descargar archivo Excel
+    fetch(`/fiscalizador/actas-exportar?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Crear y descargar archivo CSV
+            descargarCSV(data.actas, data.filename);
+            Swal.fire({
+                title: 'Exportación exitosa',
+                text: `Se exportaron ${data.actas.length} actas`,
+                icon: 'success',
+                timer: 2000
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al exportar el archivo', 'error');
+    });
+}
+
+function mostrarResultadosBusqueda(total, termino) {
+    const alertContainer = document.querySelector('.alert-info');
+    if (termino && termino.trim()) {
+        alertContainer.innerHTML = `
+            <i class="fas fa-search me-2"></i>
+            <div>
+                <strong>Resultados de búsqueda:</strong> Se encontraron ${total} acta(s) para "${termino}".
+                <button class="btn btn-sm btn-outline-primary ms-2" onclick="limpiarBusqueda()">
+                    <i class="fas fa-times me-1"></i>Ver todas
+                </button>
+            </div>
+        `;
+        alertContainer.className = 'alert alert-success d-flex align-items-center';
+    } else {
+        alertContainer.innerHTML = `
+            <i class="fas fa-info-circle me-2"></i>
+            <div>
+                <strong>Instrucciones de búsqueda:</strong> Escribe el término de búsqueda y haz clic en "Buscar" o presiona Enter. 
+                Puedes buscar por número de acta, DNI, licencia, placa o nombre.
+            </div>
+        `;
+        alertContainer.className = 'alert alert-info d-flex align-items-center';
+    }
+}
+
+function actualizarTablaActas(actas) {
+    const tbody = document.querySelector('table tbody');
+    
+    if (actas.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center">
+                        <i class="fas fa-search fa-4x text-muted mb-3" style="opacity: 0.3;"></i>
+                        <h4 class="text-muted mb-2">No se encontraron resultados</h4>
+                        <p class="text-muted mb-3">Intenta con otros términos de búsqueda o verifica la información.</p>
+                        <div class="text-muted small">
+                            <strong>Puedes buscar por:</strong><br>
+                            • Número de acta (ej: DRTC-APU-2025-000001)<br>
+                            • DNI/RUC (ej: 12345678)<br>
+                            • Licencia de conducir<br>
+                            • Placa del vehículo (ej: ABC-123)<br>
+                            • Nombre del conductor o razón social
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="limpiarBusqueda()">
+                            <i class="fas fa-list me-1"></i>Ver todas las actas
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = actas.map(acta => `
+        <tr>
+            <td><strong>${acta.numero_acta}</strong></td>
+            <td>${formatearFechaHora(acta.fecha_intervencion, acta.hora_intervencion)}</td>
+            <td><span class="badge bg-dark">${acta.placa}</span></td>
+            <td>${acta.nombre_conductor || acta.razon_social}</td>
+            <td>${acta.descripcion_hechos ? acta.descripcion_hechos.substring(0, 30) + '...' : 'Sin descripción'}</td>
+            <td><strong>${acta.sancion ? 'S/ ' + parseFloat(acta.sancion).toFixed(2) : 'Sin sanción'}</strong></td>
+            <td>${acta.created_at ? new Date(new Date(acta.created_at).getTime() + 15*24*60*60*1000).toLocaleDateString('es-PE') : 'N/A'}</td>
+            <td><span class="badge bg-${getEstadoColor(acta.estado)}">${getEstadoText(acta.estado)}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" title="Ver detalle" onclick="verDetalleActa(${acta.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                ${acta.estado !== 'anulada' ? `
+                    <button class="btn btn-sm btn-outline-success" title="Editar" onclick="editarActa(${acta.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" title="Imprimir" onclick="imprimirActa(${acta.id})">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Anular" onclick="anularActa(${acta.id})">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                ` : `
+                    <button class="btn btn-sm btn-outline-secondary" title="Acta anulada" disabled>
+                        <i class="fas fa-ban"></i>
+                    </button>
+                `}
+            </td>
+        </tr>
+    `).join('');
+}
+
+function actualizarEstadisticas(stats) {
+    document.getElementById('count-pendientes').textContent = stats.pendientes || 0;
+    document.getElementById('count-procesadas').textContent = stats.procesadas || 0;
+    document.getElementById('count-anuladas').textContent = stats.anuladas || 0;
+    document.getElementById('count-total').textContent = stats.total_actas || 0;
+}
+
+function formatearFechaHora(fecha, hora) {
+    try {
+        const fechaObj = new Date(fecha + ' ' + hora);
+        return fechaObj.toLocaleDateString('es-PE') + ' ' + fechaObj.toLocaleTimeString('es-PE', {hour: '2-digit', minute: '2-digit'});
+    } catch {
+        return fecha + ' ' + hora;
+    }
+}
+
+function descargarCSV(actas, filename) {
+    const headers = ['Número Acta', 'Fecha/Hora', 'Placa', 'Conductor', 'Razón Social', 'RUC/DNI', 'Inspector', 'Estado', 'Sanción'];
+    const csvContent = [
+        headers.join(','),
+        ...actas.map(acta => [
+            acta.numero_acta,
+            formatearFechaHora(acta.fecha_intervencion, acta.hora_intervencion),
+            acta.placa,
+            acta.nombre_conductor || '',
+            acta.razon_social || '',
+            acta.ruc_dni || '',
+            acta.inspector_responsable || '',
+            acta.estado,
+            acta.sancion || ''
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename.replace('.xlsx', '.csv');
+    link.click();
+}
+
+// Event listeners para búsqueda manual solamente
+document.addEventListener('DOMContentLoaded', function() {
+    const buscarGeneral = document.getElementById('buscar_general');
+    if (buscarGeneral) {
+        // Solo búsqueda al presionar Enter (sin búsqueda automática)
+        buscarGeneral.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarActas();
+            }
+        });
+    }
+    
+    const filtroEstado = document.getElementById('filtro_estado');
+    if (filtroEstado) {
+        // Solo cambiar cuando seleccione una opción, no búsqueda automática
+        filtroEstado.addEventListener('change', function() {
+            // Opcional: puedes comentar esta línea si no quieres que busque al cambiar estado
+            // buscarActas();
+        });
+    }
+    
+    const filtroFecha = document.getElementById('filtro_fecha');
+    if (filtroFecha) {
+        // Solo cambiar cuando seleccione una fecha, no búsqueda automática
+        filtroFecha.addEventListener('change', function() {
+            // Opcional: puedes comentar esta línea si no quieres que busque al cambiar fecha
+            // buscarActas();
+        });
+    }
+    
+    // Enfocar automáticamente el campo de búsqueda
+    if (buscarGeneral) {
+        buscarGeneral.focus();
     }
 });
 </script>

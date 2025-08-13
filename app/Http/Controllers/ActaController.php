@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Acta;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -11,215 +11,235 @@ class ActaController extends Controller
 {
     public function index()
     {
-        $actas = DB::table('actas')
-            ->join('inspectores', 'actas.inspector_id', '=', 'inspectores.id')
-            ->join('vehiculos', 'actas.vehiculo_id', '=', 'vehiculos.id')
-            ->join('conductores', 'actas.conductor_id', '=', 'conductores.id')
-            ->join('infracciones', 'actas.infraccion_id', '=', 'infracciones.id')
-            ->select(
-                'actas.*',
-                'inspectores.nombre as inspector_nombre',
-                'vehiculos.placa',
-                'conductores.nombre as conductor_nombre',
-                'infracciones.descripcion as infraccion_descripcion'
-            )
-            ->orderBy('actas.created_at', 'desc')
-            ->paginate(15);
+        $actas = Acta::with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return view('fiscalizador.actas.index', compact('actas'));
-    }
-
-    public function create()
-    {
-        $vehiculos = DB::table('vehiculos')->where('estado', 'activo')->get();
-        $conductores = DB::table('conductores')->where('estado_licencia', 'vigente')->get();
-        $infracciones = DB::table('infracciones')->get();
-        $inspectores = DB::table('inspectores')->where('estado', 'activo')->get();
-
-        return view('fiscalizador.actas.create', compact('vehiculos', 'conductores', 'infracciones', 'inspectores'));
+        return view('fiscalizador.actas-contra', compact('actas'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'vehiculo_id' => 'required|exists:vehiculos,id',
-            'conductor_id' => 'required|exists:conductores,id',
-            'infraccion_id' => 'required|exists:infracciones,id',
-            'inspector_id' => 'required|exists:inspectores,id',
-            'ubicacion' => 'required|string|max:255',
-            'descripcion' => 'required|string',
-            'monto_multa' => 'required|numeric|min:0',
-        ]);
+        try {
+            // Log de datos recibidos para debug
+            \Log::info('Datos recibidos para crear acta:', $request->all());
 
-        // Obtener la hora actual exacta para el registro
-        $horaActual = Carbon::now();
-        
-        // Generar número de acta único
-        $numeroActa = 'DRTC-APU-' . date('Y') . '-' . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
-
-        $actaId = DB::table('actas')->insertGetId([
-            'numero_acta' => $numeroActa,
-            'vehiculo_id' => $request->vehiculo_id,
-            'conductor_id' => $request->conductor_id,
-            'infraccion_id' => $request->infraccion_id,
-            'inspector_id' => $request->inspector_id,
-            'fecha_infraccion' => $horaActual->toDateString(),
-            'hora_infraccion' => $horaActual->toTimeString(),
-            'hora_inicio_registro' => $horaActual->toDateTimeString(), // Hora exacta del inicio
-            'ubicacion' => $request->ubicacion,
-            'descripcion' => $request->descripcion,
-            'monto_multa' => $request->monto_multa,
-            'estado' => 'pendiente',
-            'user_id' => Auth::id(),
-            'created_at' => $horaActual->toDateTimeString(),
-            'updated_at' => $horaActual->toDateTimeString(),
-        ]);
-
-        // Crear notificación
-        DB::table('notifications')->insert([
-            'user_id' => Auth::id(),
-            'title' => 'Nueva Acta Registrada',
-            'message' => "Se ha registrado una nueva acta de infracción #{$numeroActa} a las {$horaActual->format('H:i:s')}",
-            'type' => 'info',
-            'read' => false,
-            'created_at' => $horaActual->toDateTimeString(),
-            'updated_at' => $horaActual->toDateTimeString(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Acta registrada exitosamente',
-            'acta_id' => $actaId,
-            'numero_acta' => $numeroActa,
-            'hora_registro' => $horaActual->format('d/m/Y H:i:s')
-        ]);
-    }
-
-    /**
-     * Actualizar el acta con la hora final de registro
-     */
-    public function finalizarRegistro(Request $request, $id)
-    {
-        $horaFinal = Carbon::now();
-        
-        $acta = DB::table('actas')->where('id', $id)->first();
-        if (!$acta) {
-            return response()->json(['error' => 'Acta no encontrada'], 404);
-        }
-
-        // Calcular tiempo total de registro
-        $horaInicio = Carbon::parse($acta->hora_inicio_registro ?? $acta->created_at);
-        $tiempoTotal = $horaInicio->diffInMinutes($horaFinal);
-
-        DB::table('actas')
-            ->where('id', $id)
-            ->update([
-                'hora_fin_registro' => $horaFinal->toDateTimeString(),
-                'tiempo_total_registro' => $tiempoTotal, // en minutos
-                'estado' => 'completada',
-                'updated_at' => $horaFinal->toDateTimeString()
+            $request->validate([
+                'lugar_intervencion' => 'required|string',
+                'fecha_intervencion' => 'required|date',
+                'hora_intervencion' => 'required',
+                'inspector_responsable' => 'required|string',
+                'tipo_servicio' => 'required|string',
+                'tipo_agente' => 'required|in:Transportista,Operador de Ruta,Conductor',
+                'placa' => 'nullable|string',
+                'razon_social' => 'nullable|string',
+                'ruc_dni' => 'required|string',
+                'descripcion_hechos' => 'required|string',
+                'calificacion' => 'required|in:Leve,Grave,Muy Grave',
             ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registro de acta finalizado',
-            'hora_finalizacion' => $horaFinal->format('d/m/Y H:i:s'),
-            'tiempo_total' => $tiempoTotal . ' minutos'
-        ]);
-    }
+            $acta = new Acta();
+            
+            // Generar número de acta si no viene incluido
+            $acta->numero_acta = $request->numero_acta ?: Acta::generarNumeroActa();
+            
+            $acta->lugar_intervencion = $request->lugar_intervencion;
+            $acta->fecha_intervencion = $request->fecha_intervencion;
+            $acta->hora_intervencion = $request->hora_intervencion;
+            $acta->inspector_responsable = $request->inspector_responsable;
+            $acta->tipo_servicio = $request->tipo_servicio;
+            $acta->tipo_agente = $request->tipo_agente;
+            $acta->placa = strtoupper($request->placa);
+            $acta->razon_social = strtoupper($request->razon_social);
+            $acta->ruc_dni = $request->ruc_dni;
+            $acta->nombre_conductor = $request->nombre_conductor;
+            $acta->licencia = $request->licencia;
+            $acta->clase_licencia = $request->clase_licencia;
+            $acta->origen = $request->origen;
+            $acta->destino = $request->destino;
+            $acta->numero_personas = $request->numero_personas;
+            $acta->descripcion_hechos = $request->descripcion_hechos;
+            $acta->medios_probatorios = $request->medios_probatorios;
+            $acta->calificacion = $request->calificacion;
+            $acta->medida_administrativa = $request->medida_administrativa;
+            $acta->sancion = $request->sancion;
+            $acta->observaciones_intervenido = $request->observaciones_intervenido;
+            $acta->observaciones_inspector = $request->observaciones_inspector;
+            $acta->user_id = Auth::id();
+            
+            // Log antes de guardar
+            \Log::info('Intentando guardar acta:', $acta->toArray());
+            
+            $acta->save();
 
-    /**
-     * Guardar progreso del llenado en tiempo real
-     */
-    public function guardarProgreso(Request $request, $id)
-    {
-        $horaActual = Carbon::now();
-        
-        // Preparar datos de progreso
-        $datosProgreso = $request->only([
-            'vehiculo_id', 'conductor_id', 'infraccion_id', 'inspector_id',
-            'ubicacion', 'descripcion', 'monto_multa'
-        ]);
-        
-        $datosProgreso['ultima_actualizacion'] = $horaActual->toDateTimeString();
-        $datosProgreso['updated_at'] = $horaActual->toDateTimeString();
+            // Log de éxito
+            \Log::info('Acta guardada exitosamente con ID:', ['id' => $acta->id, 'numero' => $acta->numero_acta]);
 
-        DB::table('actas')
-            ->where('id', $id)
-            ->update($datosProgreso);
+            return response()->json([
+                'success' => true,
+                'message' => 'Acta registrada exitosamente',
+                'numero_acta' => $acta->numero_acta,
+                'id' => $acta->id
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'hora_actualizacion' => $horaActual->format('H:i:s'),
-            'mensaje' => 'Progreso guardado automáticamente'
-        ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Error de validación al crear acta:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Error general al crear acta:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
     }
 
     public function show($id)
     {
-        $acta = DB::table('actas')
-            ->join('inspectores', 'actas.inspector_id', '=', 'inspectores.id')
-            ->join('vehiculos', 'actas.vehiculo_id', '=', 'vehiculos.id')
-            ->join('conductores', 'actas.conductor_id', '=', 'conductores.id')
-            ->join('infracciones', 'actas.infraccion_id', '=', 'infracciones.id')
-            ->join('empresas', 'vehiculos.empresa_id', '=', 'empresas.id')
-            ->select(
-                'actas.*',
-                'inspectores.nombre as inspector_nombre',
-                'vehiculos.placa',
-                'vehiculos.modelo',
-                'conductores.nombre as conductor_nombre',
-                'conductores.dni',
-                'conductores.licencia',
-                'infracciones.descripcion as infraccion_descripcion',
-                'infracciones.codigo as infraccion_codigo',
-                'empresas.razon_social as empresa_nombre'
-            )
-            ->where('actas.id', $id)
-            ->first();
-
-        if (!$acta) {
-            return response()->json(['error' => 'Acta no encontrada'], 404);
-        }
-
+        $acta = Acta::with('user')->findOrFail($id);
         return response()->json(['acta' => $acta]);
     }
 
-    public function updateStatus(Request $request, $id)
+    public function update(Request $request, $id)
     {
+        $acta = Acta::findOrFail($id);
+        
         $request->validate([
-            'estado' => 'required|in:pendiente,procesada,anulada'
+            'lugar_intervencion' => 'required|string',
+            'inspector_responsable' => 'required|string',
+            'tipo_servicio' => 'required|string',
+            'tipo_agente' => 'required|in:Transportista,Operador de Ruta,Conductor',
+            'placa' => 'required|string',
+            'razon_social' => 'required|string',
+            'ruc_dni' => 'required|string',
+            'descripcion_hechos' => 'required|string',
+            'calificacion' => 'required|in:Leve,Grave,Muy Grave',
         ]);
 
-        DB::table('actas')
-            ->where('id', $id)
-            ->update([
-                'estado' => $request->estado,
-                'updated_at' => now()
-            ]);
+        $acta->update($request->all());
 
         return response()->json([
             'success' => true,
-            'message' => 'Estado del acta actualizado exitosamente'
+            'message' => 'Acta actualizada exitosamente'
         ]);
     }
 
-    public function getPendientes()
+    public function destroy($id)
     {
-        $pendientes = DB::table('actas')
-            ->join('vehiculos', 'actas.vehiculo_id', '=', 'vehiculos.id')
-            ->join('conductores', 'actas.conductor_id', '=', 'conductores.id')
-            ->join('infracciones', 'actas.infraccion_id', '=', 'infracciones.id')
-            ->select(
-                'actas.*',
-                'vehiculos.placa',
-                'conductores.nombre as conductor_nombre',
-                'infracciones.descripcion as infraccion_descripcion'
-            )
-            ->where('actas.estado', 'pendiente')
-            ->orderBy('actas.fecha_infraccion', 'desc')
-            ->get();
+        $acta = Acta::findOrFail($id);
+        $acta->estado = 'anulada';
+        $acta->save();
 
-        return response()->json(['actas' => $pendientes]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Acta anulada exitosamente'
+        ]);
+    }
+
+    public function consultas(Request $request)
+    {
+        $query = Acta::with('user');
+
+        // Búsqueda unificada en una sola casilla
+        if ($request->buscar) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('numero_acta', 'like', '%' . $buscar . '%')
+                  ->orWhere('ruc_dni', 'like', '%' . $buscar . '%')
+                  ->orWhere('licencia', 'like', '%' . $buscar . '%')
+                  ->orWhere('placa', 'like', '%' . $buscar . '%')
+                  ->orWhere('nombre_conductor', 'like', '%' . $buscar . '%')
+                  ->orWhere('razon_social', 'like', '%' . $buscar . '%');
+            });
+        }
+
+        // Filtro por estado
+        if ($request->estado) {
+            $query->byEstado($request->estado);
+        }
+
+        // Filtro por fecha
+        if ($request->fecha) {
+            $query->whereDate('fecha_intervencion', $request->fecha);
+        }
+
+        // Filtro por rango de fechas
+        if ($request->fecha_desde && $request->fecha_hasta) {
+            $query->byFechaRango($request->fecha_desde, $request->fecha_hasta);
+        }
+
+        $actas = $query->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'success' => true,
+            'actas' => $actas,
+            'total' => $actas->count(),
+            'estadisticas' => [
+                'total_actas' => $actas->count(),
+                'procesadas' => $actas->where('estado', 'procesada')->count(),
+                'pendientes' => $actas->where('estado', 'pendiente')->count(),
+                'anuladas' => $actas->where('estado', 'anulada')->count(),
+            ]
+        ]);
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        $query = Acta::with('user');
+
+        // Búsqueda unificada
+        if ($request->buscar) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('numero_acta', 'like', '%' . $buscar . '%')
+                  ->orWhere('ruc_dni', 'like', '%' . $buscar . '%')
+                  ->orWhere('licencia', 'like', '%' . $buscar . '%')
+                  ->orWhere('placa', 'like', '%' . $buscar . '%')
+                  ->orWhere('nombre_conductor', 'like', '%' . $buscar . '%')
+                  ->orWhere('razon_social', 'like', '%' . $buscar . '%');
+            });
+        }
+
+        // Aplicar otros filtros
+        if ($request->estado) {
+            $query->byEstado($request->estado);
+        }
+        if ($request->fecha) {
+            $query->whereDate('fecha_intervencion', $request->fecha);
+        }
+        if ($request->fecha_desde && $request->fecha_hasta) {
+            $query->byFechaRango($request->fecha_desde, $request->fecha_hasta);
+        }
+
+        $actas = $query->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'success' => true,
+            'actas' => $actas,
+            'filename' => 'Actas_DRTC_' . date('Y-m-d') . '.xlsx'
+        ]);
+    }
+
+    public function proximoNumero()
+    {
+        $proximoNumero = Acta::obtenerProximoNumero();
+        
+        return response()->json([
+            'success' => true,
+            'numero' => $proximoNumero,
+            'solo_numero' => str_pad(explode('-', $proximoNumero)[3], 6, '0', STR_PAD_LEFT),
+            'year' => date('Y')
+        ]);
     }
 }
+

@@ -195,22 +195,12 @@
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-secondary">
+                            <div class="card h-100 border-success">
                                 <div class="card-body text-center">
-                                    <i class="fas fa-list fa-3x text-secondary mb-3"></i>
-                                    <h5 class="card-title">Mis Inspecciones</h5>
-                                    <p class="card-text">Ver y gestionar inspecciones realizadas</p>
-                                    <a href="{{ route('inspecciones.index') }}" class="btn btn-secondary">Ver Lista</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-danger">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                                    <h5 class="card-title">Infracciones</h5>
-                                    <p class="card-text">Gestionar infracciones de tránsito</p>
-                                    <a href="{{ route('infracciones.index') }}" class="btn btn-danger">Ver Infracciones</a>
+                                    <i class="fas fa-clipboard-list fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">Actas</h5>
+                                    <p class="card-text">Consultar actas de contravencion</p>
+                                    <a href="{{ route('fiscalizador.actas-contra') }}" class="btn btn-success">Ver Actas</a>
                                 </div>
                             </div>
                         </div>
@@ -333,9 +323,9 @@
                             </a>
                         </div>
                         <div class="col-md-2 col-sm-4 col-6 mb-3">
-                            <a href="{{ route('infracciones.index') }}" class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center text-decoration-none" style="min-height: 80px;">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                                <span>Infracciones</span>
+                            <a href="{{ route('fiscalizador.actas-contra') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center text-decoration-none" style="min-height: 80px;">
+                                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                                <span>Actas</span>
                             </a>
                         </div>
                         <div class="col-md-2 col-sm-4 col-6 mb-3">

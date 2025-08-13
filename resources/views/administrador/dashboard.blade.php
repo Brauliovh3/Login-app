@@ -6,8 +6,16 @@
 <style>
     :root {
         --drtc-orange: #ff8c00;
-        --drtc-dark-orange: #e67c00;
-        --drtc-light-orange: #ffb84d;
+        --drtc-dark-orange:                         <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-clipboard-list fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">Actas</h5>
+                                    <p class="card-text">Supervisar actas de contravencion</p>
+                                    <a href="{{ route('fiscalizador.actas-contra') }}" class="btn btn-primary">Ver Actas</a>
+                                </div>
+                            </div>
+                        </div>       --drtc-light-orange: #ffb84d;
         --drtc-orange-bg: #fff4e6;
         --drtc-navy: #1e3a8a;
     }

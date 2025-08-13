@@ -14,10 +14,12 @@ return new class extends Migration
         // Determinar qué tabla usar (para compatibilidad)
         $tableName = Schema::hasTable('usuarios') ? 'usuarios' : 'users';
         
-        //Agregue el campo inspector al Enum de roles
-        Schema::table($tableName, function (Blueprint $table) {
-            $table->enum('role', ['administrador', 'fiscalizador', 'ventanilla', 'inspector'])->default('ventanilla');
-        });
+        // Verificar si la columna role ya existe antes de agregarla
+        if (!Schema::hasColumn($tableName, 'role')) {
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->enum('role', ['administrador', 'fiscalizador', 'ventanilla', 'inspector'])->default('ventanilla');
+            });
+        }
     }
 
     /**

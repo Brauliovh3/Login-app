@@ -5,12 +5,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
-// use App\Http\Controllers\NotificationController; // CONTROLADOR ELIMINADO
-use App\Http\Controllers\InfraccionController;
-use App\Http\Controllers\InspeccionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActaController;
-use App\Http\Controllers\InspeccionVehicularController;
 
 // Ruta principal - redirige al login si no está autenticado
 Route::get('/', function () {
@@ -32,13 +28,6 @@ Route::get('/register/success', function () {
 Route::middleware(['auth', 'user.approved'])->group(function () {
     // Dashboard principal - redirige según el rol
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // Notificaciones - SISTEMA ELIMINADO
-    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    // Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    // Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    // Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    // Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     
     // Información de sesión
     Route::get('/session-info', function () {
@@ -66,39 +55,10 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
     });
 });
 
-// Rutas para administradores y fiscalizadores (infracciones)
-Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
-    Route::resource('infracciones', InfraccionController::class);
-});
-
-// Rutas para inspecciones (administrador, fiscalizador, ventanilla)
-Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador,ventanilla'])->group(function () {
-    Route::resource('inspecciones', InspeccionController::class);
-});
-
 // Rutas específicas por rol con middleware de protección
 Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
     // Dashboard de administrador
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
-
-    // Mantenimientos
-    // Rutas para Inspector/Fiscal
-    Route::get('/admin/mantenimiento/fiscal', [App\Http\Controllers\InspectorController::class, 'index'])->name('admin.mantenimiento.fiscal');
-    Route::post('/admin/inspectores', [App\Http\Controllers\InspectorController::class, 'store'])->name('inspectores.store');
-    Route::get('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'show'])->name('inspectores.show');
-    Route::put('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'update'])->name('inspectores.update');
-    Route::delete('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'destroy'])->name('inspectores.destroy');
-    Route::post('/admin/inspectores/{id}/toggle-status', [App\Http\Controllers\InspectorController::class, 'toggleStatus'])->name('inspectores.toggle-status');
-    Route::get('/admin/inspectores/search', [App\Http\Controllers\InspectorController::class, 'search'])->name('inspectores.search');
-    
-    // Rutas para Conductor
-    Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
-    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('conductores.store');
-    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('conductores.show');
-    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('conductores.update');
-    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
-    Route::post('/admin/conductores/{id}/toggle-status', [App\Http\Controllers\ConductorController::class, 'toggleStatus'])->name('conductores.toggle-status');
-    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
 });
 
 Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
@@ -116,9 +76,16 @@ Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(functio
     })->name('fiscalizador.calendario');
     
     // Gestión de Actas
-    Route::get('/fiscalizador/actas-contra', function () {
-        return view('fiscalizador.actas-contra');
-    })->name('fiscalizador.actas-contra');
+    Route::get('/fiscalizador/actas-contra', [ActaController::class, 'index'])->name('fiscalizador.actas-contra');
+    
+    // Rutas para Actas AJAX
+    Route::post('/fiscalizador/actas', [ActaController::class, 'store'])->name('actas.store');
+    Route::get('/fiscalizador/actas/{id}', [ActaController::class, 'show'])->name('actas.show');
+    Route::put('/fiscalizador/actas/{id}', [ActaController::class, 'update'])->name('actas.update');
+    Route::delete('/fiscalizador/actas/{id}', [ActaController::class, 'destroy'])->name('actas.destroy');
+    Route::get('/fiscalizador/actas-consultas', [ActaController::class, 'consultas'])->name('actas.consultas');
+    Route::get('/fiscalizador/actas-exportar', [ActaController::class, 'exportarExcel'])->name('actas.exportar');
+    Route::get('/fiscalizador/actas-proximo-numero', [ActaController::class, 'proximoNumero'])->name('actas.proximo-numero');
     
     Route::get('/fiscalizador/carga-paga', function () {
         return view('fiscalizador.carga-paga');
@@ -147,9 +114,6 @@ Route::middleware(['auth', 'user.approved', 'role:ventanilla'])->group(function 
     Route::get('/ventanilla/tramites', function () {
         return view('ventanilla.tramites');
     })->name('ventanilla.tramites');
-    Route::get('/ventanilla/consultar', function () {
-        return view('ventanilla.consultar');
-    })->name('ventanilla.consultar');
     Route::get('/ventanilla/cola-espera', function () {
         return view('ventanilla.cola-espera');
     })->name('ventanilla.cola-espera');
@@ -173,7 +137,6 @@ Route::middleware(['auth', 'user.approved', 'role:inspector'])->group(function (
     Route::get('/inspector/reportes', [DashboardController::class, 'inspectorReportes'])->name('inspector.reportes');
 });
 
-
 // Rutas API para AJAX (Fiscalizador)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
     // Rutas para Actas con seguimiento automático de tiempo
@@ -182,46 +145,4 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
     Route::post('/actas/{id}/progreso', [ActaController::class, 'guardarProgreso']);
-    
-    // Rutas para datos de formularios
-    Route::get('/vehiculos-activos', function () {
-        $vehiculos = \App\Models\Vehiculo::where('estado', 'activo')
-            ->select('id', 'placa', 'marca', 'modelo', 'año')
-            ->get();
-        return response()->json(['vehiculos' => $vehiculos]);
-    });
-    Route::get('/conductores-vigentes', function () {
-        $conductores = \App\Models\Conductor::where('estado', 'activo')
-            ->where('estado_licencia', 'vigente')
-            ->select('id', 'nombres', 'apellidos', 'numero_licencia', 'dni')
-            ->get()
-            ->map(function($conductor) {
-                $conductor->nombre = $conductor->nombres . ' ' . $conductor->apellidos;
-                $conductor->licencia = $conductor->numero_licencia;
-                return $conductor;
-            });
-        return response()->json(['conductores' => $conductores]);
-    });
-    Route::get('/infracciones', function () {
-        $infracciones = \DB::table('infracciones')
-            ->select('id', 'codigo_infraccion as codigo', 'descripcion', 'multa_soles', 'tipo_infraccion')
-            ->get();
-        return response()->json(['infracciones' => $infracciones]);
-    });
-    Route::get('/inspectores-activos', function () {
-        $inspectores = \DB::table('inspectores')
-            ->where('estado', 'activo')
-            ->select('id', 'nombres', 'apellidos', 'codigo_inspector')
-            ->get()
-            ->map(function($inspector) {
-                $inspector->nombre = $inspector->nombres . ' ' . $inspector->apellidos;
-                return $inspector;
-            });
-        return response()->json(['inspectores' => $inspectores]);
-    });
-    
-    // Rutas para Inspección Vehicular
-    Route::post('/inspeccion/iniciar', [InspeccionVehicularController::class, 'iniciar']);
-    Route::post('/inspeccion/registrar', [InspeccionVehicularController::class, 'registrarInspeccion']);
-    Route::post('/verificar-licencia', [InspeccionVehicularController::class, 'verificarLicencia']);
 });
