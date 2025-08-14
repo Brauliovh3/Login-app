@@ -220,8 +220,19 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
         return response()->json(['inspectores' => $inspectores]);
     });
     
+    // Nueva ruta para consulta simple por DNI/RUC
+    Route::get('/consultar-actas/{documento}', [ActaController::class, 'consultarPorDocumento']);
+    Route::get('/consultar-actas', [ActaController::class, 'consultarActas']);
+    
     // Rutas para Inspección Vehicular
     Route::post('/inspeccion/iniciar', [InspeccionVehicularController::class, 'iniciar']);
     Route::post('/inspeccion/registrar', [InspeccionVehicularController::class, 'registrarInspeccion']);
     Route::post('/verificar-licencia', [InspeccionVehicularController::class, 'verificarLicencia']);
+});
+
+// Ruta de prueba temporal para depuración (sin autenticación)
+Route::post('/api/test-actas', [ActaController::class, 'store'])->name('test.actas');
+Route::get('/api/test-consulta/{documento}', [ActaController::class, 'consultarPorDocumento'])->name('test.consulta');
+Route::get('/api/csrf-token', function() {
+    return response()->json(['token' => csrf_token()]);
 });

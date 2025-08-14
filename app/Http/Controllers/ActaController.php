@@ -41,6 +41,12 @@ class ActaController extends Controller
 
     public function store(Request $request)
     {
+        // Verificar si es un formulario de acta libre (sin IDs) o estructurado
+        if ($request->has('placa_1') && $request->has('nombre_conductor_1')) {
+            return $this->storeActaLibre($request);
+        }
+        
+        // Método original para formularios estructurados
         $request->validate([
             'vehiculo_id' => 'required|exists:vehiculos,id',
             'conductor_id' => 'required|exists:conductores,id',
@@ -69,22 +75,24 @@ class ActaController extends Controller
             'ubicacion' => $request->ubicacion,
             'descripcion' => $request->descripcion,
             'monto_multa' => $request->monto_multa,
-            'estado' => 'pendiente',
-            'user_id' => Auth::id(),
+            'estado' => 'registrada', // Cambiar de 'pendiente' a 'registrada'
+            'user_id' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'created_at' => $horaActual->toDateTimeString(),
             'updated_at' => $horaActual->toDateTimeString(),
         ]);
 
-        // Crear notificación
-        DB::table('notifications')->insert([
-            'user_id' => Auth::id(),
-            'title' => 'Nueva Acta Registrada',
-            'message' => "Se ha registrado una nueva acta de infracción #{$numeroActa} a las {$horaActual->format('H:i:s')}",
-            'type' => 'info',
-            'read' => false,
-            'created_at' => $horaActual->toDateTimeString(),
-            'updated_at' => $horaActual->toDateTimeString(),
-        ]);
+        // Crear notificación solo si el usuario está autenticado
+        if (Auth::id()) {
+            DB::table('notifications')->insert([
+                'user_id' => Auth::id(),
+                'title' => 'Nueva Acta Registrada',
+                'message' => "Se ha registrado una nueva acta de infracción #{$numeroActa} a las {$horaActual->format('H:i:s')}",
+                'type' => 'info',
+                'read' => false,
+                'created_at' => $horaActual->toDateTimeString(),
+                'updated_at' => $horaActual->toDateTimeString(),
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -92,6 +100,79 @@ class ActaController extends Controller
             'acta_id' => $actaId,
             'numero_acta' => $numeroActa,
             'hora_registro' => $horaActual->format('d/m/Y H:i:s')
+        ]);
+    }
+
+    /**
+     * Método para guardar actas con formato libre (datos de texto)
+     */
+    public function storeActaLibre(Request $request)
+    {
+        $request->validate([
+            'placa_1' => 'required|string|max:10',
+            'nombre_conductor_1' => 'required|string|max:255',
+            'licencia_conductor_1' => 'required|string|max:20',
+            'razon_social' => 'required|string|max:255',
+            'ruc_dni' => 'required|string|max:20',
+            'lugar_intervencion' => 'required|string|max:500',
+            'origen_viaje' => 'required|string|max:255',
+            'destino_viaje' => 'required|string|max:255',
+            'tipo_servicio' => 'required|string|max:50',
+            'descripcion_hechos' => 'required|string',
+        ]);
+
+        // Obtener la hora actual exacta para el registro
+        $horaActual = Carbon::now();
+        
+        // Generar número de acta único
+        $numeroActa = 'DRTC-APU-' . date('Y') . '-' . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+
+        // Preparar descripción completa
+        $descripcionCompleta = "ACTA DE FISCALIZACIÓN\n\n";
+        $descripcionCompleta .= "DATOS DEL VEHÍCULO:\n";
+        $descripcionCompleta .= "Placa: " . $request->placa_1 . "\n";
+        $descripcionCompleta .= "Empresa/Operador: " . $request->razon_social . "\n";
+        $descripcionCompleta .= "RUC/DNI: " . $request->ruc_dni . "\n\n";
+        
+        $descripcionCompleta .= "DATOS DEL CONDUCTOR:\n";
+        $descripcionCompleta .= "Nombre: " . $request->nombre_conductor_1 . "\n";
+        $descripcionCompleta .= "Licencia: " . $request->licencia_conductor_1 . "\n\n";
+        
+        $descripcionCompleta .= "DATOS DEL VIAJE:\n";
+        $descripcionCompleta .= "Origen: " . $request->origen_viaje . "\n";
+        $descripcionCompleta .= "Destino: " . $request->destino_viaje . "\n";
+        $descripcionCompleta .= "Tipo de Servicio: " . $request->tipo_servicio . "\n\n";
+        
+        $descripcionCompleta .= "DESCRIPCIÓN DE LOS HECHOS:\n";
+        $descripcionCompleta .= $request->descripcion_hechos;
+
+        $actaId = DB::table('actas')->insertGetId([
+            'numero_acta' => $numeroActa,
+            'vehiculo_id' => null, // No vinculado a tabla vehiculos
+            'conductor_id' => null, // No vinculado a tabla conductores
+            'infraccion_id' => 1, // ID genérico de infracción
+            'inspector_id' => 1, // ID genérico de inspector
+            'placa_vehiculo' => $request->placa_1,
+            'ubicacion' => $request->lugar_intervencion,
+            'descripcion' => $descripcionCompleta,
+            'monto_multa' => $request->monto_multa ?? 0,
+            'estado' => 'registrada',
+            'fecha_infraccion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
+            'hora_infraccion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
+            'hora_inicio_registro' => $horaActual->toDateTimeString(),
+            'observaciones' => $request->observaciones_inspector ?? null,
+            'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
+            'created_at' => $horaActual->toDateTimeString(),
+            'updated_at' => $horaActual->toDateTimeString(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Acta de fiscalización registrada exitosamente',
+            'acta_id' => $actaId,
+            'numero_acta' => $numeroActa,
+            'hora_registro' => $horaActual->format('d/m/Y H:i:s'),
+            'ubicacion' => $request->lugar_intervencion
         ]);
     }
 
@@ -221,5 +302,230 @@ class ActaController extends Controller
             ->get();
 
         return response()->json(['actas' => $pendientes]);
+    }
+
+    /**
+     * Consultar actas por DNI/RUC - Sistema simple
+     */
+    public function consultarPorDocumento($documento)
+    {
+        try {
+            // Limpiar el documento
+            $documento = trim($documento);
+            
+            // Buscar en la tabla actas con múltiples patrones
+            $actas = DB::table('actas')
+                ->where(function($query) use ($documento) {
+                    $query->where('descripcion', 'LIKE', "%RUC/DNI: {$documento}%")
+                          ->orWhere('descripcion', 'LIKE', "%DNI: {$documento}%")
+                          ->orWhere('descripcion', 'LIKE', "%RUC: {$documento}%")
+                          ->orWhere('descripcion', 'LIKE', "%{$documento}%"); // Búsqueda más amplia
+                })
+                ->select([
+                    'id',
+                    'numero_acta',
+                    'placa_vehiculo',
+                    'ubicacion',
+                    'monto_multa',
+                    'estado',
+                    'fecha_infraccion',
+                    'hora_infraccion',
+                    'descripcion',
+                    'created_at'
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Si no encuentra nada, intentar búsqueda por patrones más específicos
+            if ($actas->isEmpty()) {
+                $actas = DB::table('actas')
+                    ->whereRaw("REPLACE(REPLACE(descripcion, ' ', ''), '\n', '') LIKE ?", ["%{$documento}%"])
+                    ->select([
+                        'id',
+                        'numero_acta',
+                        'placa_vehiculo',
+                        'ubicacion',
+                        'monto_multa',
+                        'estado',
+                        'fecha_infraccion',
+                        'hora_infraccion',
+                        'descripcion',
+                        'created_at'
+                    ])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+
+            // Extraer datos del campo descripción para cada acta
+            $actasFormatadas = $actas->map(function($acta) {
+                $descripcion = $acta->descripcion;
+                
+                // Extraer empresa/operador
+                $empresa = '';
+                if (preg_match('/Empresa\/Operador:\s*(.+?)[\n\r]/', $descripcion, $matches)) {
+                    $empresa = trim($matches[1]);
+                }
+                
+                // Extraer conductor
+                $conductor = '';
+                if (preg_match('/Nombre:\s*(.+?)[\n\r]/', $descripcion, $matches)) {
+                    $conductor = trim($matches[1]);
+                }
+                
+                // Extraer licencia
+                $licencia = '';
+                if (preg_match('/Licencia:\s*(.+?)[\n\r]/', $descripcion, $matches)) {
+                    $licencia = trim($matches[1]);
+                }
+                
+                // Extraer origen y destino
+                $origen = '';
+                $destino = '';
+                if (preg_match('/Origen:\s*(.+?)[\n\r]/', $descripcion, $matches)) {
+                    $origen = trim($matches[1]);
+                }
+                if (preg_match('/Destino:\s*(.+?)[\n\r]/', $descripcion, $matches)) {
+                    $destino = trim($matches[1]);
+                }
+
+                // Extraer RUC/DNI
+                $documento_extraido = '';
+                if (preg_match('/RUC\/DNI:\s*(\d+)/', $descripcion, $matches)) {
+                    $documento_extraido = $matches[1];
+                }
+
+                return [
+                    'id' => $acta->id,
+                    'numero_acta' => $acta->numero_acta,
+                    'placa' => $acta->placa_vehiculo,
+                    'empresa' => $empresa,
+                    'conductor' => $conductor,
+                    'licencia' => $licencia,
+                    'origen' => $origen,
+                    'destino' => $destino,
+                    'documento' => $documento_extraido,
+                    'ubicacion' => $acta->ubicacion,
+                    'monto_multa' => $acta->monto_multa,
+                    'estado' => $acta->estado,
+                    'fecha' => $acta->fecha_infraccion,
+                    'hora' => $acta->hora_infraccion,
+                    'fecha_registro' => $acta->created_at
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'total' => $actasFormatadas->count(),
+                'documento' => $documento,
+                'actas' => $actasFormatadas,
+                'debug' => [
+                    'total_sin_formato' => $actas->count(),
+                    'query_usado' => "Búsqueda con documento: {$documento}"
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al consultar las actas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Consultar actas con filtros múltiples
+     */
+    public function consultarActas(Request $request)
+    {
+        try {
+            $query = DB::table('actas');
+            
+            // Filtrar por número de acta
+            if ($request->numero_acta) {
+                $query->where('numero_acta', 'LIKE', '%' . $request->numero_acta . '%');
+            }
+            
+            // Filtrar por RUC/DNI
+            if ($request->ruc_dni) {
+                $query->where('descripcion', 'LIKE', '%' . $request->ruc_dni . '%');
+            }
+            
+            // Filtrar por placa
+            if ($request->placa) {
+                $query->where('placa_vehiculo', 'LIKE', '%' . strtoupper($request->placa) . '%');
+            }
+            
+            // Filtrar por estado
+            if ($request->estado) {
+                $query->where('estado', $request->estado);
+            }
+            
+            // Filtrar por fecha desde
+            if ($request->fecha_desde) {
+                $query->where('fecha_infraccion', '>=', $request->fecha_desde);
+            }
+            
+            // Filtrar por fecha hasta
+            if ($request->fecha_hasta) {
+                $query->where('fecha_infraccion', '<=', $request->fecha_hasta);
+            }
+
+            $actas = $query->select([
+                'id',
+                'numero_acta',
+                'placa_vehiculo',
+                'ubicacion',
+                'monto_multa',
+                'estado',
+                'fecha_infraccion',
+                'hora_infraccion',
+                'descripcion',
+                'created_at'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+            // Formatear resultados
+            $actasFormatadas = $actas->getCollection()->map(function($acta) {
+                $descripcion = $acta->descripcion;
+                
+                // Extraer datos
+                $empresa = '';
+                $conductor = '';
+                if (preg_match('/Empresa\/Operador:\s*(.+?)\\n/', $descripcion, $matches)) {
+                    $empresa = trim($matches[1]);
+                }
+                if (preg_match('/Nombre:\s*(.+?)\\n/', $descripcion, $matches)) {
+                    $conductor = trim($matches[1]);
+                }
+
+                return [
+                    'id' => $acta->id,
+                    'numero_acta' => $acta->numero_acta,
+                    'placa' => $acta->placa_vehiculo,
+                    'empresa' => $empresa,
+                    'conductor' => $conductor,
+                    'ubicacion' => $acta->ubicacion,
+                    'monto_multa' => $acta->monto_multa,
+                    'estado' => $acta->estado,
+                    'fecha' => $acta->fecha_infraccion,
+                    'hora' => $acta->hora_infraccion
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'total' => $actas->total(),
+                'current_page' => $actas->currentPage(),
+                'last_page' => $actas->lastPage(),
+                'actas' => $actasFormatadas
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al consultar las actas: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

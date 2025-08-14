@@ -386,7 +386,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="monto_multa" class="form-label">Monto de la Multa</label>
-                                <input type="number" class="form-control" id="monto_multa" step="0.01" readonly>
+                                <input type="number" class="form-control" id="monto_multa" name="monto_multa" step="0.01" readonly>
                             </div>
                         </div>
                     </div>
@@ -418,6 +418,87 @@
 </div>
 
 <script>
+// Función para mostrar notificaciones flotantes modernas
+function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
+    // Crear el elemento de notificación
+    const notificacion = document.createElement('div');
+    notificacion.className = `notificacion-flotante ${tipo}`;
+    
+    // Determinar el ícono según el tipo
+    let icono = '';
+    let colorFondo = '';
+    let colorTexto = '#ffffff';
+    
+    switch(tipo) {
+        case 'success':
+            icono = '✓';
+            colorFondo = '#10b981';
+            break;
+        case 'error':
+            icono = '✕';
+            colorFondo = '#ef4444';
+            break;
+        case 'warning':
+            icono = '⚠';
+            colorFondo = '#f59e0b';
+            break;
+        case 'info':
+        default:
+            icono = 'ℹ';
+            colorFondo = '#3b82f6';
+            break;
+    }
+    
+    notificacion.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px; font-weight: bold;">${icono}</span>
+            <span style="flex: 1;">${mensaje}</span>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; margin-left: 10px;">×</button>
+        </div>
+    `;
+    
+    // Estilos de la notificación
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colorFondo};
+        color: ${colorTexto};
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 400px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+        border-left: 4px solid rgba(255,255,255,0.3);
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(notificacion);
+    
+    // Animar entrada
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto-remover después de la duración especificada
+    setTimeout(() => {
+        notificacion.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notificacion.parentElement) {
+                notificacion.remove();
+            }
+        }, 300);
+    }, duracion);
+    
+    return notificacion;
+}
+
 function guardarActa() {
     // Validar formulario
     const form = document.getElementById('form-nueva-acta');
@@ -429,7 +510,7 @@ function guardarActa() {
     const lugar = formData.get('lugar_intervencion');
     
     if (!placa || !conductor || !lugar) {
-        showError('Por favor complete todos los campos obligatorios');
+        mostrarNotificacion('Por favor complete todos los campos obligatorios', 'warning');
         return;
     }
     
@@ -459,9 +540,7 @@ function guardarActa() {
             // Guardar ID del acta para seguimiento
             actaIdEnProceso = result.acta_id;
             
-            showSuccess(`Acta ${result.numero_acta} registrada exitosamente.<br>
-                        Hora de registro: ${result.hora_registro}<br>
-                        <small>El sistema está guardando automáticamente los cambios.</small>`);
+            mostrarNotificacion(`Acta ${result.numero_acta} registrada exitosamente.\nHora de registro: ${result.hora_registro}\nEl sistema está guardando automáticamente los cambios.`, 'success', 6000);
             
             // Añadir botón de finalizar en el modal
             agregarBotonFinalizar();
@@ -469,12 +548,12 @@ function guardarActa() {
             // No cerrar el modal para permitir ediciones
             console.log('Acta creada con ID:', result.acta_id);
         } else {
-            showError('Error al registrar el acta: ' + (result.message || 'Error desconocido'));
+            mostrarNotificacion('Error al registrar el acta: ' + (result.message || 'Error desconocido'), 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showError('Error al conectar con el servidor');
+        mostrarNotificacion('Error al conectar con el servidor', 'error');
     })
     .finally(() => {
         // Restaurar botón
@@ -528,7 +607,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
             </button>
         </div>
         <div class="modal-body-custom">
-            <form id="form-nueva-acta" action="{{ route('inspecciones.store') }}" method="POST">
+            <form id="form-nueva-acta" action="/api/actas" method="POST">
                 @csrf
                 
                 <!-- Campos automáticos ocultos -->
@@ -728,17 +807,137 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                     </div>
                     <div class="card-body bg-light">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-info">Lugar de Intervención:</label>
-                                <input type="text" class="form-control border-info" name="lugar_intervencion" placeholder="Dirección exacta o referencia" required>
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label fw-bold text-info">Lugar de Intervención - Región Apurímac:</label>
+                                <select class="form-select border-info" name="lugar_intervencion" id="lugar-select" required onchange="actualizarLugarCompleto()">
+                                    <option value="">Seleccione el lugar de intervención...</option>
+                                    
+                                    <!-- PROVINCIA ABANCAY -->
+                                    <optgroup label="PROVINCIA ABANCAY">
+                                        <option value="Abancay, Provincia Abancay">Distrito Abancay</option>
+                                        <option value="Chikay, Provincia Abancay">Distrito Chikay</option>
+                                        <option value="Curahuasi, Provincia Abancay">Distrito Curahuasi</option>
+                                        <option value="Huanipaca, Provincia Abancay">Distrito Huanipaca</option>
+                                        <option value="Lambrama, Provincia Abancay">Distrito Lambrama</option>
+                                        <option value="Pichirhua, Provincia Abancay">Distrito Pichirhua</option>
+                                        <option value="San Pedro de Cachora, Provincia Abancay">Distrito San Pedro de Cachora</option>
+                                        <option value="Tamburco, Provincia Abancay">Distrito Tamburco</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA ANDAHUAYLAS -->
+                                    <optgroup label="PROVINCIA ANDAHUAYLAS">
+                                        <option value="Andahuaylas, Provincia Andahuaylas">Distrito Andahuaylas</option>
+                                        <option value="Andarapa, Provincia Andahuaylas">Distrito Andarapa</option>
+                                        <option value="Chiara, Provincia Andahuaylas">Distrito Chiara</option>
+                                        <option value="Huancarama, Provincia Andahuaylas">Distrito Huancarama</option>
+                                        <option value="Huancaray, Provincia Andahuaylas">Distrito Huancaray</option>
+                                        <option value="Huayana, Provincia Andahuaylas">Distrito Huayana</option>
+                                        <option value="Kishuara, Provincia Andahuaylas">Distrito Kishuara</option>
+                                        <option value="Pacobamba, Provincia Andahuaylas">Distrito Pacobamba</option>
+                                        <option value="Pacucha, Provincia Andahuaylas">Distrito Pacucha</option>
+                                        <option value="Pampachiri, Provincia Andahuaylas">Distrito Pampachiri</option>
+                                        <option value="Pomacocha, Provincia Andahuaylas">Distrito Pomacocha</option>
+                                        <option value="San Antonio de Cachi, Provincia Andahuaylas">Distrito San Antonio de Cachi</option>
+                                        <option value="San Jerónimo, Provincia Andahuaylas">Distrito San Jerónimo</option>
+                                        <option value="San Miguel de Chaccrampa, Provincia Andahuaylas">Distrito San Miguel de Chaccrampa</option>
+                                        <option value="Santa María de Chicmo, Provincia Andahuaylas">Distrito Santa María de Chicmo</option>
+                                        <option value="Talavera, Provincia Andahuaylas">Distrito Talavera</option>
+                                        <option value="Tumay Huaraca, Provincia Andahuaylas">Distrito Tumay Huaraca</option>
+                                        <option value="Turpo, Provincia Andahuaylas">Distrito Turpo</option>
+                                        <option value="Kaquiabamba, Provincia Andahuaylas">Distrito Kaquiabamba</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA ANTABAMBA -->
+                                    <optgroup label="PROVINCIA ANTABAMBA">
+                                        <option value="Antabamba, Provincia Antabamba">Distrito Antabamba</option>
+                                        <option value="El Oro, Provincia Antabamba">Distrito El Oro</option>
+                                        <option value="Huaquirca, Provincia Antabamba">Distrito Huaquirca</option>
+                                        <option value="Juan Espinoza Medrano, Provincia Antabamba">Distrito Juan Espinoza Medrano</option>
+                                        <option value="Oropesa, Provincia Antabamba">Distrito Oropesa</option>
+                                        <option value="Pachaconas, Provincia Antabamba">Distrito Pachaconas</option>
+                                        <option value="Sabaino, Provincia Antabamba">Distrito Sabaino</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA AYMARAES -->
+                                    <optgroup label="PROVINCIA AYMARAES">
+                                        <option value="Chalhuanca, Provincia Aymaraes">Distrito Chalhuanca</option>
+                                        <option value="Capaya, Provincia Aymaraes">Distrito Capaya</option>
+                                        <option value="Caraybamba, Provincia Aymaraes">Distrito Caraybamba</option>
+                                        <option value="Chapimarca, Provincia Aymaraes">Distrito Chapimarca</option>
+                                        <option value="Colcabamba, Provincia Aymaraes">Distrito Colcabamba</option>
+                                        <option value="Cotaruse, Provincia Aymaraes">Distrito Cotaruse</option>
+                                        <option value="Huayllo, Provincia Aymaraes">Distrito Huayllo</option>
+                                        <option value="Justo Apu Sahuaraura, Provincia Aymaraes">Distrito Justo Apu Sahuaraura</option>
+                                        <option value="Lucre, Provincia Aymaraes">Distrito Lucre</option>
+                                        <option value="Pocohuanca, Provincia Aymaraes">Distrito Pocohuanca</option>
+                                        <option value="San Juan de Chacña, Provincia Aymaraes">Distrito San Juan de Chacña</option>
+                                        <option value="Sañayca, Provincia Aymaraes">Distrito Sañayca</option>
+                                        <option value="Soraya, Provincia Aymaraes">Distrito Soraya</option>
+                                        <option value="Tapairihua, Provincia Aymaraes">Distrito Tapairihua</option>
+                                        <option value="Tintay, Provincia Aymaraes">Distrito Tintay</option>
+                                        <option value="Toraya, Provincia Aymaraes">Distrito Toraya</option>
+                                        <option value="Yanaca, Provincia Aymaraes">Distrito Yanaca</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA COTABAMBAS -->
+                                    <optgroup label="PROVINCIA COTABAMBAS">
+                                        <option value="Tambobamba, Provincia Cotabambas">Distrito Tambobamba</option>
+                                        <option value="Cotabambas, Provincia Cotabambas">Distrito Cotabambas</option>
+                                        <option value="Coyllurqui, Provincia Cotabambas">Distrito Coyllurqui</option>
+                                        <option value="Haquira, Provincia Cotabambas">Distrito Haquira</option>
+                                        <option value="Mara, Provincia Cotabambas">Distrito Mara</option>
+                                        <option value="Challhuahuacho, Provincia Cotabambas">Distrito Challhuahuacho</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA CHINCHEROS -->
+                                    <optgroup label="PROVINCIA CHINCHEROS">
+                                        <option value="Chincheros, Provincia Chincheros">Distrito Chincheros</option>
+                                        <option value="Anco Huallo, Provincia Chincheros">Distrito Anco Huallo</option>
+                                        <option value="Cocharcas, Provincia Chincheros">Distrito Cocharcas</option>
+                                        <option value="Huaccana, Provincia Chincheros">Distrito Huaccana</option>
+                                        <option value="Ocobamba, Provincia Chincheros">Distrito Ocobamba</option>
+                                        <option value="Ongoy, Provincia Chincheros">Distrito Ongoy</option>
+                                        <option value="Uranmarca, Provincia Chincheros">Distrito Uranmarca</option>
+                                        <option value="Ranracancha, Provincia Chincheros">Distrito Ranracancha</option>
+                                    </optgroup>
+                                    
+                                    <!-- PROVINCIA GRAU -->
+                                    <optgroup label="PROVINCIA GRAU">
+                                        <option value="Chuquibambilla, Provincia Grau">Distrito Chuquibambilla</option>
+                                        <option value="Curasco, Provincia Grau">Distrito Curasco</option>
+                                        <option value="Curpahuasi, Provincia Grau">Distrito Curpahuasi</option>
+                                        <option value="Huayllati, Provincia Grau">Distrito Huayllati</option>
+                                        <option value="Mamara, Provincia Grau">Distrito Mamara</option>
+                                        <option value="Micaela Bastidas, Provincia Grau">Distrito Micaela Bastidas</option>
+                                        <option value="Pataypampa, Provincia Grau">Distrito Pataypampa</option>
+                                        <option value="Progreso, Provincia Grau">Distrito Progreso</option>
+                                        <option value="San Antonio, Provincia Grau">Distrito San Antonio</option>
+                                        <option value="Santa Rosa, Provincia Grau">Distrito Santa Rosa</option>
+                                        <option value="Turpay, Provincia Grau">Distrito Turpay</option>
+                                        <option value="Vilcabamba, Provincia Grau">Distrito Vilcabamba</option>
+                                        <option value="Virundo, Provincia Grau">Distrito Virundo</option>
+                                        <option value="Mariscal Gamarra, Provincia Grau">Distrito Mariscal Gamarra</option>
+                                    </optgroup>
+                                </select>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold text-secondary">Dirección específica:</label>
+                                <input type="text" class="form-control border-info" name="direccion_especifica" placeholder="Av/Jr/Calle, número, referencia" onchange="actualizarLugarCompleto()">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold text-info">Fecha:</label>
                                 <input type="date" class="form-control border-info bg-light" name="fecha_intervencion" value="{{ date('Y-m-d') }}" readonly>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold text-info">Hora:</label>
                                 <input type="time" class="form-control border-info bg-light" name="hora_intervencion" value="{{ date('H:i') }}" readonly>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold text-info">Ubicación completa:</label>
+                                <input type="text" class="form-control border-info bg-light" id="ubicacion-completa" readonly placeholder="Se generará automáticamente" style="font-size: 12px;">
                             </div>
                         </div>
                         
@@ -1012,66 +1211,84 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
             <!-- Formulario de filtros -->
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info text-white">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>FILTROS DE BÚSQUEDA</h6>
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-search me-2"></i>CONSULTA RÁPIDA POR DOCUMENTO</h6>
                 </div>
                 <div class="card-body bg-light">
-                    <form id="form-consultas">
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">N° de Acta:</label>
-                                <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2024-001">
+                    <!-- Consulta simple por DNI/RUC -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-primary">Consulta rápida por DNI o RUC:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control border-primary" id="documento-rapido" placeholder="Ingrese DNI (8 dígitos) o RUC (11 dígitos)" maxlength="11">
+                                <button class="btn btn-primary" type="button" onclick="consultarPorDocumento()">
+                                    <i class="fas fa-search me-1"></i>BUSCAR
+                                </button>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">RUC/DNI:</label>
-                                <input type="text" class="form-control border-info" name="ruc_dni" placeholder="20123456789">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Placa del Vehículo:</label>
-                                <input type="text" class="form-control border-info" name="placa" placeholder="ABC-123" style="text-transform: uppercase;">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Estado del Acta:</label>
-                                <select class="form-select border-info" name="estado">
-                                    <option value="">Todos los estados</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="procesada">Procesada</option>
-                                    <option value="anulada">Anulada</option>
-                                    <option value="pagada">Pagada</option>
-                                </select>
+                            <small class="text-muted">Busca todas las actas registradas para este documento</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Consulta instantánea:</strong> Ingrese el DNI o RUC y obtenga todos los registros de actas asociados con datos reales de la base de datos.
                             </div>
                         </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Fecha Desde:</label>
-                                <input type="date" class="form-control border-info" name="fecha_desde">
+                    </div>
+                    
+                    <!-- Separador -->
+                    <hr class="my-4">
+                    
+                    <!-- Filtros avanzados -->
+                    <div class="mb-3">
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleFiltrosAvanzados()">
+                            <i class="fas fa-filter me-1"></i>Mostrar filtros avanzados
+                        </button>
+                    </div>
+                    
+                    <div id="filtros-avanzados" style="display: none;">
+                        <h6 class="text-secondary mb-3"><i class="fas fa-sliders-h me-2"></i>Filtros Avanzados</h6>
+                        <form id="form-consultas">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-info">N° de Acta:</label>
+                                    <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-info">Placa del Vehículo:</label>
+                                    <input type="text" class="form-control border-info" name="placa" placeholder="ABC-123" style="text-transform: uppercase;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-info">Estado del Acta:</label>
+                                    <select class="form-select border-info" name="estado">
+                                        <option value="">Todos los estados</option>
+                                        <option value="registrada">Registrada</option>
+                                        <option value="procesada">Procesada</option>
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="anulada">Anulada</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-info">Fecha Desde:</label>
+                                    <input type="date" class="form-control border-info" name="fecha_desde">
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Fecha Hasta:</label>
-                                <input type="date" class="form-control border-info" name="fecha_hasta">
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-info">Fecha Hasta:</label>
+                                    <input type="date" class="form-control border-info" name="fecha_hasta">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold text-info">RUC/DNI (filtro avanzado):</label>
+                                    <input type="text" class="form-control border-info" name="ruc_dni" placeholder="20123456789 o 12345678">
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-info w-100" onclick="ejecutarConsulta()" style="margin-top: 25px;">
+                                        <i class="fas fa-search me-2"></i>CONSULTAR
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Tipo de Infracción:</label>
-                                <select class="form-select border-info" name="tipo_infraccion">
-                                    <option value="">Todas las infracciones</option>
-                                    <option value="documentaria">Documentaria</option>
-                                    <option value="administrativa">Administrativa</option>
-                                    <option value="tecnica">Técnica</option>
-                                    <option value="operacional">Operacional</option>
-                                    <option value="seguridad">Seguridad</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold text-info">Inspector:</label>
-                                <select class="form-select border-info" name="inspector">
-                                    <option value="">Todos los inspectores</option>
-                                    <option value="{{ Auth::user()->name }}">{{ Auth::user()->name }}</option>
-                                    <option value="inspector2">Inspector 2</option>
-                                    <option value="inspector3">Inspector 3</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
             
@@ -1138,11 +1355,11 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 <tr>
                                     <th class="py-3">N° ACTA</th>
                                     <th>FECHA</th>
-                                    <th>OPERADOR/CONDUCTOR</th>
+                                    <th>EMPRESA/CONDUCTOR</th>
                                     <th>RUC/DNI</th>
                                     <th>PLACA</th>
-                                    <th>INFRACCIÓN</th>
-                                    <th>GRAVEDAD</th>
+                                    <th>UBICACIÓN</th>
+                                    <th>MONTO</th>
                                     <th>ESTADO</th>
                                     <th>INSPECTOR</th>
                                 </tr>
@@ -1450,313 +1667,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Función para consultar DNI en RENIEC (con API de Decolecta como principal)
+    // Función para consultar DNI - DESHABILITADA (APIs no reales)
     async function consultarDNI(dni) {
-        try {
-            loadingData.style.display = 'block';
-            razonSocialInput.value = '';
-            
-            // Lista de APIs a probar en orden (API ultra-robusta como principal)
-            const apis = [
-                // API ULTRA-ROBUSTA PRINCIPAL - Garantiza JSON válido siempre
-                {
-                    url: `/api/api-dni-ultra.php?dni=${dni}`,
-                    headers: {},
-                    process: (data) => {
-                        console.log('Respuesta API DNI Ultra:', data);
-                        if (data && data.success && data.nombre_completo) {
-                            // Almacenar datos adicionales para uso posterior
-                            window.ultimaConsultaDNI = {
-                                dni: data.dni,
-                                nombre_completo: data.nombre_completo,
-                                nombres: data.nombres,
-                                apellido_paterno: data.apellido_paterno,
-                                apellido_materno: data.apellido_materno,
-                                fuente: data.fuente
-                            };
-                            return data.nombre_completo;
-                        }
-                        return null;
-                    }
-                },
-                // API HÍBRIDA PRINCIPAL - APISPERU + Local como fallback
-                {
-                    url: `/api/api-dni-hibrido.php?dni=${dni}`,
-                    headers: {},
-                    process: (data) => {
-                        console.log('Respuesta API DNI Híbrida:', data);
-                        if (data && data.success && data.nombre_completo) {
-                            // Almacenar datos adicionales para uso posterior
-                            window.ultimaConsultaDNI = {
-                                dni: data.dni,
-                                nombre_completo: data.nombre_completo,
-                                nombres: data.nombres,
-                                apellido_paterno: data.apellido_paterno,
-                                apellido_materno: data.apellido_materno,
-                                departamento: data.departamento,
-                                provincia: data.provincia,
-                                distrito: data.distrito,
-                                direccion: data.direccion,
-                                fecha_nacimiento: data.fecha_nacimiento,
-                                estado_civil: data.estado_civil,
-                                fuente: data.fuente
-                            };
-                            return data.nombre_completo;
-                        }
-                        return null;
-                    }
-                },
-                // API LOCAL PRINCIPAL - Siempre disponible
-                {
-                    url: `/api/api-dni-local.php?dni=${dni}`,
-                    headers: {},
-                    process: (data) => {
-                        console.log('Respuesta API DNI Local:', data);
-                        if (data && data.success && data.nombre_completo) {
-                            // Almacenar datos adicionales para uso posterior
-                            window.ultimaConsultaDNI = {
-                                dni: data.dni,
-                                nombre_completo: data.nombre_completo,
-                                nombres: data.nombres,
-                                apellido_paterno: data.apellido_paterno,
-                                apellido_materno: data.apellido_materno,
-                                departamento: data.departamento,
-                                provincia: data.provincia,
-                                distrito: data.distrito,
-                                direccion: data.direccion,
-                                fecha_nacimiento: data.fecha_nacimiento,
-                                estado_civil: data.estado_civil,
-                                fuente: data.fuente
-                            };
-                            return data.nombre_completo;
-                        }
-                        return null;
-                    }
-                },
-                // API proxy PHP local (respaldo externo)
-                {
-                    url: `/api/test-api-dni.php?dni=${dni}`,
-                    headers: {},
-                    process: (data) => {
-                        console.log('Respuesta API DNI Proxy:', data);
-                        if (data && data.success && data.nombre_completo) {
-                            return data.nombre_completo;
-                        }
-                        return null;
-                    }
-                },
-                // API de APISPERU.com directa (sin token)
-                {
-                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}`,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    process: (data) => {
-                        console.log('Respuesta APISPERU DNI Directa:', data);
-                        if (data && data.dni && data.nombres) {
-                            const nombreCompleto = `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
-                            
-                            // Almacenar datos adicionales
-                            window.ultimaConsultaDNI = {
-                                dni: data.dni,
-                                nombre_completo: nombreCompleto,
-                                nombres: data.nombres,
-                                apellido_paterno: data.apellidoPaterno,
-                                apellido_materno: data.apellidoMaterno,
-                                cod_verifica: data.codVerifica,
-                                fuente: 'APISPERU.com Directa'
-                            };
-                            
-                            return nombreCompleto;
-                        }
-                        return null;
-                    }
-                },
-                // API de Factiliza directa
-                {
-                    url: `https://api.factiliza.com/v1/dni/info/${dni}`,
-                    headers: {
-                        'Authorization': 'Bearer apis-token-1.aTSI1U7KEuT-6bbbCguH-4Y8TI6KS73N',
-                        'Content-Type': 'application/json'
-                    },
-                    process: (data) => {
-                        console.log('Respuesta Factiliza:', data);
-                        if (data && data.success && data.data) {
-                            const d = data.data;
-                            // Usar el nombre_completo si está disponible, sino construirlo
-                            let nombreCompleto = d.nombre_completo || '';
-                            if (!nombreCompleto && d.nombres) {
-                                nombreCompleto = `${d.nombres} ${d.apellido_paterno || ''} ${d.apellido_materno || ''}`.trim();
-                            }
-                            
-                            // Almacenar datos adicionales para uso posterior
-                            window.ultimaConsultaDNI = {
-                                dni: d.numero,
-                                nombre_completo: nombreCompleto,
-                                nombres: d.nombres,
-                                apellido_paterno: d.apellido_paterno,
-                                apellido_materno: d.apellido_materno,
-                                departamento: d.departamento,
-                                provincia: d.provincia,
-                                distrito: d.distrito,
-                                direccion: d.direccion,
-                                direccion_completa: d.direccion_completa,
-                                ubigeo: d.ubigeo_reniec,
-                                fecha_nacimiento: d.fecha_nacimiento,
-                                sexo: d.sexo
-                            };
-                            
-                            return nombreCompleto;
-                        }
-                        return null;
-                    }
-                },
-                // API de Decolecta como respaldo
-                {
-                    url: `https://api.decolecta.com/v1/reniec/dni?numero=${dni}`,
-                    headers: {
-                        'Referer': 'https://apis.net.pe/consulta-dni-api',
-                        'Authorization': 'Bearer apis-token-1.aTSI1U7KEuT-6bbbCguH-4Y8TI6KS73N'
-                    },
-                    process: (data) => {
-                        console.log('Respuesta Decolecta:', data);
-                        if (data && data.data && data.data.nombre_completo) {
-                            return data.data.nombre_completo;
-                        } else if (data && data.nombres) {
-                            return `${data.nombres} ${data.apellido_paterno || ''} ${data.apellido_materno || ''}`.trim();
-                        }
-                        return null;
-                    }
-                },
-                // API de APISPERU.com (sin token - gratis)
-                {
-                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}`,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    process: (data) => {
-                        console.log('Respuesta APISPERU DNI:', data);
-                        if (data && data.dni && data.nombres) {
-                            const nombreCompleto = `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
-                            
-                            // Almacenar datos adicionales
-                            window.ultimaConsultaDNI = {
-                                dni: data.dni,
-                                nombre_completo: nombreCompleto,
-                                nombres: data.nombres,
-                                apellido_paterno: data.apellidoPaterno,
-                                apellido_materno: data.apellidoMaterno,
-                                cod_verifica: data.codVerifica,
-                                fuente: 'APISPERU.com'
-                            };
-                            
-                            return nombreCompleto;
-                        }
-                        return null;
-                    }
-                },
-                // API de respaldo con token (deprecada)
-                {
-                    url: `https://dniruc.apisperu.com/api/v1/dni/${dni}?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RAdGVzdC5jb20ifQ.bb2doqtI_pKcqT3TsCtm9-lFfwHJUkkrOkF_a1r7jW4`,
-                    headers: {},
-                    process: (data) => {
-                        if (data && data.success && data.nombres) {
-                            return `${data.nombres} ${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim();
-                        }
-                        return null;
-                    }
-                }
-            ];
-            
-            let nombreCompleto = null;
-            let apiUsada = '';
-            
-            // Intentar con cada API hasta encontrar una que funcione
-            for (const api of apis) {
-                try {
-                    console.log(`Intentando API DNI: ${api.url}`);
-                    
-                    // Configurar headers según la API
-                    const fetchOptions = {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...api.headers
-                        }
-                    };
-                    
-                    const response = await fetch(api.url, fetchOptions);
-                    const data = await response.json();
-                    
-                    console.log(`Respuesta de ${api.url}:`, data);
-                    
-                    nombreCompleto = api.process(data);
-                    if (nombreCompleto) {
-                        apiUsada = api.url.includes('api-dni-ultra.php') ? 'API Ultra-Robusta DRTC' :
-                                  api.url.includes('api-dni-hibrido.php') ? 'API Híbrida APISPERU+Local' :
-                                  api.url.includes('api/api-dni-local.php') ? 'Base de Datos Local RENIEC-DRTC' :
-                                  api.url.includes('api/test-api-dni.php') ? 'API Proxy (Factiliza)' :
-                                  api.url.includes('dniruc.apisperu.com') ? 'APISPERU.com (Oficial)' :
-                                  api.url.includes('factiliza') ? 'Factiliza (Oficial)' :
-                                  api.url.includes('decolecta') ? 'Decolecta (Respaldo)' : 
-                                  'API Externa';
-                        break;
-                    }
-                } catch (apiError) {
-                    console.log(`Error con API ${api.url}:`, apiError);
-                    continue;
-                }
-            }
-            
-            if (nombreCompleto) {
-                razonSocialInput.value = nombreCompleto;
-                razonSocialInput.style.backgroundColor = '#d4edda';
-                razonSocialInput.style.borderColor = '#28a745';
-                razonSocialInput.title = `Datos obtenidos de: ${apiUsada}`;
-                
-                // También completar el nombre del conductor si es persona natural
-                const nombreConductorInput = document.querySelector('input[name="nombre_conductor_1"]');
-                if (nombreConductorInput) {
-                    nombreConductorInput.value = nombreCompleto;
-                    nombreConductorInput.style.backgroundColor = '#e2f3ff';
-                    nombreConductorInput.title = 'Autocompletado desde DNI del operador';
-                }
-                
-                // Mostrar éxito en el info
-                const infoData = document.getElementById('info-data');
-                if (infoData) {
-                    infoData.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Datos obtenidos de ${apiUsada}`;
-                    setTimeout(() => {
-                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
-                    }, 3000);
-                }
-            } else {
-                // Si ninguna API funcionó, permitir ingreso manual
-                razonSocialInput.value = '';
-                razonSocialInput.placeholder = 'DNI no encontrado - Ingrese el nombre manualmente';
-                razonSocialInput.style.backgroundColor = '#fff3cd';
-                razonSocialInput.style.borderColor = '#ffc107';
-                razonSocialInput.focus();
-                
-                // Mostrar mensaje informativo
-                const infoData = document.getElementById('info-data');
-                if (infoData) {
-                    infoData.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>DNI no encontrado - Complete manualmente';
-                    setTimeout(() => {
-                        infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
-                    }, 5000);
-                }
-            }
-        } catch (error) {
-            console.error('Error general consultando DNI:', error);
-            razonSocialInput.value = '';
-            razonSocialInput.placeholder = 'Error de conexión - Ingrese el nombre manualmente';
-            razonSocialInput.style.backgroundColor = '#fff3cd';
-            razonSocialInput.style.borderColor = '#ffc107';
-            razonSocialInput.focus();
-        } finally {
-            loadingData.style.display = 'none';
+        // Auto llenado de DNI deshabilitado porque las APIs no son reales
+        console.log('Consulta DNI deshabilitada - Complete los datos manualmente');
+        
+        // Mostrar mensaje informativo
+        const infoData = document.getElementById('info-data');
+        if (infoData) {
+            infoData.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Complete los datos manualmente - APIs de DNI deshabilitadas';
+            setTimeout(() => {
+                infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
+            }, 3000);
         }
+        
+        // Configurar campo para llenado manual
+        razonSocialInput.value = '';
+        razonSocialInput.placeholder = 'Ingrese el nombre completo manualmente';
+        razonSocialInput.style.backgroundColor = '#fff3cd';
+        razonSocialInput.style.borderColor = '#ffc107';
+        razonSocialInput.focus();
+        
+        // Restaurar estilo después de 3 segundos
+        setTimeout(() => {
+            razonSocialInput.placeholder = 'Ingrese razón social o nombres y apellidos';
+            razonSocialInput.style.backgroundColor = '';
+            razonSocialInput.style.borderColor = '';
+        }, 3000);
     }
     
     // Event listener para RUC/DNI único
@@ -1800,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (valor.length === 11) {
                 consultarRUC(valor);
             } else {
-                alert('Ingrese un DNI (8 dígitos) o RUC (11 dígitos) válido');
+                mostrarNotificacion('Ingrese un DNI (8 dígitos) o RUC (11 dígitos) válido', 'warning');
             }
         };
         
@@ -1992,7 +1929,7 @@ function mostrarErrorAutoguardado() {
 // Función para finalizar registro
 function finalizarRegistroActa() {
     if (!actaIdEnProceso) {
-        alert('No hay un acta en proceso para finalizar');
+        mostrarNotificacion('No hay un acta en proceso para finalizar', 'warning');
         return;
     }
     
@@ -2006,14 +1943,14 @@ function finalizarRegistroActa() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
-            alert(`Acta finalizada exitosamente.\nTiempo total: ${result.tiempo_total}\nHora de finalización: ${result.hora_finalizacion}`);
+            mostrarNotificacion(`Acta finalizada exitosamente.\nTiempo total: ${result.tiempo_total}\nHora de finalización: ${result.hora_finalizacion}`, 'success', 6000);
             limpiarRegistroTiempo();
             cerrarModal('modal-nueva-acta');
         }
     })
     .catch(error => {
         console.error('Error al finalizar:', error);
-        alert('Error al finalizar el registro del acta');
+        mostrarNotificacion('Error al finalizar el registro del acta', 'error');
     });
 }
 
@@ -2070,7 +2007,7 @@ document.addEventListener('click', function(e) {
 function buscarActaEditar() {
     const criterio = document.getElementById('buscar-editar').value.trim();
     if (!criterio) {
-        alert('Por favor ingrese un criterio de búsqueda');
+        mostrarNotificacion('Por favor ingrese un criterio de búsqueda', 'warning');
         return;
     }
     
@@ -2086,7 +2023,7 @@ function buscarActaEditar() {
 function buscarActaEliminar() {
     const criterio = document.getElementById('buscar-eliminar').value.trim();
     if (!criterio) {
-        alert('Por favor ingrese un criterio de búsqueda');
+        mostrarNotificacion('Por favor ingrese un criterio de búsqueda', 'warning');
         return;
     }
     
@@ -2105,13 +2042,13 @@ function confirmarEliminacion() {
     const supervisor = document.getElementById('supervisor-autorizante').value;
     
     if (!motivo || !codigo || !supervisor) {
-        alert('Todos los campos son obligatorios para la eliminación');
+        mostrarNotificacion('Todos los campos son obligatorios para la eliminación', 'warning');
         return;
     }
     
     if (confirm('¿Está seguro de que desea eliminar esta acta? Esta acción es IRREVERSIBLE.')) {
         // Aquí se haría la llamada AJAX para eliminar
-        alert('Acta eliminada exitosamente');
+        mostrarNotificacion('Acta eliminada exitosamente', 'success');
         cerrarModal('modal-eliminar-acta');
     }
 }
@@ -2121,45 +2058,192 @@ function cancelarEliminacion() {
     document.getElementById('buscar-eliminar').value = '';
 }
 
-// Modal Consultas
-function ejecutarConsulta() {
+// Función para consulta rápida por documento
+async function consultarPorDocumento() {
+    const documentoInput = document.getElementById('documento-rapido');
+    const documento = documentoInput.value.trim();
+    
+    if (!documento) {
+        mostrarNotificacion('Por favor ingrese un DNI o RUC', 'warning');
+        documentoInput.focus();
+        return;
+    }
+    
+    // Validar formato básico
+    if (documento.length !== 8 && documento.length !== 11) {
+        mostrarNotificacion('El DNI debe tener 8 dígitos y el RUC 11 dígitos', 'warning');
+        documentoInput.focus();
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const btn = document.querySelector('button[onclick="consultarPorDocumento()"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>BUSCANDO...';
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`/api/consultar-actas/${documento}`, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarResultadosConsulta(result);
+            
+            // Mostrar mensaje de resultado
+            if (result.total > 0) {
+                mostrarNotificacion(`Se encontraron ${result.total} acta(s) para el documento ${documento}`, 'success');
+            } else {
+                mostrarNotificacion(`No se encontraron actas para el documento ${documento}`, 'info');
+            }
+        } else {
+            mostrarNotificacion('Error al consultar: ' + result.message, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al consultar las actas', 'error');
+    } finally {
+        // Restaurar botón
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Función para mostrar/ocultar filtros avanzados
+function toggleFiltrosAvanzados() {
+    const filtros = document.getElementById('filtros-avanzados');
+    const btn = document.querySelector('button[onclick="toggleFiltrosAvanzados()"]');
+    
+    if (filtros.style.display === 'none') {
+        filtros.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-filter me-1"></i>Ocultar filtros avanzados';
+    } else {
+        filtros.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-filter me-1"></i>Mostrar filtros avanzados';
+    }
+}
+
+// Modal Consultas con datos reales
+async function ejecutarConsulta() {
+    const form = document.getElementById('form-consultas');
+    const formData = new FormData(form);
+    
+    // Convertir a objeto para enviar como query parameters
+    const params = new URLSearchParams();
+    for (let [key, value] of formData.entries()) {
+        if (value.trim()) {
+            params.append(key, value);
+        }
+    }
+    
+    try {
+        const response = await fetch(`/api/consultar-actas?${params.toString()}`, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarResultadosConsulta(result);
+        } else {
+            mostrarNotificacion('Error al consultar: ' + result.message, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error de conexión al consultar las actas', 'error');
+    }
+}
+
+// Función para mostrar los resultados de la consulta
+function mostrarResultadosConsulta(result) {
     // Mostrar resumen
     document.getElementById('resumen-consulta').style.display = 'block';
     
-    // Simulación de datos
-    document.getElementById('total-actas').textContent = '127';
-    document.getElementById('actas-procesadas-modal').textContent = '89';
-    document.getElementById('actas-pendientes-modal').textContent = '32';
-    document.getElementById('actas-anuladas-modal').textContent = '6';
+    // Actualizar estadísticas reales
+    const total = result.total || 0;
+    let procesadas = 0, pendientes = 0, anuladas = 0, registradas = 0;
     
-    // Simulación de resultados en tabla
+    if (result.actas) {
+        result.actas.forEach(acta => {
+            switch(acta.estado) {
+                case 'procesada': procesadas++; break;
+                case 'pendiente': pendientes++; break;
+                case 'anulada': anuladas++; break;
+                case 'registrada': registradas++; break;
+            }
+        });
+    }
+    
+    document.getElementById('total-actas').textContent = total;
+    document.getElementById('actas-procesadas-modal').textContent = procesadas;
+    document.getElementById('actas-pendientes-modal').textContent = pendientes + registradas;
+    document.getElementById('actas-anuladas-modal').textContent = anuladas;
+    
+    // Actualizar tabla con datos reales
     const tbody = document.getElementById('tbody-resultados');
-    tbody.innerHTML = `
-        <tr>
-            <td class="fw-bold">DRTC-APU-2024-001</td>
-            <td>15/08/2024</td>
-            <td>TRANSPORTES LIMA S.A.C.</td>
-            <td>20123456789</td>
-            <td>ABC-123</td>
-            <td>Documentaria</td>
-            <td><span class="badge bg-warning">Grave</span></td>
-            <td><span class="badge bg-success">Procesada</span></td>
-            <td>${document.querySelector('input[name="inspector"] option:checked')?.textContent || 'Inspector 1'}</td>
-        </tr>
-        <tr>
-            <td class="fw-bold">DRTC-APU-2024-002</td>
-            <td>14/08/2024</td>
-            <td>JUAN PÉREZ GARCÍA</td>
-            <td>12345678</td>
-            <td>DEF-456</td>
-            <td>Operacional</td>
-            <td><span class="badge bg-danger">Muy Grave</span></td>
-            <td><span class="badge bg-warning">Pendiente</span></td>
-            <td>${document.querySelector('input[name="inspector"] option:checked')?.textContent || 'Inspector 1'}</td>
-        </tr>
-    `;
     
-    console.log('Ejecutando consulta con filtros del formulario');
+    if (total === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    No se encontraron actas con los criterios especificados
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let tableHTML = '';
+    result.actas.forEach(acta => {
+        const estadoBadge = getEstadoBadge(acta.estado);
+        const fechaFormateada = new Date(acta.fecha).toLocaleDateString('es-PE');
+        
+        tableHTML += `
+            <tr>
+                <td class="fw-bold">${acta.numero_acta}</td>
+                <td>${fechaFormateada}</td>
+                <td>${acta.empresa || acta.conductor || 'N/A'}</td>
+                <td>${extractDocumento(acta) || 'N/A'}</td>
+                <td class="fw-bold">${acta.placa || 'N/A'}</td>
+                <td>${acta.ubicacion ? acta.ubicacion.substring(0, 30) + '...' : 'N/A'}</td>
+                <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
+                <td>${estadoBadge}</td>
+                <td>{{ Auth::user()->name }}</td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = tableHTML;
+}
+
+// Función auxiliar para obtener badge de estado
+function getEstadoBadge(estado) {
+    switch(estado) {
+        case 'procesada': return '<span class="badge bg-success">Procesada</span>';
+        case 'pendiente': return '<span class="badge bg-warning">Pendiente</span>';
+        case 'registrada': return '<span class="badge bg-info">Registrada</span>';
+        case 'anulada': return '<span class="badge bg-danger">Anulada</span>';
+        default: return '<span class="badge bg-secondary">Sin estado</span>';
+    }
+}
+
+// Función auxiliar para extraer documento de la descripción
+function extractDocumento(acta) {
+    // Si tenemos el campo descripción, extraer el RUC/DNI
+    if (acta.descripcion) {
+        const match = acta.descripcion.match(/RUC\/DNI:\s*(\d+)/);
+        return match ? match[1] : null;
+    }
+    return null;
 }
 
 function exportarExcel() {
@@ -2260,7 +2344,7 @@ function exportarExcel() {
     
     // Mostrar mensaje de éxito
     setTimeout(() => {
-        alert(`✅ Archivo Excel generado exitosamente:\nActa N° ${actaData.numero}\nFormato: Acta Oficial DRTC Apurímac`);
+        mostrarNotificacion(`✅ Archivo Excel generado exitosamente:\nActa N° ${actaData.numero}\nFormato: Acta Oficial DRTC Apurímac`, 'success', 6000);
     }, 500);
 }
 
@@ -2447,7 +2531,7 @@ function exportarPDF() {
     
     // Simular descarga de PDF
     setTimeout(() => {
-        alert(`✅ Archivo PDF generado exitosamente:\n\n📄 Acta N° ${actaData.numero}\n📅 Fecha: ${actaData.fecha}\n👮 Inspector: ${actaData.inspector}\n📋 Formato: Acta Oficial DRTC Apurímac\n\n⬇️ El archivo se descargará automáticamente...`);
+        mostrarNotificacion(`✅ Archivo PDF generado exitosamente:\n\n📄 Acta N° ${actaData.numero}\n📅 Fecha: ${actaData.fecha}\n👮 Inspector: ${actaData.inspector}\n📋 Formato: Acta Oficial DRTC Apurímac\n\n⬇️ El archivo se descargará automáticamente...`, 'success', 8000);
         
         // En una implementación real, aquí se enviaría el HTML a un servicio de generación de PDF
         console.log('HTML generado para PDF:', htmlContent);
@@ -2462,7 +2546,7 @@ function exportarPDF() {
 }
 
 function generarReporte() {
-    alert('Generando reporte estadístico...');
+    mostrarNotificacion('Generando reporte estadístico...', 'info', 3000);
     console.log('Generando reporte estadístico');
 }
 
@@ -2473,6 +2557,41 @@ document.addEventListener('keydown', function(e) {
         modalesAbiertos.forEach(modal => {
             cerrarModal(modal.id);
         });
+    }
+});
+
+// Función para actualizar la ubicación completa
+function actualizarLugarCompleto() {
+    const lugarSelect = document.getElementById('lugar-select');
+    const direccionInput = document.querySelector('input[name="direccion_especifica"]');
+    const ubicacionCompleta = document.getElementById('ubicacion-completa');
+    
+    if (!lugarSelect || !ubicacionCompleta) return;
+    
+    const lugarSeleccionado = lugarSelect.value; // "Distrito, Provincia"
+    const direccion = direccionInput ? direccionInput.value.trim() : '';
+    
+    let ubicacion = '';
+    
+    if (direccion) {
+        ubicacion += direccion + ', ';
+    }
+    
+    if (lugarSeleccionado) {
+        ubicacion += lugarSeleccionado + ', Región Apurímac';
+    } else {
+        ubicacion = direccion || 'Seleccione ubicación';
+    }
+    
+    ubicacionCompleta.value = ubicacion;
+}
+
+// Event listeners para actualizar ubicación
+document.addEventListener('DOMContentLoaded', function() {
+    const direccionInput = document.querySelector('input[name="direccion_especifica"]');
+    
+    if (direccionInput) {
+        direccionInput.addEventListener('input', actualizarLugarCompleto);
     }
 });
 </script>
