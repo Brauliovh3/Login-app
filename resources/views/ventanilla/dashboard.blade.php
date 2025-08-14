@@ -86,7 +86,7 @@
                             <h2 class="mb-0 fw-bold">
                                 @php
                                     try {
-                                        echo \App\Models\Inspeccion::whereDate('created_at', today())->count();
+                                        echo DB::table('inspecciones')->whereDate('created_at', today())->count();
                                     } catch (\Exception $e) {
                                         echo '0';
                                     }
@@ -110,7 +110,7 @@
                             <h2 class="mb-0 fw-bold">
                                 @php
                                     try {
-                                        echo \App\Models\Infraccion::count();
+                                        echo DB::table('infracciones')->count();
                                     } catch (\Exception $e) {
                                         echo '0';
                                     }
@@ -134,7 +134,7 @@
                             <h2 class="mb-0">
                                 @php
                                     try {
-                                        echo \App\Models\Vehiculo::count();
+                                        echo DB::table('vehiculos')->count();
                                     } catch (\Exception $e) {
                                         echo '0';
                                     }
@@ -158,7 +158,7 @@
                             <h2 class="mb-0">
                                 @php
                                     try {
-                                        echo \App\Models\Empresa::count();
+                                        echo DB::table('empresas')->count();
                                     } catch (\Exception $e) {
                                         echo '0';
                                     }
@@ -265,7 +265,7 @@
                             <tbody>
                                 @php
                                     try {
-                                        $inspecciones = \App\Models\Inspeccion::latest()->take(5)->get();
+                                        $inspecciones = DB::table('inspecciones')->latest()->take(5)->get();
                                     } catch (\Exception $e) {
                                         $inspecciones = collect();
                                     }
@@ -273,18 +273,18 @@
                                 @forelse($inspecciones as $inspeccion)
                                 <tr>
                                     <td><strong>#{{ $inspeccion->id }}</strong></td>
-                                    <td>{{ $inspeccion->empresa ?? 'N/A' }}</td>
+                                    <td>{{ $inspeccion->numero_inspeccion ?? 'N/A' }}</td>
                                     <td>{{ $inspeccion->tipo_inspeccion ?? 'General' }}</td>
                                     <td>
                                         @if($inspeccion->estado == 'completada')
                                             <span class="badge bg-success">Completada</span>
-                                        @elseif($inspeccion->estado == 'en_proceso')
-                                            <span class="badge bg-warning">En Proceso</span>
+                                        @elseif($inspeccion->estado == 'pendiente')
+                                            <span class="badge bg-warning">Pendiente</span>
                                         @else
-                                            <span class="badge bg-info">Pendiente</span>
+                                            <span class="badge bg-info">{{ $inspeccion->estado }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ $inspeccion->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>{{ $inspeccion->created_at ?? 'N/A' }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-info">
                                             <i class="fas fa-eye"></i>
