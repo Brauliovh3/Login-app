@@ -17,6 +17,11 @@ Route::get('/', function () {
     return \Illuminate\Support\Facades\Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
+// Ruta de prueba para el formulario de actas
+Route::get('/test-formulario', function () {
+    return view('test-formulario-funcional');
+})->name('test.formulario');
+
 // Rutas de autenticación
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);

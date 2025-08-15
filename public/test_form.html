@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Formulario de Actas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Prueba de Guardado de Actas</h2>
+        
+        <div id="notification" class="alert d-none" role="alert"></div>
+        
+        <form id="testForm" class="row g-3">
+            <div class="col-md-6">
+                <label for="numero_acta" class="form-label">Número de Acta</label>
+                <input type="text" class="form-control" id="numero_acta" name="numero_acta" value="TEST-2025-001" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="fecha_acta" class="form-label">Fecha</label>
+                <input type="date" class="form-control" id="fecha_acta" name="fecha_acta" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="hora_acta" class="form-label">Hora</label>
+                <input type="time" class="form-control" id="hora_acta" name="hora_acta" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="DNI">DNI</option>
+                    <option value="RUC">RUC</option>
+                    <option value="Pasaporte">Pasaporte</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="numero_documento" class="form-label">Número de Documento</label>
+                <input type="text" class="form-control" id="numero_documento" name="numero_documento" value="12345678" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="nombre_conductor" class="form-label">Nombre del Conductor</label>
+                <input type="text" class="form-control" id="nombre_conductor" name="nombre_conductor" value="Juan Pérez" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="placa_vehiculo" class="form-label">Placa del Vehículo</label>
+                <input type="text" class="form-control" id="placa_vehiculo" name="placa_vehiculo" value="ABC-123" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="clase_vehiculo" class="form-label">Clase de Vehículo</label>
+                <select class="form-select" id="clase_vehiculo" name="clase_vehiculo" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="automovil">Automóvil</option>
+                    <option value="camion">Camión</option>
+                    <option value="motocicleta">Motocicleta</option>
+                    <option value="autobus">Autobús</option>
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <label for="lugar_infraccion" class="form-label">Lugar de la Infracción</label>
+                <input type="text" class="form-control" id="lugar_infraccion" name="lugar_infraccion" value="Av. Principal 123" required>
+            </div>
+            
+            <div class="col-12">
+                <label for="descripcion_infraccion" class="form-label">Descripción de la Infracción</label>
+                <textarea class="form-control" id="descripcion_infraccion" name="descripcion_infraccion" rows="3" required>Exceso de velocidad</textarea>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="inspector" class="form-label">Inspector</label>
+                <input type="text" class="form-control" id="inspector" name="inspector" value="Inspector de Prueba" required>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado" required>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="completada">Completada</option>
+                    <option value="cancelada">Cancelada</option>
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Guardar Acta</button>
+                <button type="button" class="btn btn-secondary" onclick="testConsulta()">Probar Consulta</button>
+                <button type="button" class="btn btn-info" onclick="checkDatabase()">Verificar Base de Datos</button>
+            </div>
+        </form>
+        
+        <div id="results" class="mt-4"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Obtener token CSRF
+        async function getCSRFToken() {
+            try {
+                const response = await fetch('/api/csrf-token');
+                const data = await response.json();
+                return data.token;
+            } catch (error) {
+                console.log('Error obteniendo CSRF token:', error);
+                return 'test-token';
+            }
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(tipo, mensaje) {
+            const notification = document.getElementById('notification');
+            notification.className = `alert alert-${tipo}`;
+            notification.textContent = mensaje;
+            notification.classList.remove('d-none');
+            
+            setTimeout(() => {
+                notification.classList.add('d-none');
+            }, 5000);
+        }
+
+        // Establecer fecha y hora actual
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            document.getElementById('fecha_acta').value = now.toISOString().split('T')[0];
+            document.getElementById('hora_acta').value = now.toTimeString().split(' ')[0].substring(0, 5);
+        });
+
+        // Manejar envío del formulario
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const token = await getCSRFToken();
+                
+                const response = await fetch('/api/test-actas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    mostrarNotificacion('success', result.mensaje || 'Acta guardada exitosamente');
+                    console.log('Respuesta exitosa:', result);
+                } else {
+                    mostrarNotificacion('danger', result.mensaje || 'Error al guardar el acta');
+                    console.error('Error en respuesta:', result);
+                }
+            } catch (error) {
+                mostrarNotificacion('danger', 'Error de conexión: ' + error.message);
+                console.error('Error:', error);
+            }
+        });
+
+        // Función para probar consulta
+        async function testConsulta() {
+            const documento = document.getElementById('numero_documento').value;
+            
+            if (!documento) {
+                mostrarNotificacion('warning', 'Ingrese un número de documento para consultar');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/test-consulta/${documento}`);
+                const result = await response.json();
+                
+                document.getElementById('results').innerHTML = `
+                    <h5>Resultado de Consulta:</h5>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                mostrarNotificacion('danger', 'Error en consulta: ' + error.message);
+            }
+        }
+
+        // Función para verificar base de datos
+        async function checkDatabase() {
+            try {
+                const response = await fetch('/check_tables.php');
+                const result = await response.text();
+                
+                document.getElementById('results').innerHTML = `
+                    <h5>Estado de la Base de Datos:</h5>
+                    <pre>${result}</pre>
+                `;
+            } catch (error) {
+                mostrarNotificacion('danger', 'Error verificando base de datos: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

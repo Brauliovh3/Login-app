@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class ActaController extends Controller
@@ -36,7 +37,14 @@ class ActaController extends Controller
         $infracciones = DB::table('infracciones')->get();
         $inspectores = DB::table('inspectores')->where('estado', 'activo')->get();
 
-        return view('fiscalizador.actas.create', compact('vehiculos', 'conductores', 'infracciones', 'inspectores'));
+        // Calcular el siguiente número de acta y pasarlo a la vista (solo para mostrar)
+        try {
+            $proximoNumero = $this->generarNumeroActaUnico();
+        } catch (\Exception $e) {
+            $proximoNumero = 'DRTC-APU-' . date('Y') . '-000';
+        }
+
+        return view('fiscalizador.actas.create', compact('vehiculos', 'conductores', 'infracciones', 'inspectores'))->with('proximo_numero_acta', $proximoNumero);
     }
 
     public function store(Request $request)
@@ -60,26 +68,91 @@ class ActaController extends Controller
         // Obtener la hora actual exacta para el registro
         $horaActual = Carbon::now();
         
-        // Generar número de acta único
-        $numeroActa = 'DRTC-APU-' . date('Y') . '-' . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+    // Generar número de acta único
+    $numeroActa = $this->generarNumeroActaUnico();
 
-        $actaId = DB::table('actas')->insertGetId([
+        // Preparar valores adicionales (nombre, dni, licencia) para guardar en la tabla actas
+        $nombreConductorParaDB = $request->nombre_conductor ?? $request->nombre_conductor_1 ?? null;
+        $rucDniParaDB = $request->ruc_dni ?? null;
+        $licenciaParaDB = $request->licencia_conductor ?? $request->licencia_conductor_1 ?? null;
+
+        // Si nos pasan conductor_id y no vienen los datos, intentar obtenerlos de la tabla conductores
+        if (empty($nombreConductorParaDB) && $request->filled('conductor_id')) {
+            try {
+                $cond = DB::table('conductores')->where('id', $request->conductor_id)->first();
+                if ($cond) {
+                    $nombreConductorParaDB = $cond->nombre ?? $nombreConductorParaDB;
+                    // algunos esquemas usan 'dni' o 'documento'
+                    $rucDniParaDB = $rucDniParaDB ?? ($cond->dni ?? $cond->documento ?? null);
+                    $licenciaParaDB = $licenciaParaDB ?? ($cond->licencia ?? null);
+                }
+            } catch (\Exception $e) {
+                // no bloquear el flujo si la tabla conductores no existe
+            }
+        }
+
+        // Determinar nombres de columnas según el esquema actual y mapear valores
+        $lugar = $request->ubicacion ?? $request->lugar_intervencion ?? null;
+        $descripcionVal = $request->descripcion ?? $request->descripcion_hechos ?? null;
+
+        $insertData = [
             'numero_acta' => $numeroActa,
             'vehiculo_id' => $request->vehiculo_id,
             'conductor_id' => $request->conductor_id,
             'infraccion_id' => $request->infraccion_id,
             'inspector_id' => $request->inspector_id,
+            // Campos redundantes para facilitar búsquedas y reportes
+            'nombre_conductor' => $nombreConductorParaDB,
+            'ruc_dni' => $rucDniParaDB,
+            'licencia_conductor' => $licenciaParaDB,
             'fecha_infraccion' => $horaActual->toDateString(),
             'hora_infraccion' => $horaActual->toTimeString(),
             'hora_inicio_registro' => $horaActual->toDateTimeString(), // Hora exacta del inicio
-            'ubicacion' => $request->ubicacion,
-            'descripcion' => $request->descripcion,
             'monto_multa' => $request->monto_multa,
             'estado' => 'registrada', // Cambiar de 'pendiente' a 'registrada'
             'user_id' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'created_at' => $horaActual->toDateTimeString(),
             'updated_at' => $horaActual->toDateTimeString(),
-        ]);
+        ];
+
+        // Ubicación / lugar_intervencion
+        if ($lugar !== null) {
+            if (Schema::hasColumn('actas', 'lugar_intervencion')) {
+                $insertData['lugar_intervencion'] = $lugar;
+            } else {
+                // fallback a 'ubicacion'
+                $insertData['ubicacion'] = $lugar;
+            }
+        }
+
+        // Descripción (descripcion / descripcion_hechos)
+        if ($descripcionVal !== null) {
+            if (Schema::hasColumn('actas', 'descripcion_hechos')) {
+                $insertData['descripcion_hechos'] = $descripcionVal;
+            } else {
+                $insertData['descripcion'] = $descripcionVal;
+            }
+        }
+
+        // Intentar insertar con reintentos si existe colisión en numero_acta
+        $actaId = null;
+        $attempts = 0;
+        while ($attempts < 5) {
+            try {
+                $insertData['numero_acta'] = $numeroActa = $this->generarNumeroActaUnico();
+                $actaId = DB::table('actas')->insertGetId($insertData);
+                break;
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Colisión, reintentar con nuevo número
+                $attempts++;
+                logger()->warning('Colisión en numero_acta, reintentando generación', ['attempt' => $attempts, 'error' => $e->getMessage()]);
+                usleep(100000); // esperar 100ms
+            }
+        }
+        if (!$actaId) {
+            // Si no se pudo insertar después de reintentos, lanzar excepción
+            throw new \Exception('No se pudo generar un numero_acta único después de varios intentos.');
+        }
 
         // Crear notificación solo si el usuario está autenticado
         if (Auth::id()) {
@@ -112,11 +185,12 @@ class ActaController extends Controller
             'placa_1' => 'required|string|max:10',
             'nombre_conductor_1' => 'required|string|max:255',
             'licencia_conductor_1' => 'required|string|max:20',
-            'razon_social' => 'required|string|max:255',
+            'razon_social' => 'nullable|string|max:255',
             'ruc_dni' => 'required|string|max:20',
             'lugar_intervencion' => 'required|string|max:500',
-            'origen_viaje' => 'required|string|max:255',
-            'destino_viaje' => 'required|string|max:255',
+            // Origen/Destino ya no son obligatorios - pueden enviarse o quedar vacíos
+            'origen_viaje' => 'nullable|string|max:255',
+            'destino_viaje' => 'nullable|string|max:255',
             'tipo_servicio' => 'required|string|max:50',
             'descripcion_hechos' => 'required|string',
         ]);
@@ -124,14 +198,19 @@ class ActaController extends Controller
         // Obtener la hora actual exacta para el registro
         $horaActual = Carbon::now();
         
-        // Generar número de acta único
-        $numeroActa = 'DRTC-APU-' . date('Y') . '-' . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+    // Generar número de acta único
+    $numeroActa = $this->generarNumeroActaUnico();
 
         // Preparar descripción completa
         $descripcionCompleta = "ACTA DE FISCALIZACIÓN\n\n";
         $descripcionCompleta .= "DATOS DEL VEHÍCULO:\n";
         $descripcionCompleta .= "Placa: " . $request->placa_1 . "\n";
-        $descripcionCompleta .= "Empresa/Operador: " . $request->razon_social . "\n";
+        
+        // Solo agregar empresa/operador si hay razón social
+        if (!empty($request->razon_social)) {
+            $descripcionCompleta .= "Empresa/Operador: " . $request->razon_social . "\n";
+        }
+        
         $descripcionCompleta .= "RUC/DNI: " . $request->ruc_dni . "\n\n";
         
         $descripcionCompleta .= "DATOS DEL CONDUCTOR:\n";
@@ -139,32 +218,115 @@ class ActaController extends Controller
         $descripcionCompleta .= "Licencia: " . $request->licencia_conductor_1 . "\n\n";
         
         $descripcionCompleta .= "DATOS DEL VIAJE:\n";
-        $descripcionCompleta .= "Origen: " . $request->origen_viaje . "\n";
-        $descripcionCompleta .= "Destino: " . $request->destino_viaje . "\n";
+        if (!empty($request->origen_viaje)) {
+            $descripcionCompleta .= "Origen: " . $request->origen_viaje . "\n";
+        }
+        if (!empty($request->destino_viaje)) {
+            $descripcionCompleta .= "Destino: " . $request->destino_viaje . "\n";
+        }
         $descripcionCompleta .= "Tipo de Servicio: " . $request->tipo_servicio . "\n\n";
         
         $descripcionCompleta .= "DESCRIPCIÓN DE LOS HECHOS:\n";
         $descripcionCompleta .= $request->descripcion_hechos;
 
-        $actaId = DB::table('actas')->insertGetId([
-            'numero_acta' => $numeroActa,
-            'vehiculo_id' => null, // No vinculado a tabla vehiculos
-            'conductor_id' => null, // No vinculado a tabla conductores
-            'infraccion_id' => 1, // ID genérico de infracción
-            'inspector_id' => 1, // ID genérico de inspector
-            'placa_vehiculo' => $request->placa_1,
-            'ubicacion' => $request->lugar_intervencion,
-            'descripcion' => $descripcionCompleta,
-            'monto_multa' => $request->monto_multa ?? 0,
-            'estado' => 'registrada',
-            'fecha_infraccion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
-            'hora_infraccion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
-            'hora_inicio_registro' => $horaActual->toDateTimeString(),
-            'observaciones' => $request->observaciones_inspector ?? null,
-            'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
-            'created_at' => $horaActual->toDateTimeString(),
-            'updated_at' => $horaActual->toDateTimeString(),
-        ]);
+        // Defensive: truncar valores que puedan superar la longitud de la columna en la BD
+        try {
+            $db = env('DB_DATABASE');
+            $maxPlaca = null;
+            // Intentar obtener el tamaño máximo de la columna desde information_schema
+            $col = DB::selectOne("SELECT CHARACTER_MAXIMUM_LENGTH as len FROM information_schema.columns WHERE table_schema = ? AND table_name = 'actas' AND column_name = 'placa_vehiculo'", [$db]);
+            if ($col && isset($col->len) && is_numeric($col->len)) {
+                $maxPlaca = (int) $col->len;
+            }
+        } catch (\Exception $e) {
+            // Si falla la consulta, no interrumpimos: usaremos una longitud por defecto
+            $maxPlaca = null;
+        }
+
+        $placaOriginal = (string)($request->placa_1 ?? '');
+        if ($maxPlaca && $maxPlaca > 0) {
+            $placaParaDB = mb_substr($placaOriginal, 0, $maxPlaca);
+        } else {
+            // Fallback conservador: limitar a 50 caracteres en memoria
+            $placaParaDB = mb_substr($placaOriginal, 0, 50);
+        }
+
+        try {
+            // Preparar insert adaptable al esquema de la tabla
+            $insertData = [
+                'numero_acta' => $numeroActa,
+                'vehiculo_id' => null, // No vinculado a tabla vehiculos
+                'conductor_id' => null, // No vinculado a tabla conductores
+                'infraccion_id' => 1, // ID genérico de infracción
+                'inspector_id' => 1, // ID genérico de inspector
+                // Guardar nombre completo y documento (RUC/DNI) enviados desde el formulario libre
+                'nombre_conductor' => $request->nombre_conductor_1 ?? null,
+                'ruc_dni' => $request->ruc_dni ?? null,
+                'monto_multa' => $request->monto_multa ?? 0,
+                'estado' => 'registrada',
+                'fecha_infraccion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
+                'hora_infraccion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
+                'hora_inicio_registro' => $horaActual->toDateTimeString(),
+                'observaciones' => $request->observaciones_inspector ?? null,
+                'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
+                'created_at' => $horaActual->toDateTimeString(),
+                'updated_at' => $horaActual->toDateTimeString(),
+            ];
+
+            // Placa: placa_vehiculo o placa
+            if (Schema::hasColumn('actas', 'placa_vehiculo')) {
+                $insertData['placa_vehiculo'] = $placaParaDB;
+            } elseif (Schema::hasColumn('actas', 'placa')) {
+                $insertData['placa'] = $placaParaDB;
+            }
+
+            // Lugar / ubicacion
+            $lugar = $request->lugar_intervencion ?? null;
+            if ($lugar !== null) {
+                if (Schema::hasColumn('actas', 'lugar_intervencion')) {
+                    $insertData['lugar_intervencion'] = $lugar;
+                } else {
+                    $insertData['ubicacion'] = $lugar;
+                }
+            }
+
+            // Descripción
+            if (Schema::hasColumn('actas', 'descripcion_hechos')) {
+                $insertData['descripcion_hechos'] = $descripcionCompleta;
+            } else {
+                $insertData['descripcion'] = $descripcionCompleta;
+            }
+
+            // Intentar insertar con reintentos si existe colisión en numero_acta
+            $actaId = null;
+            $attempts = 0;
+            while ($attempts < 5) {
+                try {
+                    $insertData['numero_acta'] = $numeroActa = $this->generarNumeroActaUnico();
+                    $actaId = DB::table('actas')->insertGetId($insertData);
+                    break;
+                } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                    $attempts++;
+                    logger()->warning('Colisión en numero_acta (libre), reintentando generación', ['attempt' => $attempts, 'error' => $e->getMessage()]);
+                    usleep(100000);
+                }
+            }
+            if (!$actaId) {
+                throw new \Exception('No se pudo generar un numero_acta único después de varios intentos (libre).');
+            }
+        } catch (\Exception $e) {
+            // Loguear y devolver JSON de error legible para evitar 500 silencioso
+            logger()->error('Error al insertar acta libre: ' . $e->getMessage(), [
+                'exception' => $e,
+                'placa_original' => $placaOriginal,
+                'placa_para_db' => $placaParaDB
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error general al crear acta: ' . $e->getMessage()
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
@@ -528,4 +690,39 @@ class ActaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Genera un número de acta único con formato DRTC-APU-YYYY-XXX
+     * Busca los existentes para el año y calcula el siguiente sufijo numérico disponible.
+     */
+    private function generarNumeroActaUnico()
+    {
+        $year = date('Y');
+        $prefix = 'DRTC-APU-' . $year . '-';
+
+        try {
+            $rows = DB::table('actas')
+                ->where('numero_acta', 'like', $prefix . '%')
+                ->pluck('numero_acta');
+
+            $max = 0;
+            foreach ($rows as $num) {
+                $parts = explode('-', $num);
+                $suf = end($parts);
+                if (is_numeric($suf)) {
+                    $n = (int) $suf;
+                    if ($n > $max) {
+                        $max = $n;
+                    }
+                }
+            }
+
+            $next = $max + 1;
+            return $prefix . str_pad($next, 3, '0', STR_PAD_LEFT);
+        } catch (\Exception $e) {
+            // En caso de fallo al consultar la BD, usar fallback simple
+            return $prefix . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+        }
+    }
+
 }

@@ -3,6 +3,29 @@
 @section('title', 'Gestión de Actas de Fiscalización')
 
 @section('content')
+@php
+use Illuminate\Support\Facades\DB;
+// Calcular próximo sufijo numérico para mostrar en el encabezado (reinicio anual)
+try {
+    $year = date('Y');
+    $prefix = 'DRTC-APU-' . $year . '-';
+    $rows = DB::table('actas')->where('numero_acta', 'like', $prefix . '%')->pluck('numero_acta');
+    $max = 0;
+    foreach ($rows as $num) {
+        $parts = explode('-', $num);
+        $suf = (int) end($parts);
+        if ($suf > $max) $max = $suf;
+    }
+    $next = $max + 1;
+    $proximo_sufijo = str_pad($next, 6, '0', STR_PAD_LEFT);
+} catch (\Exception $e) {
+    try {
+        $proximo_sufijo = str_pad(DB::table('actas')->count() + 1, 6, '0', STR_PAD_LEFT);
+    } catch (\Exception $e) {
+        $proximo_sufijo = str_pad(1, 6, '0', STR_PAD_LEFT);
+    }
+}
+@endphp
 <style>
     :root {
         --drtc-orange: #ff8c00;
@@ -499,69 +522,185 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
     return notificacion;
 }
 
-function guardarActa() {
-    // Validar formulario
+function submitActa(event) {
+    event.preventDefault(); // Prevenir el envío normal del formulario
+    
+    console.log('🚀 Iniciando envío de acta...');
+    
+    // Obtener el formulario
     const form = document.getElementById('form-nueva-acta');
-    const formData = new FormData(form);
-    
-    // Validaciones básicas
-    const placa = formData.get('placa_1');
-    const conductor = formData.get('nombre_conductor_1');
-    const lugar = formData.get('lugar_intervencion');
-    
-    if (!placa || !conductor || !lugar) {
-        mostrarNotificacion('Por favor complete todos los campos obligatorios', 'warning');
-        return;
+    if (!form) {
+        console.error('❌ Formulario no encontrado');
+        mostrarNotificacion('Error: Formulario no encontrado', 'error');
+        return false;
     }
     
-    // Mostrar indicador de carga
-    const submitBtn = document.querySelector('#form-nueva-acta button[type="submit"]');
+    // Recopilar datos del formulario
+    const formData = new FormData(form);
+    
+    // Validar campos obligatorios (origen/destino son opcionales ahora)
+    const camposObligatorios = {
+        'placa_1': 'Placa del vehículo',
+        'nombre_conductor_1': 'Nombre del conductor', 
+        'licencia_conductor_1': 'Licencia del conductor',
+        'ruc_dni': 'RUC/DNI',
+        'lugar_intervencion': 'Lugar de intervención',
+        'tipo_servicio': 'Tipo de servicio',
+        'descripcion_hechos': 'Descripción de los hechos'
+    };
+    
+    const camposFaltantes = [];
+    for (const [campo, nombre] of Object.entries(camposObligatorios)) {
+        const valor = formData.get(campo);
+        if (!valor || valor.trim() === '') {
+            camposFaltantes.push(nombre);
+        }
+    }
+    
+    if (camposFaltantes.length > 0) {
+        console.log('❌ Campos faltantes:', camposFaltantes);
+        mostrarNotificacion('Por favor complete todos los campos obligatorios:\n• ' + camposFaltantes.join('\n• '), 'warning');
+        return false;
+    }
+    
+    // Obtener lugar completo (combinar select + dirección específica)
+    const lugarSelect = formData.get('lugar_intervencion');
+    const direccionEspecifica = formData.get('direccion_especifica');
+    let lugarCompleto = lugarSelect;
+    if (direccionEspecifica && direccionEspecifica.trim() !== '') {
+        lugarCompleto += ' - ' + direccionEspecifica.trim();
+    }
+    
+    // Preparar datos para envío (mapear a los campos que espera el backend)
+    // Aceptar nombres alternativos de campos (compatibilidad con distintos formularios)
+    const placaValor = formData.get('placa_1') || formData.get('placa_vehiculo') || formData.get('placa');
+    const nombreConductorValor = formData.get('nombre_conductor_1') || formData.get('nombre_conductor') || formData.get('nombre');
+    const licenciaValor = formData.get('licencia_conductor_1') || formData.get('licencia_conductor') || formData.get('licencia');
+    const documentoValor = formData.get('ruc_dni') || formData.get('dni_conductor') || formData.get('dni');
+
+    const datosParaEnvio = {
+        placa_1: placaValor,
+        nombre_conductor_1: nombreConductorValor,
+        licencia_conductor_1: licenciaValor,
+        razon_social: formData.get('razon_social') || null,
+        ruc_dni: documentoValor,
+        lugar_intervencion: lugarCompleto,
+        origen_viaje: formData.get('origen_viaje') || null,
+        destino_viaje: formData.get('destino_viaje') || null,
+        tipo_servicio: formData.get('tipo_servicio') || null,
+        descripcion_hechos: formData.get('descripcion_hechos') || formData.get('descripcion') || null,
+        // Campos adicionales opcionales
+        fecha_intervencion: formData.get('fecha_intervencion') || null,
+        hora_intervencion: formData.get('hora_intervencion') || null,
+        tipo_agente: formData.get('tipo_agente') || null,
+        clase_categoria: formData.get('clase_categoria') || null,
+        tipo_infraccion: formData.get('tipo_infraccion') || null,
+        codigo_infraccion: formData.get('codigo_infraccion') || null,
+        gravedad: formData.get('gravedad') || null
+    };
+
+    // Incluir numero_acta si está presente en el formulario (campo readonly)
+    const numeroActaCampo = formData.get('numero_acta');
+    if (numeroActaCampo) {
+        datosParaEnvio.numero_acta = numeroActaCampo;
+    }
+    
+    console.log('📤 Datos a enviar:', datosParaEnvio);
+    
+    // Obtener botón de envío para mostrar estado de carga
+    const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn ? submitBtn.innerHTML : '';
+    
     if (submitBtn) {
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando Acta...';
         submitBtn.disabled = true;
     }
     
-    // Preparar datos para envío
-    const data = Object.fromEntries(formData.entries());
+    // Obtener token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken) {
+        console.error('❌ Token CSRF no encontrado');
+        mostrarNotificacion('Error: Token CSRF no encontrado', 'error');
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+        return false;
+    }
     
-    // Enviar datos al servidor con seguimiento automático de tiempo
+    // Enviar datos al servidor
     fetch('/api/actas', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+            'Accept': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(datosParaEnvio)
     })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            // Guardar ID del acta para seguimiento
-            actaIdEnProceso = result.acta_id;
-            
-            mostrarNotificacion(`Acta ${result.numero_acta} registrada exitosamente.\nHora de registro: ${result.hora_registro}\nEl sistema está guardando automáticamente los cambios.`, 'success', 6000);
-            
-            // Añadir botón de finalizar en el modal
-            agregarBotonFinalizar();
-            
-            // No cerrar el modal para permitir ediciones
-            console.log('Acta creada con ID:', result.acta_id);
-        } else {
-            mostrarNotificacion('Error al registrar el acta: ' + (result.message || 'Error desconocido'), 'error');
+    .then(response => {
+        console.log('📡 Respuesta del servidor:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        return response.json();
     })
-    .catch(error => {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al conectar con el servidor', 'error');
-    })
-    .finally(() => {
+    .then(result => {
+        console.log('✅ Resultado:', result);
+        
         // Restaurar botón
         if (submitBtn) {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
+        
+        if (result.success) {
+            // Mostrar notificación de éxito
+            mostrarNotificacion(
+                `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
+                `📅 Fecha: ${result.hora_registro}\n` +
+                `🆔 ID: ${result.acta_id}\n` +
+                `📍 Lugar: ${lugarCompleto}`,
+                'success',
+                8000
+            );
+            
+            // Limpiar formulario
+            form.reset();
+            
+            // Recargar la tabla de actas si existe
+            if (typeof cargarActas === 'function') {
+                setTimeout(() => {
+                    cargarActas();
+                }, 1000);
+            }
+            
+            console.log('✅ Acta creada exitosamente con ID:', result.acta_id);
+            
+        } else {
+            console.error('❌ Error del servidor:', result);
+            mostrarNotificacion(
+                '❌ Error al registrar el acta:\n' + (result.message || result.error || 'Error desconocido'),
+                'error'
+            );
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error en la petición:', error);
+        
+        // Restaurar botón
+        if (submitBtn) {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+        
+        mostrarNotificacion(
+            '❌ Error de conexión:\n' + error.message + '\n\nVerifique que el servidor esté funcionando.',
+            'error'
+        );
     });
+    
+    return false; // Prevenir envío del formulario
 }
 
 // Función para agregar botón de finalizar al modal
@@ -607,7 +746,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
             </button>
         </div>
         <div class="modal-body-custom">
-            <form id="form-nueva-acta" action="/api/actas" method="POST">
+            <form id="form-nueva-acta" action="/api/actas" method="POST" onsubmit="return submitActa(event)">
                 @csrf
                 
                 <!-- Campos automáticos ocultos -->
@@ -667,11 +806,10 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 <div class="d-flex align-items-center justify-content-center mb-2">
                                     <h3 class="mb-0 fw-bold text-dark me-3">ACTA DE CONTROL</h3>
                                     <span class="me-2 fw-bold text-dark" style="font-size: 18px;">Nº</span>
-                                    <input type="text" class="form-control d-inline-block me-2" 
-                                           name="numero_acta" 
-                                           placeholder="000451"
-                                           style="width: 120px; border: 3px solid #000; text-align: center; font-weight: bold; font-size: 18px; background-color: #fff;">
+                                    <span class="me-2 d-inline-block" style="width: 120px; text-align: center; font-weight: bold; font-size: 18px;">{{ $proximo_sufijo }}</span>
                                     <span class="fw-bold text-dark" style="font-size: 18px;">- {{ date('Y') }}</span>
+                                    {{-- Hidden con el numero_acta completo para envío al backend --}}
+                                    <input type="hidden" name="numero_acta" value="{{ 'DRTC-APU-' . date('Y') . '-' . $proximo_sufijo }}">
                                 </div>
                             </div>
                         </div>
@@ -756,8 +894,8 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos:</label>
-                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT" readonly>
+                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos: <small class="text-muted">(Opcional)</small></label>
+                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT - Campo opcional">
                                 <div id="loading-data" class="form-text text-info" style="display: none;">
                                     <i class="fas fa-spinner fa-spin"></i> Consultando datos...
                                 </div>
@@ -941,21 +1079,26 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             </div>
                         </div>
                         
+                        <!-- Origen y Destino removidos según requerimiento -->
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-info">Inspector Responsable:</label>
-                                <input type="text" class="form-control border-info" name="inspector" value="{{ Auth::user()->name }}" readonly>
-                            </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-8 mb-3">
                                 <label class="form-label fw-bold text-info">Tipo de Servicio:</label>
                                 <select class="form-select border-info" name="tipo_servicio" required>
                                     <option value="">Seleccione tipo de servicio...</option>
-                                    <option value="publico">Servicio Público</option>
-                                    <option value="privado">Servicio Privado</option>
-                                    <option value="turistico">Servicio Turístico</option>
-                                    <option value="carga">Transporte de Carga</option>
-                                    <option value="especial">Servicio Especial</option>
+                                    <option value="Interprovincial">Interprovincial</option>
+                                    <option value="Interdistrital">Interdistrital</option>
+                                    <option value="Urbano">Urbano</option>
+                                    <option value="Turístico">Turístico</option>
+                                    <option value="Carga">Transporte de Carga</option>
+                                    <option value="Especial">Servicio Especial</option>
                                 </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold text-info">Inspector Responsable:</label>
+                                <input type="text" class="form-control border-info" name="inspector" value="{{ Auth::user()->name }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -1004,13 +1147,81 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                 
                 <!-- Botones de acción -->
                 <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg me-3 px-5">
+                    <button type="submit" class="btn btn-success btn-lg me-2 px-4" id="btn-guardar-acta">
                         <i class="fas fa-save me-2"></i>GUARDAR ACTA
                     </button>
+
+                    <!-- Descargar PDF -->
+                    <button type="button" class="btn btn-outline-primary btn-lg me-2 px-4" id="btn-descargar-pdf" onclick="descargarPDF()" title="Descargar acta en PDF">
+                        <i class="fas fa-file-pdf me-2"></i>DESCARGAR PDF
+                    </button>
+
+                    <!-- Imprimir -->
+                    <button type="button" class="btn btn-outline-info btn-lg me-3 px-4" id="btn-imprimir-acta" onclick="imprimirActa()" title="Imprimir acta">
+                        <i class="fas fa-print me-2"></i>IMPRIMIR
+                    </button>
+
                     <button type="reset" class="btn btn-secondary btn-lg px-5">
                         <i class="fas fa-undo me-2"></i>LIMPIAR FORMULARIO
                     </button>
                 </div>
+
+                <!-- Script: imprimir y descargar PDF -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+                <script>
+                    /**
+                     * imprimirActa: abre una ventana nueva con el contenido del formulario y dispara la impresión.
+                     * Usa los estilos cargados en la página para que la impresión conserve apariencia.
+                     */
+                    function imprimirActa() {
+                        var element = document.getElementById('form-nueva-acta');
+                        if (!element) { alert('Formulario no encontrado para imprimir.'); return; }
+
+                        var printWindow = window.open('', '_blank');
+                        printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir Acta</title>');
+                        // Copiar hojas de estilo actuales (link y style)
+                        var styles = document.querySelectorAll('link[rel="stylesheet"], style');
+                        styles.forEach(function(s){ printWindow.document.write(s.outerHTML); });
+                        printWindow.document.write('</head><body>');
+                        // Clonar el formulario para mantener valores actuales
+                        printWindow.document.write('<div style="padding:20px;">' + element.outerHTML + '</div>');
+                        printWindow.document.write('</body></html>');
+                        printWindow.document.close();
+                        printWindow.focus();
+                        // Dar tiempo a que cargue estilos
+                        setTimeout(function(){ printWindow.print(); /*printWindow.close();*/ }, 600);
+                    }
+
+                    /**
+                     * descargarPDF: usa html2pdf para convertir el formulario a PDF y descargarlo.
+                     */
+                    function descargarPDF() {
+                        var element = document.getElementById('form-nueva-acta');
+                        if (!element) { alert('Formulario no encontrado para exportar.'); return; }
+
+                        var filename = 'acta-' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
+                        var opt = {
+                            margin:       0.5,
+                            filename:     filename,
+                            image:        { type: 'jpeg', quality: 0.98 },
+                            html2canvas:  { scale: 2, useCORS: true },
+                            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                        };
+
+                        // Para evitar que el formulario muestre botones en el PDF, clonamos y quitamos los controles
+                        var clone = element.cloneNode(true);
+                        // Remover botones dentro del clon
+                        var buttons = clone.querySelectorAll('button');
+                        buttons.forEach(function(b){ b.parentNode && b.parentNode.removeChild(b); });
+
+                        // Crear contenedor temporal
+                        var container = document.createElement('div');
+                        container.style.padding = '20px';
+                        container.appendChild(clone);
+
+                        html2pdf().set(opt).from(container).save();
+                    }
+                </script>
             </form>
         </div>
     </div>
@@ -1250,7 +1461,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                             <div class="row mb-3">
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-info">N° de Acta:</label>
-                                    <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001">
+                                    <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001" value="{{ $proximo_numero_acta ?? '' }}" readonly>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-info">Placa del Vehículo:</label>
