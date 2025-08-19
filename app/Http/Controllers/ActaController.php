@@ -263,14 +263,13 @@ class ActaController extends Controller
                 'nombre_conductor' => $request->nombre_conductor_1 ?? null,
                 'ruc_dni' => $request->ruc_dni ?? null,
                 'monto_multa' => $request->monto_multa ?? 0,
-                'estado' => 'registrada',
-                'fecha_intervencion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
-                'hora_intervencion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
-                'hora_inicio_registro' => $horaActual->toDateTimeString(),
-                'observaciones' => $request->observaciones_inspector ?? null,
-                'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
-                'created_at' => $horaActual->toDateTimeString(),
-                'updated_at' => $horaActual->toDateTimeString(),
+                    'estado' => 'registrada',
+                    // Hora de inicio del registro siempre guardamos si existe la columna
+                    'hora_inicio_registro' => $horaActual->toDateTimeString(),
+                    'observaciones' => $request->observaciones_inspector ?? null,
+                    'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
+                    'created_at' => $horaActual->toDateTimeString(),
+                    'updated_at' => $horaActual->toDateTimeString(),
             ];
 
             // Placa: placa_vehiculo o placa
@@ -278,6 +277,21 @@ class ActaController extends Controller
                 $insertData['placa_vehiculo'] = $placaParaDB;
             } elseif (Schema::hasColumn('actas', 'placa')) {
                 $insertData['placa'] = $placaParaDB;
+            }
+
+            // Fecha / Hora: mapear a columnas existentes para evitar SQL errors en esquemas distintos
+            $fechaVal = $request->fecha_intervencion ?? $horaActual->toDateString();
+            $horaVal = $request->hora_intervencion ?? $horaActual->toTimeString();
+            if (Schema::hasColumn('actas', 'fecha_intervencion')) {
+                $insertData['fecha_intervencion'] = $fechaVal;
+            } elseif (Schema::hasColumn('actas', 'fecha_infraccion')) {
+                $insertData['fecha_infraccion'] = $fechaVal;
+            }
+
+            if (Schema::hasColumn('actas', 'hora_intervencion')) {
+                $insertData['hora_intervencion'] = $horaVal;
+            } elseif (Schema::hasColumn('actas', 'hora_infraccion')) {
+                $insertData['hora_infraccion'] = $horaVal;
             }
 
             // Lugar / ubicacion
