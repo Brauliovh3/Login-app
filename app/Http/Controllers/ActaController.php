@@ -172,7 +172,10 @@ class ActaController extends Controller
             'message' => 'Acta registrada exitosamente',
             'acta_id' => $actaId,
             'numero_acta' => $numeroActa,
-            'hora_registro' => $horaActual->format('d/m/Y H:i:s')
+            'hora_registro' => $horaActual->format('d/m/Y H:i:s'),
+            // Sufijo numérico extraído del numero_acta (ej: 000001)
+            'sufijo_padded' => (function($num){ $parts = explode('-', $num); return end($parts); })($numeroActa),
+            'sufijo' => (function($num){ $parts = explode('-', $num); return (int)end($parts); })($numeroActa)
         ]);
     }
 
@@ -348,7 +351,9 @@ class ActaController extends Controller
             'acta_id' => $actaId,
             'numero_acta' => $numeroActa,
             'hora_registro' => $horaActual->format('d/m/Y H:i:s'),
-            'ubicacion' => $request->lugar_intervencion
+            'ubicacion' => $request->lugar_intervencion,
+            'sufijo_padded' => (function($num){ $parts = explode('-', $num); return end($parts); })($numeroActa),
+            'sufijo' => (function($num){ $parts = explode('-', $num); return (int)end($parts); })($numeroActa)
         ]);
     }
 

@@ -657,14 +657,14 @@ function submitActa(event) {
         
         if (result.success) {
             // Mostrar notificación de éxito
-            mostrarNotificacion(
-                `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
-                `📅 Fecha: ${result.hora_registro}\n` +
-                `🆔 ID: ${result.acta_id}\n` +
-                `📍 Lugar: ${lugarCompleto}`,
-                'success',
-                8000
-            );
+            // Preferir mostrar el numero_acta oficial; el ID de la BD es interno
+            let mensajeExito = `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
+                               `📅 Fecha: ${result.hora_registro}\n` +
+                               `📍 Lugar: ${lugarCompleto}`;
+            if (result.sufijo_padded) {
+                mensajeExito += `\n🔢 Sufijo: ${result.sufijo_padded}`;
+            }
+            mostrarNotificacion(mensajeExito, 'success', 8000);
             
             // Limpiar formulario
             form.reset();
