@@ -731,11 +731,20 @@ class ActaController extends Controller
                 }
             }
 
-            $next = $max + 1;
-            return $prefix . str_pad($next, 3, '0', STR_PAD_LEFT);
+            // Si no hay registros para el año actual, comenzar en 0 (000000)
+            if (count($rows) === 0) {
+                $next = 0;
+            } else {
+                $next = $max + 1;
+            }
+
+            // Usar padding de 6 dígitos para consistencia con la vista
+            return $prefix . str_pad($next, 6, '0', STR_PAD_LEFT);
         } catch (\Exception $e) {
             // En caso de fallo al consultar la BD, usar fallback simple
-            return $prefix . str_pad(DB::table('actas')->count() + 1, 3, '0', STR_PAD_LEFT);
+            $count = DB::table('actas')->count();
+            $next = $count === 0 ? 0 : ($count + 1);
+            return $prefix . str_pad($next, 6, '0', STR_PAD_LEFT);
         }
     }
 
