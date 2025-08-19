@@ -631,6 +631,7 @@ function submitActa(event) {
     // Enviar datos al servidor
     fetch('/api/actas', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
@@ -2101,6 +2102,7 @@ function guardarProgresoAutomatico() {
     
     fetch(`/api/actas/${actaIdEnProceso}/progreso`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -2146,6 +2148,7 @@ function finalizarRegistroActa() {
     
     fetch(`/api/actas/${actaIdEnProceso}/finalizar`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -2295,6 +2298,7 @@ async function consultarPorDocumento() {
     
     try {
         const response = await fetch(`/api/consultar-actas/${documento}`, {
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
@@ -2354,6 +2358,7 @@ async function ejecutarConsulta() {
     
     try {
         const response = await fetch(`/api/consultar-actas?${params.toString()}`, {
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
