@@ -55,7 +55,7 @@ class InspeccionesSeeder extends Seeder
                 'tipo_inspeccion' => 'emergencia',
                 'observaciones' => 'Inspección por denuncia - En proceso',
                 'estado_vehiculo' => 'regular',
-                'estado' => 'pendiente',
+                'estado' => 0,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

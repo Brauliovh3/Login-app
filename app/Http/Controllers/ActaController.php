@@ -61,7 +61,7 @@ class ActaController extends Controller
             'infraccion_id' => 'required|exists:infracciones,id',
             'inspector_id' => 'required|exists:inspectores,id',
             'ubicacion' => 'required|string|max:255',
-            'descripcion' => 'required|string',
+            'descripcion_hechos' => 'required|string',
             'monto_multa' => 'required|numeric|min:0',
         ]);
 
@@ -105,8 +105,8 @@ class ActaController extends Controller
             'nombre_conductor' => $nombreConductorParaDB,
             'ruc_dni' => $rucDniParaDB,
             'licencia_conductor' => $licenciaParaDB,
-            'fecha_infraccion' => $horaActual->toDateString(),
-            'hora_infraccion' => $horaActual->toTimeString(),
+            'fecha_intervencion' => $horaActual->toDateString(),
+            'hora_intervencion' => $horaActual->toTimeString(),
             'hora_inicio_registro' => $horaActual->toDateTimeString(), // Hora exacta del inicio
             'monto_multa' => $request->monto_multa,
             'estado' => 'registrada', // Cambiar de 'pendiente' a 'registrada'
@@ -264,8 +264,8 @@ class ActaController extends Controller
                 'ruc_dni' => $request->ruc_dni ?? null,
                 'monto_multa' => $request->monto_multa ?? 0,
                 'estado' => 'registrada',
-                'fecha_infraccion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
-                'hora_infraccion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
+                'fecha_intervencion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
+                'hora_intervencion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
                 'hora_inicio_registro' => $horaActual->toDateTimeString(),
                 'observaciones' => $request->observaciones_inspector ?? null,
                 'user_id' => Auth::id() ?? 1, // Usar 1 como fallback

@@ -71,27 +71,40 @@ try {
     
     // Insertar acta
     $sql = "INSERT INTO actas (
-        numero_acta, vehiculo_id, conductor_id, infraccion_id, inspector_id,
-        placa_vehiculo, ubicacion, descripcion, monto_multa, estado,
-        fecha_infraccion, hora_infraccion, hora_inicio_registro,
-        user_id, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
+        numero_acta, codigo_ds, lugar_intervencion, fecha_intervencion, hora_intervencion,
+        inspector_responsable, tipo_servicio, tipo_agente, placa, razon_social, ruc_dni, nombre_conductor, licencia, clase_licencia, origen, destino, numero_personas, conductor_id, infraccion_id, descripcion_hechos, medios_probatorios, calificacion, medida_administrativa, sancion, monto_multa, observaciones_intervenido, observaciones_inspector, estado, user_id, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
         $numeroActa,
-        null,
-        null,
-        $infracciones['id'],
-        $inspectores['id'],
-        $formData['placa_1'],
+        '017-2009-MTC',
         $formData['lugar_intervencion'],
-        $descripcionCompleta,
-        0,
-        'registrada',
         date('Y-m-d'),
         date('H:i:s'),
-        date('Y-m-d H:i:s'),
+        'Inspector General',
+        $formData['tipo_servicio'],
+        'Conductor',
+        $formData['placa_1'],
+        $formData['razon_social'],
+        $formData['ruc_dni'],
+        $formData['nombre_conductor_1'],
+        $formData['licencia_conductor_1'],
+        'A',
+        $formData['origen_viaje'],
+        $formData['destino_viaje'],
+        1,
+        1,
+        $infracciones['id'],
+        $formData['descripcion_hechos'],
+        'N/A',
+        'Leve',
+        'N/A',
+        'N/A',
+        0,
+        'N/A',
+        'N/A',
+        'pendiente',
         1,
         date('Y-m-d H:i:s'),
         date('Y-m-d H:i:s')

@@ -61,23 +61,13 @@ try {
     echo "💾 Guardando acta en la base de datos...\n";
     
     $sql = "INSERT INTO actas (
-        numero_acta, placa_vehiculo, nombre_conductor, licencia_conductor,
-        razon_social, ruc_dni, lugar_intervencion, origen_viaje, destino_viaje,
-        tipo_servicio, descripcion, estado, fecha_registro, hora_registro
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Registrada', CURDATE(), CURTIME())";
+        numero_acta, placa_vehiculo, descripcion_hechos, estado, created_at, updated_at
+    ) VALUES (?, ?, ?, 'registrada', NOW(), NOW())";
     
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
         $numeroActa,
         $formData['placa_1'],
-        $formData['nombre_conductor_1'],
-        $formData['licencia_conductor_1'],
-        $formData['razon_social'],
-        $formData['ruc_dni'],
-        $formData['lugar_intervencion'],
-        $formData['origen_viaje'],
-        $formData['destino_viaje'],
-        $formData['tipo_servicio'],
         $descripcion
     ]);
     
