@@ -9,14 +9,31 @@ use Illuminate\Support\Facades\DB;
 try {
     $year = date('Y');
     $prefix = 'DRTC-APU-' . $year . '-';
-    $rows = DB::table('actas')->where('numero_acta', 'like', $prefix . '%')->pluck('numero_acta');
-    $max = 0;
-    foreach ($rows as $num) {
-        $parts = explode('-', $num);
-        $suf = (int) end($parts);
-        if ($suf > $max) $max = $suf;
+    // Preferir la regla sufijo = id - 1: leer el next AUTO_INCREMENT y restar 1
+    try {
+        $tbl = DB::selectOne("SELECT AUTO_INCREMENT as next_id FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'actas'", [env('DB_DATABASE')]);
+        $nextId = ($tbl && isset($tbl->next_id) && is_numeric($tbl->next_id)) ? (int)$tbl->next_id : null;
+
+        // Si no hay filas reales en la tabla, el primer número de acta debe ser 1
+        $countActas = DB::table('actas')->count();
+        if ($countActas === 0) {
+            $next = 1;
+        } elseif ($nextId !== null) {
+            // Mantener la regla sufijo = id - 1, pero garantizar al menos 1
+            $sufijo = max(1, $nextId - 1);
+            $next = $sufijo;
+        } else {
+            // Fallback: usar MAX del sufijo numérico
+            $res = DB::selectOne("SELECT MAX(CAST(SUBSTRING_INDEX(numero_acta, '-', -1) AS UNSIGNED)) as max_suf FROM `actas` WHERE numero_acta LIKE ?", [$prefix . '%']);
+            $max = ($res && isset($res->max_suf) && is_numeric($res->max_suf)) ? (int)$res->max_suf : null;
+            $next = ($max === null) ? 0 : ($max + 1);
+        }
+    } catch (\Exception $inner) {
+        // Si falla la consulta a information_schema, usar MAX por sufijo como fallback
+        $res = DB::selectOne("SELECT MAX(CAST(SUBSTRING_INDEX(numero_acta, '-', -1) AS UNSIGNED)) as max_suf FROM `actas` WHERE numero_acta LIKE ?", [$prefix . '%']);
+        $max = ($res && isset($res->max_suf) && is_numeric($res->max_suf)) ? (int)$res->max_suf : null;
+        $next = ($max === null) ? 0 : ($max + 1);
     }
-    $next = $max + 1;
     $proximo_sufijo = str_pad($next, 6, '0', STR_PAD_LEFT);
 } catch (\Exception $e) {
     try {
@@ -599,11 +616,7 @@ function submitActa(event) {
         gravedad: formData.get('gravedad') || null
     };
 
-    // Incluir numero_acta si está presente en el formulario (campo readonly)
-    const numeroActaCampo = formData.get('numero_acta');
-    if (numeroActaCampo) {
-        datosParaEnvio.numero_acta = numeroActaCampo;
-    }
+    // No enviar numero_acta desde el cliente: el servidor lo generará de forma única
     
     console.log('📤 Datos a enviar:', datosParaEnvio);
     
@@ -628,22 +641,50 @@ function submitActa(event) {
         return false;
     }
     
-    // Enviar datos al servidor
-    fetch('/api/actas', {
+    // Preparar envío: si hay archivos, usar FormData para incluir evidencias
+    const inputFiles = document.getElementById('evidencias');
+    let fetchOptions = {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            // No establecer Content-Type para que el navegador añada el boundary correcto
             'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
             'Accept': 'application/json'
-        },
-        body: JSON.stringify(datosParaEnvio)
-    })
-    .then(response => {
-        console.log('📡 Respuesta del servidor:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
+    };
+
+    if (inputFiles && inputFiles.files && inputFiles.files.length > 0) {
+        const fd = new FormData();
+        // Añadir archivos
+        for (let i = 0; i < inputFiles.files.length; i++) {
+            fd.append('evidencias[]', inputFiles.files[i]);
+        }
+
+        // Añadir campos del objeto datosParaEnvio
+        for (const key in datosParaEnvio) {
+            if (datosParaEnvio.hasOwnProperty(key) && datosParaEnvio[key] !== null) {
+                fd.append(key, datosParaEnvio[key]);
+            }
+        }
+
+        fetchOptions.body = fd;
+    } else {
+        // No hay archivos: enviar JSON
+        fetchOptions.headers['Content-Type'] = 'application/json';
+        fetchOptions.body = JSON.stringify(datosParaEnvio);
+    }
+
+    // Enviar datos al servidor
+    fetch('/api/actas', fetchOptions)
+    .then(async response => {
+        console.log('📡 Respuesta del servidor:', response.status);
+        const text = await response.text();
+        let json = null;
+        try { json = JSON.parse(text); } catch(e) { json = null; }
+        if (!response.ok) {
+            const serverMsg = (json && json.message) ? json.message : text;
+            throw new Error(`HTTP ${response.status}: ${serverMsg}`);
+        }
+        return json;
     })
     .then(result => {
         console.log('✅ Resultado:', result);
@@ -695,8 +736,9 @@ function submitActa(event) {
         }
         
         mostrarNotificacion(
-            '❌ Error de conexión:\n' + error.message + '\n\nVerifique que el servidor esté funcionando.',
-            'error'
+            '❌ Error al enviar el acta:\n' + error.message + '\n\nVerifique el servidor o consulte logs.',
+            'error',
+            8000
         );
     });
     
