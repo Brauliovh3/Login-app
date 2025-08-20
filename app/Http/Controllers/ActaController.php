@@ -121,8 +121,13 @@ class ActaController extends Controller
         $insertData = [
             'nombre_conductor' => $nombreConductorParaDB,
             'ruc_dni' => $rucDniParaDB,
-            'monto_multa' => $request->monto_multa ?? null,
-            'user_id' => Auth::id() ?? null,
+            'licencia_conductor' => $licenciaParaDB,
+            'fecha_intervencion' => $horaActual->toDateString(),
+            'hora_intervencion' => $horaActual->toTimeString(),
+            'hora_inicio_registro' => $horaActual->toDateTimeString(), // Hora exacta del inicio
+            'monto_multa' => $request->monto_multa,
+            'estado' => 'registrada', // Cambiar de 'pendiente' a 'registrada'
+            'user_id' => Auth::id() ?? 1, // Usar 1 como fallback si no hay usuario autenticado
             'created_at' => $horaActual->toDateTimeString(),
             'updated_at' => $horaActual->toDateTimeString(),
         ];
@@ -138,7 +143,6 @@ class ActaController extends Controller
             $insertData['infraccion_id'] = $request->infraccion_id;
         }
 
-        // Mapear licencia: algunos esquemas usan 'licencia' en vez de 'licencia_conductor'
         if ($licenciaParaDB !== null) {
             if (Schema::hasColumn('actas', 'licencia')) {
                 $insertData['licencia'] = $licenciaParaDB;
@@ -182,7 +186,27 @@ class ActaController extends Controller
                 $insertData['ubicacion'] = $lugar;
             }
         }
-
+            // Validar los campos que envía el formulario actual (evitar exigir IDs que no se envían)
+            $request->validate([
+                'descripcion_hechos' => 'required|string',
+                'tipo_servicio' => 'required|string',
+                'tipo_infraccion' => 'nullable|string',
+                'gravedad' => 'nullable|string',
+                'fecha_intervencion' => 'nullable|date',
+                'hora_intervencion' => 'nullable',
+                'inspector' => 'nullable|string',
+                'inspector_principal' => 'nullable|string',
+                'placa' => 'nullable|string',
+                'placa_vehiculo' => 'nullable|string',
+                'razon_social' => 'nullable|string',
+                'ruc_dni' => 'nullable|string',
+                'nombre_conductor' => 'nullable|string',
+                'licencia_conductor' => 'nullable|string',
+                'clase_licencia' => 'nullable|string',
+                'codigo_infraccion' => 'nullable|string',
+                'monto_multa' => 'nullable|numeric',
+                'estado' => 'nullable',
+            ]);
         // Descripción (descripcion / descripcion_hechos)
         if ($descripcionVal !== null) {
             if (Schema::hasColumn('actas', 'descripcion_hechos')) {
@@ -431,27 +455,6 @@ class ActaController extends Controller
 
         try {
             // Preparar insert adaptable al esquema de la tabla
-<<<<<<< HEAD
-            $insertData = [
-                'numero_acta' => $numeroActa,
-                'vehiculo_id' => null, // No vinculado a tabla vehiculos
-                'conductor_id' => null, // No vinculado a tabla conductores
-                'infraccion_id' => 1, // ID genérico de infracción
-                'inspector_id' => 1, // ID genérico de inspector
-                // Guardar nombre completo y documento (RUC/DNI) enviados desde el formulario libre
-                'nombre_conductor' => $request->nombre_conductor_1 ?? null,
-                'ruc_dni' => $request->ruc_dni ?? null,
-                'monto_multa' => $request->monto_multa ?? 0,
-                'estado' => 'registrada',
-                'fecha_infraccion' => $request->fecha_intervencion ?? $horaActual->toDateString(),
-                'hora_infraccion' => $request->hora_intervencion ?? $horaActual->toTimeString(),
-                'hora_inicio_registro' => $horaActual->toDateTimeString(),
-                'observaciones' => $request->observaciones_inspector ?? null,
-                'user_id' => Auth::id() ?? 1, // Usar 1 como fallback
-                'created_at' => $horaActual->toDateTimeString(),
-                'updated_at' => $horaActual->toDateTimeString(),
-            ];
-=======
             $insertData = [];
 
             // Valores fijos que deberían existir en la mayoría de esquemas
@@ -541,7 +544,6 @@ class ActaController extends Controller
             if (Schema::hasColumn('actas', 'numero_acta')) {
                 $insertData['numero_acta'] = $numeroActa;
             }
->>>>>>> 4a8a6c7 (CAMBIOS EN ACTAS)
 
             // Placa: placa_vehiculo o placa
             if (Schema::hasColumn('actas', 'placa_vehiculo')) {
@@ -550,9 +552,7 @@ class ActaController extends Controller
                 $insertData['placa'] = $placaParaDB;
             }
 
-<<<<<<< HEAD
-=======
-            
+            // Fecha / Hora: mapear a columnas existentes para evitar SQL errors en esquemas distintos
             $fechaVal = $request->fecha_intervencion ?? $horaActual->toDateString();
             $horaVal = $request->hora_intervencion ?? $horaActual->toTimeString();
             if (Schema::hasColumn('actas', 'fecha_intervencion')) {
@@ -567,7 +567,144 @@ class ActaController extends Controller
                 $insertData['hora_infraccion'] = $horaVal;
             }
 
+            // Lugar / ubicacion
+            $lugar = $request->lugar_intervencion ?? null;
+            if ($lugar !== null) {
+                if (Schema::hasColumn('actas', 'lugar_intervencion')) {
+                    $insertData['lugar_intervencion'] = $lugar;
+                } else {
+                    $insertData['ubicacion'] = $lugar;
+                }
+            }
+
+            // Descripción
+            if (Schema::hasColumn('actas', 'descripcion_hechos')) {
+                $insertData['descripcion_hechos'] = $descripcionCompleta;
+            } else {
+                $insertData['descripcion'] = $descripcionCompleta;
+            }
+
+            $insertData = [];
+
+            // Valores fijos que deberían existir en la mayoría de esquemas
+            if (Schema::hasColumn('actas', 'vehiculo_id')) {
+                $insertData['vehiculo_id'] = null; // No vinculado a tabla vehiculos
+            }
+            if (Schema::hasColumn('actas', 'conductor_id')) {
+                $insertData['conductor_id'] = null; // No vinculado a tabla conductores
+            }
+            if (Schema::hasColumn('actas', 'infraccion_id')) {
+                // No usar ID hardcodeado; dejar null para respetar FK si no hay infracciones cargadas
+                $insertData['infraccion_id'] = null;
+            }
+            if (Schema::hasColumn('actas', 'inspector_id')) {
+                // Dejar null para evitar violaciones de clave foránea si no existen inspectores
+                $insertData['inspector_id'] = null;
+            }
+
+            // Guardar nombre completo y documento (RUC/DNI) enviados desde el formulario libre
+            if (Schema::hasColumn('actas', 'nombre_conductor')) {
+                $insertData['nombre_conductor'] = $request->nombre_conductor_1 ?? null;
+            }
+            if (Schema::hasColumn('actas', 'ruc_dni')) {
+                $insertData['ruc_dni'] = $request->ruc_dni ?? null;
+            }
+
+            if (Schema::hasColumn('actas', 'monto_multa')) {
+                $insertData['monto_multa'] = $request->monto_multa ?? 0;
+            }
+
+            // Estado: solo si la columna existe y acepta strings; si la columna es numérica (tinyint) usamos el valor por defecto
+            if (Schema::hasColumn('actas', 'estado')) {
+                try {
+                    $db = env('DB_DATABASE');
+                    $col = DB::selectOne("SELECT DATA_TYPE as dtype FROM information_schema.columns WHERE table_schema = ? AND table_name = 'actas' AND column_name = 'estado'", [$db]);
+                    if ($col && in_array(strtolower($col->dtype), ['tinyint','int','smallint','bigint'])) {
+                        // columna numérica: no insertar string, dejar que el default de la BD aplique
+                    } else {
+                        $insertData['estado'] = 'registrada';
+                    }
+                } catch (\Exception $e) {
+                    // Si falla la comprobación, usar comportamiento seguro: no insertar estado para evitar valores inválidos
+                    logger()->warning('No se pudo determinar tipo de columna estado en actas: ' . $e->getMessage());
+                }
+            }
+
+            // Hora de inicio del registro: sólo si la columna existe
+            if (Schema::hasColumn('actas', 'hora_inicio_registro')) {
+                $insertData['hora_inicio_registro'] = $horaActual->toDateTimeString();
+            }
+
+            // Observaciones solo si la columna existe
+            if (Schema::hasColumn('actas', 'observaciones')) {
+                $insertData['observaciones'] = $request->observaciones_inspector ?? null;
+            }
+
+            // Guardar inspector_responsable si viene en formulario libre
+            $inspectorNombreFormulario = $request->inspector ?? $request->inspector_principal ?? null;
+            if ($inspectorNombreFormulario !== null && Schema::hasColumn('actas', 'inspector_responsable')) {
+                $insertData['inspector_responsable'] = $inspectorNombreFormulario;
+            }
+
+            // user_id y timestamps si existen
+            if (Schema::hasColumn('actas', 'user_id')) {
+                // Si no hay un usuario autenticado, usar el primer usuario disponible para respetar la FK
+                $userId = Auth::id();
+                if (!$userId) {
+                    try {
+                        $firstUser = DB::table('usuarios')->orderBy('id')->first();
+                        $userId = $firstUser->id ?? null;
+                    } catch (\Exception $e) {
+                        $userId = null;
+                    }
+                }
+                if ($userId) {
+                    $insertData['user_id'] = $userId;
+                }
+            }
+            if (Schema::hasColumn('actas', 'created_at')) {
+                $insertData['created_at'] = $horaActual->toDateTimeString();
+            }
+            if (Schema::hasColumn('actas', 'updated_at')) {
+                $insertData['updated_at'] = $horaActual->toDateTimeString();
+            }
+
+            // Añadir numero_acta si la columna existe (es requerida en muchos esquemas)
+            if (Schema::hasColumn('actas', 'numero_acta')) {
+                $insertData['numero_acta'] = $numeroActa;
+            }
+
+            // Placa: placa_vehiculo o placa
+            if (Schema::hasColumn('actas', 'placa_vehiculo')) {
+                $insertData['placa_vehiculo'] = $placaParaDB;
+            } elseif (Schema::hasColumn('actas', 'placa')) {
+                $insertData['placa'] = $placaParaDB;
+            }
+
+<<<<<<< HEAD
+=======
+            
+=======
+            // Fecha / Hora: mapear a columnas existentes para evitar SQL errors en esquemas distintos
+>>>>>>> 4129b734ed2fa28656dbb7fc6381b291085a4a88
+            $fechaVal = $request->fecha_intervencion ?? $horaActual->toDateString();
+            $horaVal = $request->hora_intervencion ?? $horaActual->toTimeString();
+            if (Schema::hasColumn('actas', 'fecha_intervencion')) {
+                $insertData['fecha_intervencion'] = $fechaVal;
+            } elseif (Schema::hasColumn('actas', 'fecha_infraccion')) {
+                $insertData['fecha_infraccion'] = $fechaVal;
+            }
+
+            if (Schema::hasColumn('actas', 'hora_intervencion')) {
+                $insertData['hora_intervencion'] = $horaVal;
+            } elseif (Schema::hasColumn('actas', 'hora_infraccion')) {
+                $insertData['hora_infraccion'] = $horaVal;
+            }
+
+<<<<<<< HEAD
 >>>>>>> 4a8a6c7 (CAMBIOS EN ACTAS)
+=======
+>>>>>>> 4129b734ed2fa28656dbb7fc6381b291085a4a88
             // Lugar / ubicacion
             $lugar = $request->lugar_intervencion ?? null;
             if ($lugar !== null) {
@@ -642,7 +779,9 @@ class ActaController extends Controller
             'acta_id' => $actaId,
             'numero_acta' => $numeroActa,
             'hora_registro' => $horaActual->format('d/m/Y H:i:s'),
-            'ubicacion' => $request->lugar_intervencion
+            'ubicacion' => $request->lugar_intervencion,
+            'sufijo_padded' => (function($num){ $parts = explode('-', $num); return end($parts); })($numeroActa),
+            'sufijo' => (function($num){ $parts = explode('-', $num); return (int)end($parts); })($numeroActa)
         ]);
     }
 
@@ -1031,11 +1170,27 @@ class ActaController extends Controller
                 $next = $sufijo;
             }
 
+<<<<<<< HEAD
+=======
+            // Si no hay registros para el año actual, comenzar en 0 (000000)
+            if (count($rows) === 0) {
+                $next = 0;
+            } else {
+                $next = $max + 1;
+            }
+
+>>>>>>> 4129b734ed2fa28656dbb7fc6381b291085a4a88
             // Usar padding de 6 dígitos para consistencia con la vista
             return $prefix . str_pad($next, 6, '0', STR_PAD_LEFT);
         } catch (\Exception $e) {
             // En caso de fallo al consultar la BD, usar fallback simple
+<<<<<<< HEAD
             return $prefix . str_pad(DB::table('actas')->count() + 1, 6, '0', STR_PAD_LEFT);
+=======
+            $count = DB::table('actas')->count();
+            $next = $count === 0 ? 0 : ($count + 1);
+            return $prefix . str_pad($next, 6, '0', STR_PAD_LEFT);
+>>>>>>> 4129b734ed2fa28656dbb7fc6381b291085a4a88
         }
     }
 

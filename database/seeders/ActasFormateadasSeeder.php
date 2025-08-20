@@ -22,7 +22,7 @@ class ActasFormateadasSeeder extends Seeder
                 'infraccion_id' => 1,
                 'placa_vehiculo' => 'ABC-123',
                 'ubicacion' => 'Terminal Terrestre Abancay',
-                'descripcion' => "ACTA DE FISCALIZACIÓN\n\n" .
+                'descripcion_hechos' => "ACTA DE FISCALIZACIÓN\n\n" .
                                "DATOS DEL VEHÍCULO:\n" .
                                "Placa: ABC-123\n" .
                                "Empresa/Operador: Transportes San Miguel S.A.C.\n" .
@@ -37,9 +37,9 @@ class ActasFormateadasSeeder extends Seeder
                                "DESCRIPCIÓN DE LOS HECHOS:\n" .
                                "Vehículo circulando sin tarjeta de operación vigente",
                 'monto_multa' => 1580.00,
-                'estado' => 'registrada',
-                'fecha_infraccion' => Carbon::today(),
-                'hora_infraccion' => '08:30:00',
+                'estado' => 0,
+                'fecha_intervencion' => Carbon::today(),
+                'hora_intervencion' => '08:30:00',
                 'observaciones' => 'Conductor no pudo presentar documentos requeridos',
                 'user_id' => 1,
                 'created_at' => Carbon::now(),
@@ -53,7 +53,7 @@ class ActasFormateadasSeeder extends Seeder
                 'infraccion_id' => 1,
                 'placa_vehiculo' => 'XYZ-789',
                 'ubicacion' => 'Av. Arenas 456, Abancay',
-                'descripcion' => "ACTA DE FISCALIZACIÓN\n\n" .
+                'descripcion_hechos' => "ACTA DE FISCALIZACIÓN\n\n" .
                                "DATOS DEL VEHÍCULO:\n" .
                                "Placa: XYZ-789\n" .
                                "Empresa/Operador: María Elena González López\n" .
@@ -68,9 +68,9 @@ class ActasFormateadasSeeder extends Seeder
                                "DESCRIPCIÓN DE LOS HECHOS:\n" .
                                "Control de documentos - Licencia próxima a vencer",
                 'monto_multa' => 790.00,
-                'estado' => 'pendiente',
-                'fecha_infraccion' => Carbon::today(),
-                'hora_infraccion' => '14:15:00',
+                'estado' => 0,
+                'fecha_intervencion' => Carbon::today(),
+                'hora_intervencion' => '14:15:00',
                 'observaciones' => 'Licencia vence en 15 días',
                 'user_id' => 1,
                 'created_at' => Carbon::now(),
@@ -84,7 +84,7 @@ class ActasFormateadasSeeder extends Seeder
                 'infraccion_id' => 1,
                 'placa_vehiculo' => 'DEF-456',
                 'ubicacion' => 'Carretera Abancay-Andahuaylas Km 15',
-                'descripcion' => "ACTA DE FISCALIZACIÓN\n\n" .
+                'descripcion_hechos' => "ACTA DE FISCALIZACIÓN\n\n" .
                                "DATOS DEL VEHÍCULO:\n" .
                                "Placa: DEF-456\n" .
                                "Empresa/Operador: Transportes Los Andes E.I.R.L.\n" .
@@ -99,9 +99,9 @@ class ActasFormateadasSeeder extends Seeder
                                "DESCRIPCIÓN DE LOS HECHOS:\n" .
                                "Inspección técnica vehicular - Vehículo en buenas condiciones",
                 'monto_multa' => 0.00,
-                'estado' => 'procesada',
-                'fecha_infraccion' => Carbon::yesterday(),
-                'hora_infraccion' => '10:45:00',
+                'estado' => 1,
+                'fecha_intervencion' => Carbon::yesterday(),
+                'hora_intervencion' => '10:45:00',
                 'observaciones' => 'Inspección exitosa - Sin infracciones',
                 'user_id' => 1,
                 'created_at' => Carbon::yesterday(),
@@ -115,7 +115,7 @@ class ActasFormateadasSeeder extends Seeder
                 'infraccion_id' => 1,
                 'placa_vehiculo' => 'GHI-012',
                 'ubicacion' => 'Plaza de Armas Abancay',
-                'descripcion' => "ACTA DE FISCALIZACIÓN\n\n" .
+                'descripcion_hechos' => "ACTA DE FISCALIZACIÓN\n\n" .
                                "DATOS DEL VEHÍCULO:\n" .
                                "Placa: GHI-012\n" .
                                "Empresa/Operador: José Miguel Vargas Mendoza\n" .
@@ -130,9 +130,9 @@ class ActasFormateadasSeeder extends Seeder
                                "DESCRIPCIÓN DE LOS HECHOS:\n" .
                                "Estacionamiento en zona prohibida - Infracción leve",
                 'monto_multa' => 395.00,
-                'estado' => 'registrada',
-                'fecha_infraccion' => Carbon::today(),
-                'hora_infraccion' => '16:20:00',
+                'estado' => 0,
+                'fecha_intervencion' => Carbon::today(),
+                'hora_intervencion' => '16:20:00',
                 'observaciones' => 'Primera infracción del conductor',
                 'user_id' => 1,
                 'created_at' => Carbon::now(),

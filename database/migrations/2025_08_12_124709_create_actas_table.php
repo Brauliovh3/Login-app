@@ -12,20 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('actas', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
             $table->id();
             $table->string('numero_acta')->unique();
             $table->string('codigo_ds')->default('017-2009-MTC');
-            
+
             // Datos de la intervención
-            $table->string('lugar_intervencion');
+            // Permitir null para no requerir un valor por defecto durante seeders
+            $table->string('lugar_intervencion')->nullable();
             $table->date('fecha_intervencion');
             $table->time('hora_intervencion');
-            $table->string('inspector_responsable');
-            $table->string('tipo_servicio');
-            
+            // Inspector responsable (puede ser nulo durante seeders)
+            $table->string('inspector_responsable')->nullable();
+            // Tipo de servicio (puede ser nulo durante seeders)
+            $table->string('tipo_servicio')->nullable();
+
             // Datos del infractor
             $table->enum('tipo_agente', ['Transportista', 'Operador de Ruta', 'Conductor']);
             $table->string('placa');
+            // Campo legacy usado por seeders y vistas
+            $table->string('placa_vehiculo')->nullable();
             $table->string('razon_social');
             $table->string('ruc_dni');
             $table->string('nombre_conductor')->nullable();
@@ -34,22 +40,42 @@ return new class extends Migration
             $table->string('origen')->nullable();
             $table->string('destino')->nullable();
             $table->integer('numero_personas')->nullable();
-            
+            // Ubicación del hecho (legacy / usado por seeders)
+            $table->string('ubicacion')->nullable();
+
+            // Nueva columna para relación con conductores
+            $table->unsignedBigInteger('conductor_id')->nullable();
+            $table->foreign('conductor_id')->references('id')->on('conductores')->onDelete('set null');
+
+            // Nueva columna para relacion con infracciones
+            $table->unsignedBigInteger('infraccion_id')->nullable();
+            $table->foreign('infraccion_id')->references('id')->on('infracciones')->onDelete('set null');
+
+            // Relación con inspector (usada por seeders y controladores)
+            // La columna se crea aquí; la clave foránea se añadirá en una migración posterior
+            $table->unsignedBigInteger('inspector_id')->nullable();
+
+            // Relación con vehículo (columna creada aquí, FK añadida en migración posterior)
+            $table->unsignedBigInteger('vehiculo_id')->nullable();
+
             // Descripción de hechos e infracciones
             $table->text('descripcion_hechos');
             $table->text('medios_probatorios')->nullable();
             $table->enum('calificacion', ['Leve', 'Grave', 'Muy Grave']);
             $table->string('medida_administrativa')->nullable();
             $table->string('sancion')->nullable();
+            $table->decimal('monto_multa', 10, 2)->nullable();
             $table->text('observaciones_intervenido')->nullable();
             $table->text('observaciones_inspector')->nullable();
-            
+            // Campo usado por seeders y scripts antiguos
+            $table->text('observaciones')->nullable();
+
             // Estado y metadatos
             $table->enum('estado', ['pendiente', 'procesada', 'anulada', 'pagada'])->default('pendiente');
             $table->foreignId('user_id')->constrained('usuarios')->onDelete('cascade'); // Inspector que creó el acta
-            
+
             $table->timestamps();
-            
+
             // Índices
             $table->index(['fecha_intervencion', 'estado']);
             $table->index(['ruc_dni']);

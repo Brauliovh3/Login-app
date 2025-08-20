@@ -25,9 +25,9 @@ try {
     
     // Verificar qué columnas necesitamos usar
     $necesarias = [
-        'numero_acta', 'placa_vehiculo', 'conductor', 'licencia_conductor',
-        'razon_social', 'ruc_dni', 'lugar_intervencion', 'origen_viaje', 
-        'destino_viaje', 'tipo_servicio', 'descripcion', 'estado'
+        'numero_acta', 'placa', 'nombre_conductor', 'licencia',
+        'razon_social', 'ruc_dni', 'lugar_intervencion', 'origen', 
+        'destino', 'tipo_servicio', 'descripcion_hechos', 'estado'
     ];
     
     $columnasReales = array_column($columns, 'Field');

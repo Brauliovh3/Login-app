@@ -11,21 +11,21 @@ echo "=== PROBANDO GUARDADO DE ACTA ===\n\n";
 try {
     // Datos de prueba para una nueva acta
     $datosActa = [
-        'numero_acta' => 'TEST-' . date('YmdHis'),
-        'inspector_id' => 1,
-        'vehiculo_id' => 1,
-        'conductor_id' => 1,
-        'infraccion_id' => 1,
-        'placa_vehiculo' => 'TEST-123',
-        'ubicacion' => 'Prueba de ubicación',
-        'descripcion' => 'ACTA DE PRUEBA - Descripción de prueba',
-        'monto_multa' => 500.00,
-        'estado' => 'registrada',
-        'fecha_infraccion' => date('Y-m-d'),
-        'hora_infraccion' => date('H:i:s'),
-        'user_id' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
+    'numero_acta' => 'TEST-' . date('YmdHis'),
+    'inspector_id' => 1,
+    'vehiculo_id' => 1,
+    'conductor_id' => 1,
+    'infraccion_id' => 1,
+    'placa_vehiculo' => 'TEST-123',
+    'ubicacion' => 'Prueba de ubicación',
+    'descripcion_hechos' => 'ACTA DE PRUEBA - Descripción de prueba',
+    'monto_multa' => 500.00,
+    'estado' => 'registrada',
+    'fecha_intervencion' => date('Y-m-d'),
+    'hora_intervencion' => date('H:i:s'),
+    'user_id' => 1,
+    'created_at' => now(),
+    'updated_at' => now(),
     ];
     
     echo "1. Insertando acta de prueba...\n";

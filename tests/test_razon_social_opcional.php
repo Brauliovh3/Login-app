@@ -69,11 +69,10 @@ try {
         
         $sql = "INSERT INTO actas (
             numero_acta, vehiculo_id, conductor_id, infraccion_id, inspector_id,
-            placa_vehiculo, ubicacion, descripcion, monto_multa, estado,
-            fecha_infraccion, hora_infraccion, hora_inicio_registro,
+            placa_vehiculo, ubicacion, descripcion_hechos, monto_multa, estado,
+            fecha_intervencion, hora_intervencion, hora_inicio_registro,
             user_id, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute([
             $numeroActa,

@@ -645,6 +645,7 @@ function submitActa(event) {
     const inputFiles = document.getElementById('evidencias');
     let fetchOptions = {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             // No establecer Content-Type para que el navegador añada el boundary correcto
             'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
@@ -697,14 +698,14 @@ function submitActa(event) {
         
         if (result.success) {
             // Mostrar notificación de éxito
-            mostrarNotificacion(
-                `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
-                `📅 Fecha: ${result.hora_registro}\n` +
-                `🆔 ID: ${result.acta_id}\n` +
-                `📍 Lugar: ${lugarCompleto}`,
-                'success',
-                8000
-            );
+            // Preferir mostrar el numero_acta oficial; el ID de la BD es interno
+            let mensajeExito = `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
+                               `📅 Fecha: ${result.hora_registro}\n` +
+                               `📍 Lugar: ${lugarCompleto}`;
+            if (result.sufijo_padded) {
+                mensajeExito += `\n🔢 Sufijo: ${result.sufijo_padded}`;
+            }
+            mostrarNotificacion(mensajeExito, 'success', 8000);
             
             // Limpiar formulario
             form.reset();
@@ -717,6 +718,26 @@ function submitActa(event) {
             }
             
             console.log('✅ Acta creada exitosamente con ID:', result.acta_id);
+            // Actualizar el sufijo mostrado para el siguiente acta (incremento inmediato)
+            try {
+                const span = document.getElementById('proximo_sufijo_span');
+                const hidden = document.getElementById('numero_acta_hidden');
+                if (span && hidden) {
+                    // extraer sufijo numérico actual
+                    const current = span.textContent.trim();
+                    const n = parseInt(current, 10);
+                    if (!isNaN(n)) {
+                        const next = n + 1;
+                        const nextStr = String(next).padStart(6, '0');
+                        span.textContent = nextStr;
+                        // actualizar el hidden con el nuevo numero completo
+                        const year = new Date().getFullYear();
+                        hidden.value = `DRTC-APU-${year}-${nextStr}`;
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo actualizar el sufijo en el DOM:', e);
+            }
             
         } else {
             console.error('❌ Error del servidor:', result);
@@ -848,10 +869,10 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                                 <div class="d-flex align-items-center justify-content-center mb-2">
                                     <h3 class="mb-0 fw-bold text-dark me-3">ACTA DE CONTROL</h3>
                                     <span class="me-2 fw-bold text-dark" style="font-size: 18px;">Nº</span>
-                                    <span class="me-2 d-inline-block" style="width: 120px; text-align: center; font-weight: bold; font-size: 18px;">{{ $proximo_sufijo }}</span>
+                                    <span id="proximo_sufijo_span" class="me-2 d-inline-block" style="width: 120px; text-align: center; font-weight: bold; font-size: 18px;">{{ $proximo_sufijo }}</span>
                                     <span class="fw-bold text-dark" style="font-size: 18px;">- {{ date('Y') }}</span>
                                     {{-- Hidden con el numero_acta completo para envío al backend --}}
-                                    <input type="hidden" name="numero_acta" value="{{ 'DRTC-APU-' . date('Y') . '-' . $proximo_sufijo }}">
+                                    <input type="hidden" id="numero_acta_hidden" name="numero_acta" value="{{ 'DRTC-APU-' . date('Y') . '-' . $proximo_sufijo }}">
                                 </div>
                             </div>
                         </div>
@@ -2143,6 +2164,7 @@ function guardarProgresoAutomatico() {
     
     fetch(`/api/actas/${actaIdEnProceso}/progreso`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -2188,6 +2210,7 @@ function finalizarRegistroActa() {
     
     fetch(`/api/actas/${actaIdEnProceso}/finalizar`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -2337,6 +2360,7 @@ async function consultarPorDocumento() {
     
     try {
         const response = await fetch(`/api/consultar-actas/${documento}`, {
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
@@ -2396,6 +2420,7 @@ async function ejecutarConsulta() {
     
     try {
         const response = await fetch(`/api/consultar-actas?${params.toString()}`, {
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
