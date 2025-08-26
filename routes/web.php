@@ -104,6 +104,9 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
     Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
     Route::post('/admin/conductores/{id}/toggle-status', [App\Http\Controllers\ConductorController::class, 'toggleStatus'])->name('conductores.toggle-status');
     Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
+
+    // Administración de actas: reiniciar AUTO_INCREMENT (solo administradores)
+    Route::post('/admin/actas/reset-autoincrement', [App\Http\Controllers\Admin\ActasMaintenanceController::class, 'resetAutoIncrement'])->name('admin.actas.reset-autoincrement');
 });
 
 Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
@@ -178,11 +181,33 @@ Route::middleware(['auth', 'user.approved', 'role:inspector'])->group(function (
     Route::get('/inspector/reportes', [DashboardController::class, 'inspectorReportes'])->name('inspector.reportes');
 });
 
+// Superadmin hidden panel - access only by users with role 'superadmin'
+Route::middleware(['auth', 'user.approved', 'role:superadmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/super', [App\Http\Controllers\Admin\SuperAdminController::class, 'index'])->name('super.index');
+    Route::post('/super/cache-clear', [App\Http\Controllers\Admin\SuperAdminController::class, 'cacheClear'])->name('super.cache-clear');
+    Route::post('/super/config-cache', [App\Http\Controllers\Admin\SuperAdminController::class, 'configCache'])->name('super.config-cache');
+    Route::post('/super/reset-actas', [App\Http\Controllers\Admin\SuperAdminController::class, 'resetActas'])->name('super.reset-actas');
+    Route::get('/super/app-info', [App\Http\Controllers\Admin\SuperAdminController::class, 'appInfo'])->name('super.app-info');
+    Route::post('/super/run-command', [App\Http\Controllers\Admin\SuperAdminController::class, 'runCommand'])->name('super.run-command');
+    Route::get('/super/stats', [App\Http\Controllers\Admin\SuperAdminController::class, 'stats'])->name('super.stats');
+    Route::get('/super/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'usersList'])->name('super.users');
+    Route::post('/super/users/{id}/toggle-status', [App\Http\Controllers\Admin\SuperAdminController::class, 'toggleUserStatus'])->name('super.users.toggle-status');
+    Route::post('/super/users/{id}/approve', [App\Http\Controllers\Admin\SuperAdminController::class, 'approveUser'])->name('super.users.approve');
+    // Temporary debug endpoint to inspect authenticated user while troubleshooting
+    Route::get('/super/debug-user', function(){ return response()->json(['user' => auth()->user()]); })->name('super.debug-user');
+});
+
+// Auth-only debug route (no role check) to inspect authenticated user in session
+Route::middleware(['auth', 'user.approved'])->get('/admin/super/debug-auth', function () {
+    return response()->json(['user' => auth()->user()]);
+})->name('super.debug-auth');
+
 
 // Rutas API para AJAX (Fiscalizador)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
     // Rutas para Actas con seguimiento automático de tiempo
     Route::post('/actas', [ActaController::class, 'store']);
+    Route::get('/actas/{id}', [ActaController::class, 'show']);
     Route::get('/actas/pendientes', [ActaController::class, 'getPendientes']);
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);

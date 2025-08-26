@@ -15,6 +15,8 @@ class DashboardController extends Controller
         
         // Redirigir a la URL específica del rol
         switch ($user->role) {
+            case 'superadmin':
+                return redirect()->route('admin.super.index');
             case 'administrador':
                 return redirect()->route('admin.dashboard');
             case 'fiscalizador':

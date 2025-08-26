@@ -369,94 +369,7 @@ try {
     </div>
 </div>
 
-<!-- Modal Nueva Acta -->
-<div class="modal fade" id="nuevaActaModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: #ff8c00; color: white;">
-                <h5 class="modal-title">
-                    <i class="fas fa-plus me-2"></i>Nueva Acta de Contra
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="nuevaActaForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Datos del Vehículo y Conductor</h6>
-                            <hr>
-                            <div class="mb-3">
-                                <label for="placa_vehiculo" class="form-label">Placa del Vehículo *</label>
-                                <input type="text" class="form-control" id="placa_vehiculo" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="dni_conductor" class="form-label">DNI del Conductor *</label>
-                                <input type="text" class="form-control" id="dni_conductor" maxlength="8" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="nombre_conductor" class="form-label">Nombre del Conductor</label>
-                                <input type="text" class="form-control" id="nombre_conductor" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label for="licencia_conductor" class="form-label">N° Licencia</label>
-                                <input type="text" class="form-control" id="licencia_conductor" readonly>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Datos de la Infracción</h6>
-                            <hr>
-                            <div class="mb-3">
-                                <label for="fecha_infraccion" class="form-label">Fecha y Hora *</label>
-                                <input type="datetime-local" class="form-control bg-light" id="fecha_infraccion" value="{{ now()->format('Y-m-d\TH:i') }}" readonly>
-                            </div>
-                            <div class="mb-3">
-                                <label for="lugar_infraccion" class="form-label">Lugar de la Infracción *</label>
-                                <input type="text" class="form-control" id="lugar_infraccion" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="infraccion_id" class="form-label">Tipo de Infracción *</label>
-                                <select class="form-select" id="infraccion_id" required>
-                                    <option value="">Seleccionar...</option>
-                                    <option value="1">G.01 - Exceso de velocidad (S/ 462.00)</option>
-                                    <option value="2">L.02 - Documentos vencidos (S/ 231.00)</option>
-                                    <option value="3">MG.03 - Transporte ilegal (S/ 4,620.00)</option>
-                                    <option value="4">G.05 - No usar cinturón (S/ 462.00)</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="monto_multa" class="form-label">Monto de la Multa</label>
-                                <input type="number" class="form-control" id="monto_multa" name="monto_multa" step="0.01" readonly>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="text-primary">Observaciones y Evidencias</h6>
-                            <hr>
-                            <div class="mb-3">
-                                <label for="observaciones" class="form-label">Observaciones</label>
-                                <textarea class="form-control" id="observaciones" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="evidencias" class="form-label">Evidencias (Fotos, Videos)</label>
-                                <input type="file" class="form-control" id="evidencias" multiple accept="image/*,video/*">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="guardarActa()">
-                    <i class="fas fa-save me-2"></i>Generar Acta
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- (Removed duplicate Bootstrap modal 'nuevaActaModal' to avoid duplicate/unnamed inputs.) -->
 <script>
 // Función para mostrar notificaciones flotantes modernas
 function mostrarNotificacion(mensaje, tipo = 'info', duracion = 4000) {
@@ -590,45 +503,78 @@ function submitActa(event) {
     
     // Preparar datos para envío (mapear a los campos que espera el backend)
     // Aceptar nombres alternativos de campos (compatibilidad con distintos formularios)
-    const placaValor = formData.get('placa_1') || formData.get('placa_vehiculo') || formData.get('placa');
-    const nombreConductorValor = formData.get('nombre_conductor_1') || formData.get('nombre_conductor') || formData.get('nombre');
-    const licenciaValor = formData.get('licencia_conductor_1') || formData.get('licencia_conductor') || formData.get('licencia');
-    const documentoValor = formData.get('ruc_dni') || formData.get('dni_conductor') || formData.get('dni');
+    const placaValor = formData.get('placa_1') || formData.get('placa_vehiculo') || formData.get('placa') || '';
+    const nombreConductorValor = formData.get('nombre_conductor_1') || formData.get('nombre_conductor') || formData.get('nombre') || '';
+    const licenciaValor = formData.get('licencia_conductor_1') || formData.get('licencia_conductor') || formData.get('licencia') || '';
+    const documentoValor = formData.get('ruc_dni') || formData.get('dni_conductor') || formData.get('dni') || '';
 
+    // Incluir explícitamente campos que backend espera. Usar cadena vacía cuando el campo existe
+    // para que no sea omitido en el envío y así llene columnas que ahora aparecen NULL.
     const datosParaEnvio = {
+        // variantes de placa (clientes/BD diferentes)
         placa_1: placaValor,
+        placa: placaValor,
+        placa_vehiculo: placaValor,
+
+        // conductor / licencia
         nombre_conductor_1: nombreConductorValor,
         licencia_conductor_1: licenciaValor,
-        razon_social: formData.get('razon_social') || null,
+
+        // datos fiscales
+        razon_social: formData.get('razon_social') || '',
         ruc_dni: documentoValor,
+
+        // ubicación
         lugar_intervencion: lugarCompleto,
-        origen_viaje: formData.get('origen_viaje') || null,
-        destino_viaje: formData.get('destino_viaje') || null,
-        tipo_servicio: formData.get('tipo_servicio') || null,
-        descripcion_hechos: formData.get('descripcion_hechos') || formData.get('descripcion') || null,
+        origen_viaje: formData.get('origen_viaje') || '',
+        destino_viaje: formData.get('destino_viaje') || '',
+
+        // servicio / infracción
+        tipo_servicio: formData.get('tipo_servicio') || '',
+        descripcion_hechos: formData.get('descripcion_hechos') || formData.get('descripcion') || '',
+
+        // inspector / responsables
+        inspector_responsable: formData.get('inspector_responsable') || formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '{{ Auth::user()->name }}',
+        inspector: formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '{{ Auth::user()->name }}',
+        inspector_principal: formData.get('inspector_principal') || '{{ Auth::user()->name }}',
+
+        tipo_agente: formData.get('tipo_agente') || (document.getElementById('tipo_agente_hidden') && document.getElementById('tipo_agente_hidden').value) || '',
+        clase_licencia: formData.get('clase_categoria') || (document.getElementById('clase_licencia_hidden') && document.getElementById('clase_licencia_hidden').value) || '',
+
         // Campos adicionales opcionales
-        fecha_intervencion: formData.get('fecha_intervencion') || null,
-        hora_intervencion: formData.get('hora_intervencion') || null,
-        tipo_agente: formData.get('tipo_agente') || null,
-        clase_categoria: formData.get('clase_categoria') || null,
-        tipo_infraccion: formData.get('tipo_infraccion') || null,
-        codigo_infraccion: formData.get('codigo_infraccion') || null,
-        gravedad: formData.get('gravedad') || null
+        fecha_intervencion: formData.get('fecha_intervencion') || '',
+        hora_intervencion: formData.get('hora_intervencion') || '',
+        clase_categoria: formData.get('clase_categoria') || '',
+        tipo_infraccion: formData.get('tipo_infraccion') || '',
+        codigo_infraccion: formData.get('codigo_infraccion') || '',
+        gravedad: formData.get('gravedad') || ''
     };
+    
+        // Actualizar hidden fallbacks en el DOM para compatibilidad servidor
+        try {
+            const placaHidden = document.getElementById('placa_hidden');
+            const placaVehHidden = document.getElementById('placa_vehiculo_hidden');
+            const inspectorRespHidden = document.getElementById('inspector_responsable_hidden');
+            if (placaHidden) placaHidden.value = placaValor || '';
+            if (placaVehHidden) placaVehHidden.value = placaValor || '';
+            if (inspectorRespHidden) inspectorRespHidden.value = datosParaEnvio.inspector || datosParaEnvio.inspector_principal || '';
+        } catch (e) {
+            console.warn('No se pudieron actualizar hidden fallbacks:', e);
+        }
 
     // No enviar numero_acta desde el cliente: el servidor lo generará de forma única
     
     console.log('📤 Datos a enviar:', datosParaEnvio);
     
-    // Obtener botón de envío para mostrar estado de carga
-    const submitBtn = form.querySelector('button[type="submit"]');
+    // Obtener botón de envío para mostrar estado de carga (usar id del botón)
+    const submitBtn = document.getElementById('btn-guardar-acta');
     const originalText = submitBtn ? submitBtn.innerHTML : '';
-    
+
     if (submitBtn) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando Acta...';
         submitBtn.disabled = true;
     }
-    
+
     // Obtener token CSRF
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if (!csrfToken) {
@@ -640,39 +586,59 @@ function submitActa(event) {
         }
         return false;
     }
-    
-    // Preparar envío: si hay archivos, usar FormData para incluir evidencias
+
+    // Siempre usar FormData para enviar todos los campos tal como lo haría un form normal
     const inputFiles = document.getElementById('evidencias');
+    const fd = new FormData(form);
+
+    // Añadir/forzar campos normalizados para asegurar que no queden NULL en BD
+    for (const key in datosParaEnvio) {
+        if (datosParaEnvio.hasOwnProperty(key)) {
+            const val = datosParaEnvio[key] === null || datosParaEnvio[key] === undefined ? '' : datosParaEnvio[key];
+            fd.set(key, val);
+        }
+    }
+
+    // Asegurarse explícitamente de copiar los campos principales que el backend puede leer
+    const explicitFields = ['placa_1','nombre_conductor_1','licencia_conductor_1','tipo_servicio','inspector','inspector_responsable','razon_social','ruc_dni','placa','placa_vehiculo'];
+    explicitFields.forEach(k => {
+        try {
+            const el = form.querySelector('[name="' + k + '"]');
+            if (el) {
+                const v = (el.value !== undefined && el.value !== null) ? el.value : '';
+                fd.set(k, v);
+            }
+        } catch (e) {
+            // ignore
+        }
+    });
+
+    // Debug: mostrar todas las entradas de FormData en consola antes de enviar
+    try {
+        console.log('🔎 FormData entries to be sent:');
+        for (const pair of fd.entries()) {
+            console.log(pair[0] + ':', pair[1]);
+        }
+    } catch (e) {
+        console.warn('No se pudo listar FormData entries:', e);
+    }
+
+    // Si hay archivos seleccionados, FormData ya los contiene si el input file tiene name; añadir si es necesario
+    if (inputFiles && inputFiles.files && inputFiles.files.length > 0) {
+        for (let i = 0; i < inputFiles.files.length; i++) {
+            fd.append('evidencias[]', inputFiles.files[i]);
+        }
+    }
+
     let fetchOptions = {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
-            // No establecer Content-Type para que el navegador añada el boundary correcto
             'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
             'Accept': 'application/json'
-        }
+        },
+        body: fd
     };
-
-    if (inputFiles && inputFiles.files && inputFiles.files.length > 0) {
-        const fd = new FormData();
-        // Añadir archivos
-        for (let i = 0; i < inputFiles.files.length; i++) {
-            fd.append('evidencias[]', inputFiles.files[i]);
-        }
-
-        // Añadir campos del objeto datosParaEnvio
-        for (const key in datosParaEnvio) {
-            if (datosParaEnvio.hasOwnProperty(key) && datosParaEnvio[key] !== null) {
-                fd.append(key, datosParaEnvio[key]);
-            }
-        }
-
-        fetchOptions.body = fd;
-    } else {
-        // No hay archivos: enviar JSON
-        fetchOptions.headers['Content-Type'] = 'application/json';
-        fetchOptions.body = JSON.stringify(datosParaEnvio);
-    }
 
     // Enviar datos al servidor
     fetch('/api/actas', fetchOptions)
@@ -707,36 +673,52 @@ function submitActa(event) {
             }
             mostrarNotificacion(mensajeExito, 'success', 8000);
             
-            // Limpiar formulario
-            form.reset();
-            
-            // Recargar la tabla de actas si existe
-            if (typeof cargarActas === 'function') {
-                setTimeout(() => {
-                    cargarActas();
-                }, 1000);
-            }
-            
+            // Mostrar notificación flotante (ya ejecutada). Restaurar comportamiento: limpiar formulario,
+            // cerrar modal y recargar la tabla de actas, pero NO redirigir a otra página.
             console.log('✅ Acta creada exitosamente con ID:', result.acta_id);
+
+            // Limpiar formulario para nueva entrada
+            try {
+                form.reset();
+            } catch (e) {
+                console.warn('No se pudo limpiar el formulario automáticamente:', e);
+            }
+
             // Actualizar el sufijo mostrado para el siguiente acta (incremento inmediato)
             try {
                 const span = document.getElementById('proximo_sufijo_span');
                 const hidden = document.getElementById('numero_acta_hidden');
                 if (span && hidden) {
-                    // extraer sufijo numérico actual
                     const current = span.textContent.trim();
                     const n = parseInt(current, 10);
                     if (!isNaN(n)) {
                         const next = n + 1;
                         const nextStr = String(next).padStart(6, '0');
                         span.textContent = nextStr;
-                        // actualizar el hidden con el nuevo numero completo
                         const year = new Date().getFullYear();
                         hidden.value = `DRTC-APU-${year}-${nextStr}`;
                     }
                 }
             } catch (e) {
                 console.warn('No se pudo actualizar el sufijo en el DOM:', e);
+            }
+
+            // Cerrar el modal actual si está abierto
+            try {
+                if (typeof cerrarModal === 'function') {
+                    cerrarModal('modal-nueva-acta');
+                }
+            } catch (e) {
+                console.warn('No se pudo cerrar el modal automáticamente:', e);
+            }
+
+            // Recargar la tabla de actas si la función existe (no fuerza navegación)
+            try {
+                if (typeof cargarActas === 'function') {
+                    setTimeout(() => { cargarActas(); }, 800);
+                }
+            } catch (e) {
+                console.warn('No se pudo recargar la tabla automáticamente:', e);
             }
             
         } else {
@@ -770,6 +752,34 @@ function submitActa(event) {
 function agregarBotonFinalizar() {
     const modalFooter = document.querySelector('#modal-nueva-acta .d-flex.justify-content-between');
     if (modalFooter && !document.getElementById('btn-finalizar-acta')) {
+        // Hidden fallbacks para nombres de columnas alternativos: crear inputs ocultos si no existen
+        const form = document.getElementById('form-nueva-acta');
+        if (form) {
+            if (!document.getElementById('placa_hidden')) {
+                const placaHidden = document.createElement('input');
+                placaHidden.type = 'hidden';
+                placaHidden.id = 'placa_hidden';
+                placaHidden.name = 'placa';
+                placaHidden.value = '';
+                form.appendChild(placaHidden);
+            }
+            if (!document.getElementById('placa_vehiculo_hidden')) {
+                const placaVehHidden = document.createElement('input');
+                placaVehHidden.type = 'hidden';
+                placaVehHidden.id = 'placa_vehiculo_hidden';
+                placaVehHidden.name = 'placa_vehiculo';
+                placaVehHidden.value = '';
+                form.appendChild(placaVehHidden);
+            }
+            if (!document.getElementById('inspector_responsable_hidden')) {
+                const inspectorHidden = document.createElement('input');
+                inspectorHidden.type = 'hidden';
+                inspectorHidden.id = 'inspector_responsable_hidden';
+                inspectorHidden.name = 'inspector_responsable';
+                inspectorHidden.value = '{{ Auth::user()->name }}';
+                form.appendChild(inspectorHidden);
+            }
+        }
         const btnFinalizar = document.createElement('button');
         btnFinalizar.id = 'btn-finalizar-acta';
         btnFinalizar.type = 'button';
@@ -781,17 +791,20 @@ function agregarBotonFinalizar() {
     }
 }
 
-// Actualizar monto al seleccionar infracción
-document.getElementById('infraccion_id').addEventListener('change', function() {
-    const select = this;
-    const montoInput = document.getElementById('monto_multa');
-    
-    if (select.value === '1') montoInput.value = '462.00';
-    else if (select.value === '2') montoInput.value = '231.00';
-    else if (select.value === '3') montoInput.value = '4620.00';
-    else if (select.value === '4') montoInput.value = '462.00';
-    else montoInput.value = '';
-});
+// Actualizar monto al seleccionar infracción (adjuntar solo si existen los elementos)
+const _infraccionEl = document.getElementById('infraccion_id');
+const _montoEl = document.getElementById('monto_multa');
+if (_infraccionEl && _montoEl) {
+    _infraccionEl.addEventListener('change', function() {
+        const select = this;
+        const montoInput = _montoEl;
+        if (select.value === '1') montoInput.value = '462.00';
+        else if (select.value === '2') montoInput.value = '231.00';
+        else if (select.value === '3') montoInput.value = '4620.00';
+        else if (select.value === '4') montoInput.value = '462.00';
+        else montoInput.value = '';
+    });
+}
 </script>
 
 <!-- MODALES FLOTANTES -->
@@ -809,13 +822,17 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
             </button>
         </div>
         <div class="modal-body-custom">
-            <form id="form-nueva-acta" action="/api/actas" method="POST" onsubmit="return submitActa(event)">
+                <form id="form-nueva-acta" action="/api/actas" method="POST">
                 @csrf
                 
                 <!-- Campos automáticos ocultos -->
                 <input type="hidden" id="fecha_inspeccion_hidden" name="fecha_inspeccion">
                 <input type="hidden" id="hora_inicio_hidden" name="hora_inicio">
                 <input type="hidden" name="inspector_principal" value="{{ Auth::user()->name }}">
+                <!-- Añadir campos que el backend espera y a veces no llegan desde el formulario -->
+                <input type="hidden" id="inspector_hidden" name="inspector" value="{{ Auth::user()->name }}">
+                <input type="hidden" id="tipo_agente_hidden" name="tipo_agente" value="transportista">
+                <input type="hidden" id="clase_licencia_hidden" name="clase_licencia" value="">
 
                 <!-- CABEZAL OFICIAL DEL ACTA -->
                 <div class="card mb-4 border-3 border-dark" style="background: #ffffff;">
@@ -1210,7 +1227,7 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                 
                 <!-- Botones de acción -->
                 <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg me-2 px-4" id="btn-guardar-acta">
+                    <button type="button" class="btn btn-success btn-lg me-2 px-4" id="btn-guardar-acta" onclick="submitActa(event)">
                         <i class="fas fa-save me-2"></i>GUARDAR ACTA
                     </button>
 
@@ -1233,56 +1250,181 @@ document.getElementById('infraccion_id').addEventListener('change', function() {
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
                 <script>
                     /**
-                     * imprimirActa: abre una ventana nueva con el contenido del formulario y dispara la impresión.
-                     * Usa los estilos cargados en la página para que la impresión conserve apariencia.
+                     * buildPrintableActaHTML: genera una plantilla HTML (cliente) con estilo fijo
+                     * a partir de los valores actuales del formulario. Esta plantilla se usa
+                     * tanto para imprimir como para exportar a PDF.
                      */
-                    function imprimirActa() {
-                        var element = document.getElementById('form-nueva-acta');
-                        if (!element) { alert('Formulario no encontrado para imprimir.'); return; }
+                    function buildPrintableActaHTML(data) {
+                        // Nota: mantener estilos inline para evitar dependencias externas
+                        var css = `
+                            @page { size: A4; margin: 10mm; }
+                            body { font-family: Arial, Helvetica, sans-serif; color: #000; }
+                            .acta-container { width: 210mm; max-width: 100%; margin: 0 auto; padding: 6mm; box-sizing: border-box; }
+                            .header { display:flex; align-items:center; gap:8px; }
+                            .logo { width:60px; height:60px; border:2px solid #000; display:flex; align-items:center; justify-content:center; }
+                            .header-center { flex:1; text-align:center; }
+                            .acta-title { font-size:20px; font-weight:700; }
+                            .acta-meta { margin-top:6px; font-weight:700; display:flex; align-items:center; gap:8px; justify-content:center; }
+                            .numero-box { display:inline-block; min-width:90px; max-width:140px; padding:6px 8px; border:2px solid #000; text-align:center; font-weight:700; background:#fff; }
+                            .section { margin-top:10px; border:1px solid #000; padding:8px; }
+                            .row { display:flex; gap:8px; }
+                            .col { flex:1; }
+                            .label { font-weight:700; font-size:12px; }
+                            .value { font-size:13px; border-bottom:1px dashed #000; padding:4px 2px; }
+                            .big-value { font-size:14px; font-weight:700; }
+                            .signatures { display:flex; justify-content:space-between; margin-top:18px; }
+                            .sig-box { width:45%; text-align:center; border-top:1px solid #000; padding-top:6px; }
+                        `;
 
-                        var printWindow = window.open('', '_blank');
-                        printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir Acta</title>');
-                        // Copiar hojas de estilo actuales (link y style)
-                        var styles = document.querySelectorAll('link[rel="stylesheet"], style');
-                        styles.forEach(function(s){ printWindow.document.write(s.outerHTML); });
-                        printWindow.document.write('</head><body>');
-                        // Clonar el formulario para mantener valores actuales
-                        printWindow.document.write('<div style="padding:20px;">' + element.outerHTML + '</div>');
-                        printWindow.document.write('</body></html>');
-                        printWindow.document.close();
-                        printWindow.focus();
-                        // Dar tiempo a que cargue estilos
-                        setTimeout(function(){ printWindow.print(); /*printWindow.close();*/ }, 600);
+                        // Seguridad: normalizar undefined
+                        data = data || {};
+
+                        var html = `<!doctype html><html><head><meta charset="utf-8"><title>Acta - Imprimir</title><style>${css}</style></head><body>`;
+                        html += `<div class="acta-container">`;
+                        // Header
+                        html += `<div class="header">`;
+                        html += `<div class="logo"><img src="${data.escudo || '/images/escudo_peru.png'}" style="max-width:48px; max-height:48px;"/></div>`;
+                        html += `<div class="header-center">`;
+                        html += `<div class="acta-title">ACTA DE CONTROL</div>`;
+                        html += `<div class="acta-meta">Nº ${data.numero_acta || data.numero || ''} - ${data.anio || new Date().getFullYear()}</div>`;
+                        html += `</div>`;
+                        html += `<div class="logo"><img src="${data.logo || '/images/logo-gobierno.png'}" style="max-width:48px; max-height:48px;"/></div>`;
+                        html += `</div>`;
+
+                        // Meta bloque (fecha/hora)
+                        html += `<div class="row" style="margin-top:8px;">`;
+                        html += `<div class="col"><div class="label">Fecha</div><div class="value big-value">${data.fecha || ''}</div></div>`;
+                        html += `<div class="col"><div class="label">Hora</div><div class="value big-value">${data.hora || ''}</div></div>`;
+                        html += `</div>`;
+
+                        // Secciones principales
+                        html += `<div class="section">`;
+                        html += `<div class="label">I. DATOS DEL OPERADOR/CONDUCTOR</div>`;
+                        html += `<div style="margin-top:6px;">`;
+                        html += `<div class="row"><div class="col"><div class="label">RUC/DNI</div><div class="value">${data.ruc_dni || ''}</div></div>`;
+                        html += `<div class="col"><div class="label">Razón social / Nombres</div><div class="value">${data.razon_social || ''}</div></div>`;
+                        html += `<div class="col"><div class="label">Placa</div><div class="value">${data.placa || ''}</div></div></div>`;
+                        html += `<div class="row" style="margin-top:6px;"><div class="col"><div class="label">Conductor</div><div class="value">${data.nombre_conductor || ''}</div></div>`;
+                        html += `<div class="col"><div class="label">N° Licencia</div><div class="value">${data.licencia || ''}</div></div>`;
+                        html += `<div class="col"><div class="label">Clase/Categoría</div><div class="value">${data.clase_categoria || ''}</div></div></div>`;
+                        html += `</div></div>`;
+
+                        html += `<div class="section">`;
+                        html += `<div class="label">II. DATOS DE LA INTERVENCIÓN</div>`;
+                        html += `<div style="margin-top:6px;">`;
+                        html += `<div class="label">Lugar</div><div class="value">${data.lugar_intervencion || ''}${data.direccion_especifica ? ' - ' + data.direccion_especifica : ''}</div>`;
+                        html += `<div style="margin-top:6px;" class="label">Tipo de Servicio</div><div class="value">${data.tipo_servicio || ''}</div>`;
+                        html += `</div></div>`;
+
+                        html += `<div class="section">`;
+                        html += `<div class="label">III. DESCRIPCIÓN DE LA INFRACCIÓN</div>`;
+                        html += `<div style="margin-top:6px;"><div class="label">Tipo / Código / Gravedad</div><div class="value">${data.tipo_infraccion || ''} ${data.codigo_infraccion ? ' / ' + data.codigo_infraccion : ''} ${data.gravedad ? ' / ' + data.gravedad : ''}</div></div>`;
+                        html += `<div style="margin-top:8px;"><div class="label">Descripción detallada</div><div class="value" style="min-height:70px;">${(data.descripcion_hechos || '').replace(/\n/g, '<br/>')}</div></div>`;
+                        html += `</div>`;
+
+                        // Multa / monto
+                        html += `<div style="margin-top:8px; display:flex; gap:12px;"><div style="flex:1;"><div class="label">Monto de la multa</div><div class="value big-value">${data.monto_multa ? ('S/ ' + Number(data.monto_multa).toFixed(2)) : ''}</div></div>`;
+                        html += `<div style="width:220px;"><div class="label">Vencimiento</div><div class="value">${data.vencimiento || ''}</div></div></div>`;
+
+                        // Firmas: no mostrar nombre del inspector en la exportación (se deja el espacio para firma)
+                        html += `<div class="signatures">`;
+                        html += `<div class="sig-box">Firma del Inspector<br/><div style="margin-top:10px; font-weight:700;">&nbsp;</div></div>`;
+                        html += `<div class="sig-box">Firma del Operador / Conductor<br/><div style="margin-top:10px; font-weight:700;">${data.nombre_conductor || ''}</div></div>`;
+                        html += `</div>`;
+
+                        html += `</div>`; // container
+                        html += `</body></html>`;
+                        return html;
                     }
 
                     /**
-                     * descargarPDF: usa html2pdf para convertir el formulario a PDF y descargarlo.
+                     * imprimirActa: toma los valores actuales del formulario, genera la
+                     * plantilla imprimible y abre una ventana para imprimir.
+                     */
+                    function imprimirActa() {
+                        var form = document.getElementById('form-nueva-acta');
+                        if (!form) { alert('Formulario no encontrado para imprimir.'); return; }
+
+                        // Mapear valores del formulario
+                        var fd = new FormData(form);
+                        var data = {
+                            numero_acta: fd.get('numero_acta') || document.getElementById('numero_acta_hidden') && document.getElementById('numero_acta_hidden').value,
+                            anio: new Date().getFullYear(),
+                            fecha: fd.get('fecha_intervencion') || fd.get('fecha_inspeccion_hidden') || document.querySelector('input[name="fecha_intervencion"]') && document.querySelector('input[name="fecha_intervencion"]').value || '',
+                            hora: fd.get('hora_intervencion') || fd.get('hora_inicio_hidden') || document.querySelector('input[name="hora_intervencion"]') && document.querySelector('input[name="hora_intervencion"]').value || '',
+                            ruc_dni: fd.get('ruc_dni') || '',
+                            razon_social: fd.get('razon_social') || '',
+                            placa: fd.get('placa_1') || fd.get('placa') || '',
+                            nombre_conductor: fd.get('nombre_conductor_1') || fd.get('nombre_conductor') || '',
+                            licencia: fd.get('licencia_conductor_1') || fd.get('licencia_conductor') || '',
+                            clase_categoria: fd.get('clase_categoria') || '',
+                            lugar_intervencion: fd.get('lugar_intervencion') || '',
+                            direccion_especifica: fd.get('direccion_especifica') || '',
+                            tipo_servicio: fd.get('tipo_servicio') || '',
+                            tipo_infraccion: fd.get('tipo_infraccion') || '',
+                            codigo_infraccion: fd.get('codigo_infraccion') || '',
+                            gravedad: fd.get('gravedad') || '',
+                            descripcion_hechos: fd.get('descripcion_hechos') || fd.get('descripcion') || '',
+                            monto_multa: fd.get('monto_multa') || '',
+                            vencimiento: fd.get('vencimiento') || '' ,
+                            inspector: fd.get('inspector') || document.querySelector('input[name="inspector"]') && document.querySelector('input[name="inspector"]').value || ''
+                        };
+
+                        var html = buildPrintableActaHTML(data);
+                        var printWindow = window.open('', '_blank');
+                        printWindow.document.write(html);
+                        printWindow.document.close();
+                        printWindow.focus();
+                        setTimeout(function(){ printWindow.print(); }, 600);
+                    }
+
+                    /**
+                     * descargarPDF: genera el mismo HTML imprimible y lo convierte a PDF usando html2pdf.
                      */
                     function descargarPDF() {
-                        var element = document.getElementById('form-nueva-acta');
-                        if (!element) { alert('Formulario no encontrado para exportar.'); return; }
+                        var form = document.getElementById('form-nueva-acta');
+                        if (!form) { alert('Formulario no encontrado para exportar.'); return; }
 
-                        var filename = 'acta-' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
+                        var fd = new FormData(form);
+                        var data = {
+                            numero_acta: fd.get('numero_acta') || document.getElementById('numero_acta_hidden') && document.getElementById('numero_acta_hidden').value,
+                            anio: new Date().getFullYear(),
+                            fecha: fd.get('fecha_intervencion') || fd.get('fecha_inspeccion_hidden') || '',
+                            hora: fd.get('hora_intervencion') || fd.get('hora_inicio_hidden') || '',
+                            ruc_dni: fd.get('ruc_dni') || '',
+                            razon_social: fd.get('razon_social') || '',
+                            placa: fd.get('placa_1') || fd.get('placa') || '',
+                            nombre_conductor: fd.get('nombre_conductor_1') || fd.get('nombre_conductor') || '',
+                            licencia: fd.get('licencia_conductor_1') || fd.get('licencia_conductor') || '',
+                            clase_categoria: fd.get('clase_categoria') || '',
+                            lugar_intervencion: fd.get('lugar_intervencion') || '',
+                            direccion_especifica: fd.get('direccion_especifica') || '',
+                            tipo_servicio: fd.get('tipo_servicio') || '',
+                            tipo_infraccion: fd.get('tipo_infraccion') || '',
+                            codigo_infraccion: fd.get('codigo_infraccion') || '',
+                            gravedad: fd.get('gravedad') || '',
+                            descripcion_hechos: fd.get('descripcion_hechos') || fd.get('descripcion') || '',
+                            monto_multa: fd.get('monto_multa') || '',
+                            vencimiento: fd.get('vencimiento') || '' ,
+                            inspector: fd.get('inspector') || ''
+                        };
+
+                        var filename = 'acta-' + (data.numero_acta || new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')) + '.pdf';
                         var opt = {
-                            margin:       0.5,
+                            margin:       10,
                             filename:     filename,
                             image:        { type: 'jpeg', quality: 0.98 },
                             html2canvas:  { scale: 2, useCORS: true },
-                            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                         };
 
-                        // Para evitar que el formulario muestre botones en el PDF, clonamos y quitamos los controles
-                        var clone = element.cloneNode(true);
-                        // Remover botones dentro del clon
-                        var buttons = clone.querySelectorAll('button');
-                        buttons.forEach(function(b){ b.parentNode && b.parentNode.removeChild(b); });
+                        // Generar el HTML y extraer el body dentro de un contenedor para html2pdf
+                        var printableHTML = buildPrintableActaHTML(data);
+                        var wrapper = document.createElement('div');
+                        wrapper.innerHTML = printableHTML;
 
-                        // Crear contenedor temporal
-                        var container = document.createElement('div');
-                        container.style.padding = '20px';
-                        container.appendChild(clone);
-
-                        html2pdf().set(opt).from(container).save();
+                        // html2pdf espera un elemento DOM
+                        html2pdf().set(opt).from(wrapper).save();
                     }
                 </script>
             </form>

@@ -19,9 +19,10 @@ class RoleMiddleware
             return redirect('/login');
         }
 
-        $userRole = auth()->user()->role;
+        $userRole = strtolower((string) auth()->user()->role);
+        $normalizedRoles = array_map('strtolower', $roles);
 
-        if (!in_array($userRole, $roles)) {
+        if (!in_array($userRole, $normalizedRoles)) {
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
 

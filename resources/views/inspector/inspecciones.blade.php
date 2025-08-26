@@ -404,6 +404,26 @@ function completarInspeccion(id) {
     });
 }
 
+// Helper pequeño para generar HTML imprimible desde datos de acta (versión reducida)
+function buildPrintableActaHTMLFromRecord(acta) {
+    var css = `@page { size: A4; margin: 10mm; } body{font-family:Arial,Helvetica,sans-serif;color:#000} .container{padding:6mm} .numero-box{display:inline-block;padding:6px 8px;border:2px solid #000;min-width:90px;text-align:center;font-weight:700}`;
+    var html = '<!doctype html><html><head><meta charset="utf-8"><title>Acta</title><style>' + css + '</style></head><body>';
+    html += '<div class="container">';
+    html += '<h2 style="text-align:center;">ACTA DE CONTROL</h2>';
+    html += '<p style="text-align:center;"><span class="numero-box">' + (acta.numero_acta || '') + '</span></p>';
+    html += '<p><strong>Fecha:</strong> ' + (acta.fecha_infraccion || acta.created_at || '') + ' <strong>Hora:</strong> ' + (acta.hora_infraccion || '') + '</p>';
+    html += '<p><strong>Placa:</strong> ' + (acta.placa || acta.placa_vehiculo || '') + '</p>';
+    html += '<p><strong>Conductor:</strong> ' + (acta.conductor_nombre || acta.nombre_conductor || '') + '</p>';
+    html += '<hr/>';
+    html += '<h4>Descripción</h4>';
+    html += '<div>' + (acta.descripcion || acta.descripcion_hechos || '') + '</div>';
+    html += '<hr/>';
+    html += '<p><strong>Monto:</strong> ' + (acta.monto_multa ? ('S/ ' + Number(acta.monto_multa).toFixed(2)) : '-') + '</p>';
+    html += '<div style="margin-top:30px; display:flex; justify-content:space-between;"><div style="width:45%; text-align:center; border-top:1px solid #000; padding-top:6px;">&nbsp;</div><div style="width:45%; text-align:center; border-top:1px solid #000; padding-top:6px;">Operador/Conductor</div></div>';
+    html += '</div></body></html>';
+    return html;
+}
+
 function imprimirActa(id) {
     Swal.fire({
         title: 'Imprimir Acta',
@@ -417,10 +437,24 @@ function imprimirActa(id) {
     }).then((result) => {
         if (result.isConfirmed) {
             showInfo('Generando acta para impresión...');
-            // Simular generación de PDF
-            setTimeout(() => {
-                showSuccess('Acta generada correctamente');
-            }, 2000);
+            fetch(`/api/actas/${id}`, { credentials: 'same-origin' })
+            .then(res => res.json())
+            .then(json => {
+                if (json.acta) {
+                    var html = buildPrintableActaHTMLFromRecord(json.acta);
+                    var w = window.open('', '_blank');
+                    w.document.write(html);
+                    w.document.close();
+                    setTimeout(() => { w.print(); }, 500);
+                    showSuccess('Acta lista para impresión');
+                } else {
+                    showError('No se encontró la acta solicitada');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showError('Error al obtener datos del acta');
+            });
         }
     });
 }

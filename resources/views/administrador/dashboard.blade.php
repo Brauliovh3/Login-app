@@ -222,6 +222,16 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-hashtag fa-3x text-secondary mb-3"></i>
+                                    <h5 class="card-title">Numeración Actas</h5>
+                                    <p class="card-text">Reiniciar la secuencia de números de actas (AUTO_INCREMENT).</p>
+                                    <button id="btn-reset-actas" class="btn btn-outline-secondary btn-sm">Reiniciar números</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -310,6 +320,85 @@ document.addEventListener('DOMContentLoaded', function() {
     // Actualizar cada segundo
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
+});
+</script>
+<!-- Modal y JS para reiniciar AUTO_INCREMENT de actas -->
+<div class="modal fade" id="modalResetActas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reiniciar numeración de actas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Esta operación puede ser destructiva si la tabla contiene registros. Si la tabla está vacía, el sistema establecerá el siguiente AUTO_INCREMENT a 1.</p>
+                <p>Si desea forzar el reinicio (TRUNCATE), escriba <strong>CONFIRMAR</strong> en el campo y pulse <em>Forzar reinicio</em> (eliminirá todos los registros).</p>
+                <input id="confirmResetInput" type="text" class="form-control" placeholder="Escriba CONFIRMAR para forzar">
+                <div id="resetFeedback" class="mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btnForceReset" type="button" class="btn btn-danger">Forzar reinicio</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('btn-reset-actas');
+        if (!btn) return;
+
+        // Create bootstrap modal instance
+        const modalEl = document.getElementById('modalResetActas');
+        let bsModal = null;
+        if (modalEl) bsModal = new bootstrap.Modal(modalEl);
+
+        btn.addEventListener('click', function() {
+                if (bsModal) bsModal.show();
+        });
+
+        const btnForce = document.getElementById('btnForceReset');
+        const inputConfirm = document.getElementById('confirmResetInput');
+        const feedback = document.getElementById('resetFeedback');
+
+        async function callReset(force) {
+                feedback.textContent = 'Procesando...';
+                try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                        const res = await fetch('{{ route('admin.actas.reset-autoincrement') }}', {
+                                method: 'POST',
+                                headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ force: force })
+                        });
+
+                        const data = await res.json();
+                        if (res.ok) {
+                                feedback.innerHTML = '<div class="alert alert-success p-2">' + (data.message || 'Hecho') + '</div>';
+                        } else {
+                                feedback.innerHTML = '<div class="alert alert-danger p-2">' + (data.message || 'Error') + '</div>';
+                        }
+                } catch (err) {
+                        feedback.innerHTML = '<div class="alert alert-danger p-2">Error de red</div>';
+                }
+        }
+
+        btnForce.addEventListener('click', function() {
+                const value = (inputConfirm.value || '').trim();
+                if (value !== 'CONFIRMAR') {
+                        // If not confirmed, try non-destructive reset (works only if table empty)
+                        if (!confirm('No ha escrito CONFIRMAR. ¿Desea intentar un reinicio no destructivo (solo si la tabla está vacía)?')) return;
+                        callReset(false);
+                        return;
+                }
+
+                if (!confirm('ATENCIÓN: Forzar el reinicio eliminará todos los registros de la tabla actas. ¿Continuar?')) return;
+                callReset(true);
+        });
 });
 </script>
 @endsection
