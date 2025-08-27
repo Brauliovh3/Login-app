@@ -11,6 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Evitar crear la tabla si ya existe (previene migraciones duplicadas en entornos
+        // donde exista una versión más reciente de esta migración).
+        if (Schema::hasTable('infracciones')) {
+            // Ya existe: no hacer nada para evitar errores por duplicado.
+            return;
+        }
+
         Schema::create('infracciones', function (Blueprint $table) {
             $table->id();
             $table->string('codigo_infraccion')->unique();

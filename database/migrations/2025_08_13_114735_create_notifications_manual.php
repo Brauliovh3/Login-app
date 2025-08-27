@@ -18,7 +18,13 @@ return new class extends Migration
                 $table->string('type');
                 $table->string('title');
                 $table->text('message');
-                $table->foreignId('user_id')->constrained('usuarios')->onDelete('cascade');
+                // Use a plain unsignedBigInteger for user_id and index it.
+                // Avoid adding a hard foreign-key constraint here because
+                // the project uses a single canonical table named `usuarios`
+                // and some environments may already contain a physical
+                // `users` table (or may run this migration before that table
+                // exists). A strict FK causes migration failures in those cases.
+                $table->unsignedBigInteger('user_id')->nullable()->index();
                 $table->json('data')->nullable();
                 $table->timestamp('read_at')->nullable();
                 $table->timestamps();

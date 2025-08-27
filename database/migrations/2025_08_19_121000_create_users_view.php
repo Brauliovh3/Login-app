@@ -14,7 +14,15 @@ return new class extends Migration
         // Esto no modifica los datos ni la tabla `usuarios`, solo provee compatibilidad
         // para código o queries que accidentalmente usen la tabla `users`.
         try {
-            DB::statement("CREATE OR REPLACE VIEW `users` AS SELECT * FROM `usuarios`");
+            // Si ya existe una tabla física `users`, no creamos la vista para evitar
+            // conflictos. Esto puede ocurrir en instalaciones antiguas o exportadas.
+            $exists = DB::select("SELECT COUNT(*) as c FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'users'");
+            $count = intval($exists[0]->c ?? 0);
+            if ($count === 0) {
+                DB::statement("CREATE OR REPLACE VIEW `users` AS SELECT * FROM `usuarios`");
+            } else {
+                logger()->info('Skipping creation of view `users` because a physical table `users` exists.');
+            }
         } catch (\Exception $e) {
             // Registrar el error para diagnóstico si la creación de la vista falla
             logger()->error('Error creando view users -> usuarios: ' . $e->getMessage());

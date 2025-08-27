@@ -52,8 +52,9 @@ return new class extends Migration
             $table->foreign('infraccion_id')->references('id')->on('infracciones')->onDelete('set null');
 
             // Relación con inspector (usada por seeders y controladores)
-            // La columna se crea aquí; la clave foránea se añadirá en una migración posterior
-            $table->unsignedBigInteger('inspector_id')->nullable();
+            // La columna se crea aquí; no añadimos una FK rígida para evitar
+            // fallos en entornos con tablas `users`/`usuarios` distintas.
+            $table->unsignedBigInteger('inspector_id')->nullable()->index();
 
             // Relación con vehículo (columna creada aquí, FK añadida en migración posterior)
             $table->unsignedBigInteger('vehiculo_id')->nullable();
@@ -72,7 +73,9 @@ return new class extends Migration
 
             // Estado y metadatos
             $table->enum('estado', ['pendiente', 'procesada', 'anulada', 'pagada'])->default('pendiente');
-            $table->foreignId('user_id')->constrained('usuarios')->onDelete('cascade'); // Inspector que creó el acta
+            // Inspector que creó el acta. Usamos columna idx en lugar de FK para
+            // evitar errores en instalaciones con tablas distintas.
+            $table->unsignedBigInteger('user_id')->nullable()->index();
 
             $table->timestamps();
 
