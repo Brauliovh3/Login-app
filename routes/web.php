@@ -212,7 +212,11 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
     Route::post('/actas/{id}/progreso', [ActaController::class, 'guardarProgreso']);
-    
+    // Buscar acta por criterio (GET)
+    Route::get('/actas/buscar', [ActaController::class, 'buscar']);
+    //Eliminar acta por ID (DELETE)
+    Route::delete('/actas/{id}', [ActaController::class, 'destroy']);
+
     // Rutas para datos de formularios
     Route::get('/vehiculos-activos', function () {
         $vehiculos = \App\Models\Vehiculo::where('estado', 'activo')

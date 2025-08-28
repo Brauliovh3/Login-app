@@ -2439,41 +2439,152 @@ function buscarActaEditar() {
 
 // Modal Eliminar Acta
 function buscarActaEliminar() {
-    const criterio = document.getElementById('buscar-eliminar').value.trim();
+    const criterioEL = document.getElementById('buscar-eliminar');
+    const criterio = criterioEL ? criterioEL.value.trim() : '';
+
     if (!criterio) {
         mostrarNotificacion('Por favor ingrese un criterio de búsqueda', 'warning');
+        if (criterioEL) criterioEL.focus();
         return;
     }
-    
-    // Simulación de búsqueda
-    document.getElementById('eliminar-numero-acta').textContent = 'DRTC-APU-2024-001';
-    document.getElementById('eliminar-fecha-acta').textContent = '15/08/2024';
-    document.getElementById('resultado-eliminar').style.display = 'block';
-    
-    // Aquí se haría la llamada AJAX real para buscar el acta
-    console.log('Buscando acta para eliminar con criterio:', criterio);
+
+    const btn = document.querySelector('button[onclick="buscarActaEliminar()"]');
+    const originalText = btn ? btn.innerHTML : null;
+    if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>BUSCANDO...'; btn.disabled = true; }
+
+    const headers = { 'Accept': 'application/json' };
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) headers['X-CSRF-TOKEN'] = csrfMeta.getAttribute('content');
+
+    fetch(`/api/actas/buscar?criterio=${encodeURIComponent(criterio)}`, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers
+    })
+    .then(async res => {
+        const txt = await res.text();
+        let json = null;
+        try { json = JSON.parse(txt); } catch (e) { json = null; }
+        if (!res.ok) {
+            const msg = (json && json.message) ? json.message : `HTTP ${res.status}`;
+            throw new Error(msg);
+        }
+        return json;
+    })
+    .then(result => {
+        if (!result || !result.success || !result.acta) {
+            mostrarNotificacion(result && result.message ? result.message : 'Acta no encontrada', 'info');
+            return;
+        }
+
+        const acta = result.acta;
+        // Guardar id global y dataset
+        actaIdEnProceso = acta.id;
+        const resultadoEL = document.getElementById('resultado-eliminar');
+        if (resultadoEL) resultadoEL.dataset.actaId = acta.id;
+
+        // Rellenar UI
+        const numeroEL = document.getElementById('eliminar-numero-acta');
+        const fechaEL = document.getElementById('eliminar-fecha-acta');
+
+        if (numeroEL) numeroEL.textContent = acta.numero_acta || acta.numero || 'N/A';
+        if (fechaEL) fechaEL.textContent = acta.fecha_registro || acta.fecha || (acta.created_at ? new Date(acta.created_at).toLocaleDateString('es-PE') : 'N/A');
+
+        document.getElementById('resultado-eliminar').style.display = 'block';
+        mostrarNotificacion('Acta encontrada', 'success', 2000);
+    })
+    .catch(err => {
+        console.error('Error buscando acta:', err);
+        mostrarNotificacion('Error al buscar acta: ' + (err.message || 'Error de conexión'), 'error', 6000);
+    })
+    .finally(() => {
+        if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
+    });
 }
 
 function confirmarEliminacion() {
     const motivo = document.getElementById('motivo-eliminacion').value;
-    const codigo = document.getElementById('codigo-autorizacion').value;
     const supervisor = document.getElementById('supervisor-autorizante').value;
-    
-    if (!motivo || !codigo || !supervisor) {
+
+    if (!motivo || !supervisor) {
         mostrarNotificacion('Todos los campos son obligatorios para la eliminación', 'warning');
         return;
     }
-    
-    if (confirm('¿Está seguro de que desea eliminar esta acta? Esta acción es IRREVERSIBLE.')) {
-        // Aquí se haría la llamada AJAX para eliminar
-        mostrarNotificacion('Acta eliminada exitosamente', 'success');
-        cerrarModal('modal-eliminar-acta');
+
+    const actaId = actaIdEnProceso || (document.getElementById('resultado-eliminar') && document.getElementById('resultado-eliminar').dataset.actaId);
+    if (!actaId) {
+        mostrarNotificacion('ID de acta no encontrado. Primero busque la acta a eliminar.', 'warning');
+        return;
     }
+
+    if (!confirm('¿Está seguro de que desea eliminar esta acta? Esta acción es IRREVERSIBLE')) {
+        return;
+    }
+
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    mostrarNotificacion('Eliminando acta...', 'info', 2000);
+
+    fetch(`/api/actas/${actaId}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrf
+        }
+    })
+    .then(async res => {
+        const txt = await res.text();
+        let json = null;
+        try { json = JSON.parse(txt); } catch (e) { json = null; }
+        if (!res.ok) {
+            const msg = (json && json.message) ? json.message : `HTTP ${res.status}`;
+            throw new Error(msg);
+        }
+        return json;
+    })
+    .then(result => {
+        mostrarNotificacion(result && result.message ? result.message : 'Acta eliminada exitosamente', 'success');
+        cancelarEliminacion();
+        if (typeof cargarActas === 'function') setTimeout(cargarActas, 700);
+    })
+    .catch(err => {
+        console.error('Error eliminando acta:', err);
+        mostrarNotificacion('Error al eliminar: ' + (err.message || 'Error desconocido'), 'error', 6000);
+    });
 }
 
 function cancelarEliminacion() {
-    document.getElementById('resultado-eliminar').style.display = 'none';
-    document.getElementById('buscar-eliminar').value = '';
+     // Ocultar resultado y limpiar buscador
+    const resultadoEl = document.getElementById('resultado-eliminar');
+    if (resultadoEl) {
+        resultadoEl.style.display = 'none';
+        delete resultadoEl.dataset.actaId;
+    }
+
+    const buscarEL = document.getElementById('buscar-eliminar');
+    if (buscarEL) {
+        buscarEL.value = '';
+        buscarEL.focus();
+    }
+
+    // Limpiar campos del formulario de eliminación
+    const motivoEL = document.getElementById('motivo-eliminacion');
+    const obsEL = document.getElementById('observaciones-eliminacion');
+    const supervisorEL = document.getElementById('supervisor-autorizante');
+    const codigoEL = document.getElementById('codigo-autorizacion');
+
+    if (motivoEL) motivoEL.value = '';
+    if (obsEL) obsEL.value = '';
+    if (supervisorEL) supervisorEL.value = '';
+    if (codigoEL) codigoEL.value = '';
+
+    // Limpiar id en proceso
+    actaIdEnProceso = null;
+
+    // Cerrar modal por seguridad
+    cerrarModal('modal-eliminar-acta');
 }
 
 // Función para consulta rápida por documento
