@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 // Controlador completo para el CRUD de usuarios con soporte para modales
@@ -319,5 +320,102 @@ class UserController extends Controller
         ]);
 
         return back()->with('success', 'Usuario rechazado correctamente.');
+    }
+
+    // Métodos para perfil del usuario
+    public function perfil()
+    {
+        $user = Auth::user();
+        return view('user.perfil', compact('user'));
+    }
+
+    public function updatePerfil(Request $request)
+    {
+        $user = Auth::user();
+        
+        $rules = [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:usuarios,email,' . $user->id,
+            'username' => 'required|string|max:255|unique:usuarios,username,' . $user->id,
+        ];
+
+        // Solo validar phone si la tabla tiene esa columna
+        if (Schema::hasColumn('usuarios', 'phone')) {
+            $rules['phone'] = 'nullable|string|max:20';
+        }
+
+        if ($request->filled('current_password')) {
+            $rules['current_password'] = 'required';
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // Verificar contraseña actual si se quiere cambiar
+        if ($request->filled('current_password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'La contraseña actual es incorrecta.']);
+            }
+        }
+
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'username' => $request->username,
+        ];
+
+        // Solo actualizar phone si la tabla tiene esa columna
+        if (Schema::hasColumn('usuarios', 'phone')) {
+            $data['phone'] = $request->phone;
+        }
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'Perfil actualizado correctamente.');
+    }
+
+    public function configuracion()
+    {
+        $user = Auth::user();
+        return view('user.configuracion', compact('user'));
+    }
+
+    public function updateConfiguracion(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validator = Validator::make($request->all(), [
+            'notifications_enabled' => 'boolean',
+            'email_notifications' => 'boolean',
+            'theme' => 'in:light,dark,auto',
+            'language' => 'in:es,en',
+            'timezone' => 'string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
+        }
+
+        // Aquí puedes guardar las configuraciones
+        // Por ahora las guardamos en la sesión como ejemplo
+        session([
+            'user_config' => [
+                'notifications_enabled' => $request->boolean('notifications_enabled', true),
+                'email_notifications' => $request->boolean('email_notifications', true),
+                'theme' => $request->get('theme', 'light'),
+                'language' => $request->get('language', 'es'),
+                'timezone' => $request->get('timezone', 'America/Lima'),
+            ]
+        ]);
+
+        return back()->with('success', 'Configuración actualizada correctamente.');
     }
 }

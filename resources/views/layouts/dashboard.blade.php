@@ -7,6 +7,9 @@
     <title>@yield('title', 'Panel de Control')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    @if(session('user_config.theme') === 'dark')
+        <link href="{{ asset('css/dark-mode.css') }}" rel="stylesheet">
+    @endif
     <style>
         :root {
             --sidebar-width: 250px;
@@ -30,10 +33,10 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fc;
             overflow-x: hidden !important;
-            position: relative;
+        position: relative;
         }
 
         /* Sidebar */
@@ -433,7 +436,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ session('user_config.theme', 'light') === 'dark' ? 'dark-mode' : '' }}">
     <!-- Sidebar -->
     <nav class="sidebar sidebar-{{ auth()->user()->role ?? 'default' }}" id="sidebar">
         @auth
@@ -697,11 +700,11 @@
                             <i class="fas fa-user-circle fa-lg" style="color: #858796;"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                            <a class="dropdown-item" href="#">
+                            <a class="dropdown-item" href="{{ route('user.perfil') }}">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Mi Perfil
                             </a>
-                            <a class="dropdown-item" href="#">
+                            <a class="dropdown-item" href="{{ route('user.configuracion') }}">
                                 <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Configuración
                             </a>
