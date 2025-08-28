@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 // use App\Http\Controllers\NotificationController; // CONTROLADOR ELIMINADO
-use App\Http\Controllers\InfraccionController;
+// use App\Http\Controllers\InfraccionController;
 use App\Http\Controllers\InspeccionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActaController;
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
 
 // Rutas para administradores y fiscalizadores (infracciones)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
-    Route::resource('infracciones', InfraccionController::class);
+            // Route::resource('infracciones', InfraccionController::class);
 });
 
 // Rutas para inspecciones (administrador, fiscalizador, ventanilla)
@@ -193,6 +193,13 @@ Route::middleware(['auth', 'user.approved', 'role:superadmin'])->prefix('admin')
     Route::get('/super/users', [App\Http\Controllers\Admin\SuperAdminController::class, 'usersList'])->name('super.users');
     Route::post('/super/users/{id}/toggle-status', [App\Http\Controllers\Admin\SuperAdminController::class, 'toggleUserStatus'])->name('super.users.toggle-status');
     Route::post('/super/users/{id}/approve', [App\Http\Controllers\Admin\SuperAdminController::class, 'approveUser'])->name('super.users.approve');
+    Route::delete('/super/users/{id}', [App\Http\Controllers\Admin\SuperAdminController::class, 'deleteUser'])->name('super.users.delete');
+    Route::post('/super/users/{id}/role', [App\Http\Controllers\Admin\SuperAdminController::class, 'updateUserRole'])->name('super.users.role');
+    Route::get('/super/actas', [App\Http\Controllers\Admin\SuperAdminController::class, 'actasManagement'])->name('super.actas');
+    Route::delete('/super/actas/{id}', [App\Http\Controllers\Admin\SuperAdminController::class, 'deleteActa'])->name('super.actas.delete');
+    Route::post('/super/actas/{id}/status', [App\Http\Controllers\Admin\SuperAdminController::class, 'updateActaStatus'])->name('super.actas.status');
+    Route::post('/super/system', [App\Http\Controllers\Admin\SuperAdminController::class, 'systemMaintenance'])->name('super.system');
+    Route::post('/super/database', [App\Http\Controllers\Admin\SuperAdminController::class, 'databaseMaintenance'])->name('super.database');
     // Temporary debug endpoint to inspect authenticated user while troubleshooting
     Route::get('/super/debug-user', function(){ return response()->json(['user' => auth()->user()]); })->name('super.debug-user');
 });
@@ -253,6 +260,9 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
     // Nueva ruta para consulta simple por DNI/RUC
     Route::get('/consultar-actas/{documento}', [ActaController::class, 'consultarPorDocumento']);
     Route::get('/consultar-actas', [ActaController::class, 'consultarActas']);
+    Route::get('/estadisticas-actas', [ActaController::class, 'obtenerEstadisticas']);
+    Route::get('/buscar-acta-editar/{criterio}', [ActaController::class, 'buscarActaParaEditar']);
+    Route::put('/actualizar-acta/{id}', [ActaController::class, 'actualizarActa']);
     
     // Rutas para Inspección Vehicular
     Route::post('/inspeccion/iniciar', [InspeccionVehicularController::class, 'iniciar']);

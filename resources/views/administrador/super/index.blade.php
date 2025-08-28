@@ -1,393 +1,767 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Superadmin - Herramientas')
+@section('title', 'Panel Superadministrador')
 
 @section('content')
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="mb-0">Panel Superadmin</h3>
-            <small class="text-muted">Acciones potentes. Solo rol <strong>superadmin</strong>.</small>
-        </div>
-        <div>
-            <span class="badge bg-danger">Oculto</span>
+<div class="container-fluid">
+    <!-- Loader Global -->
+    <div id="globalLoader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <div class="mt-2">Procesando...</div>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">Información</div>
-                <div class="card-body">
-                    <p class="small text-muted">Consulta información de la aplicación y servidor.</p>
-                    <button id="btnAppInfo" class="btn btn-info btn-sm">Mostrar info app/servidor</button>
-                    <pre id="appInfo" class="mt-3 small p-2 bg-light rounded" style="display:none; white-space:pre-wrap;"></pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">Mantenimiento - Artisan</div>
-                <div class="card-body">
-                    <p class="small text-muted">Comandos permitidos (whitelist). Cada acción mostrará advertencia y log.</p>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button class="btn btn-primary btn-sm run-cmd" data-cmd="cache:clear">cache:clear</button>
-                        <button class="btn btn-secondary btn-sm run-cmd" data-cmd="config:cache">config:cache</button>
-                        <button class="btn btn-warning btn-sm run-cmd" data-cmd="route:clear">route:clear</button>
-                        <button class="btn btn-dark btn-sm run-cmd" data-cmd="view:clear">view:clear</button>
-                    </div>
-                    <div class="mt-3">
-                        <button id="btnRunAll" class="btn btn-outline-success btn-sm">Ejecutar todos (secuencial)</button>
-                    </div>
-                    <pre id="cmdOutput" class="mt-3 small p-2 bg-light rounded" style="display:none; white-space:pre-wrap; max-height:220px; overflow:auto;"></pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">Usuarios y Estadísticas</div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-0">Estadísticas rápidas</h6>
-                            <small class="text-muted">Actas y usuarios</small>
-                        </div>
-                        <div>
-                            <button id="btnRefreshStats" class="btn btn-sm btn-outline-primary">Actualizar</button>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-4 text-center">
-                            <h4 id="statActas">-</h4>
-                            <small class="text-muted">Total actas</small>
-                        </div>
-                        <div class="col-4 text-center">
-                            <h4 id="statUsuarios">-</h4>
-                            <small class="text-muted">Total usuarios</small>
-                        </div>
-                        <div class="col-4 text-center">
-                            <h4 id="statRecent">-</h4>
-                            <small class="text-muted">Actas recientes</small>
-                        </div>
-                    </div>
-
-                    <hr />
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Usuarios (últimos 50)</h6>
-                        <button id="btnLoadUsers" class="btn btn-sm btn-outline-secondary">Cargar usuarios</button>
-                    </div>
-                    <div style="max-height:240px; overflow:auto;">
-                        <table class="table table-sm table-striped" id="usersTable">
-                            <thead><tr><th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <!-- Header Simple -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm border-danger">
-                <div class="card-header bg-danger text-white">Peligroso — Reset actas</div>
-                <div class="card-body">
-                    <p class="small text-muted">Reinicia la numeración de la tabla <code>actas</code>. Si existen registros puede ser destructivo.</p>
-                    <div class="mb-2">
-                        <input id="superConfirm" class="form-control" placeholder="Escribe CONFIRMAR para forzar (opcional)" />
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button id="btnResetActasSuper" class="btn btn-danger">Reset actas</button>
-                        <button id="btnResetActasPreview" class="btn btn-outline-danger">Vista previa (segura)</button>
-                    </div>
-                    <div id="resetActasFeedback" class="mt-3"></div>
+            <div class="card" style="background: linear-gradient(135deg, #ff8c00, #e67e22); color: white;">
+                <div class="card-body text-center">
+                    <h2 class="mb-0">🛡️ Panel Superadministrador DRTC</h2>
+                    <p class="mb-0">Sistema de Administración Total</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toasts -->
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-        <div id="toastContainer"></div>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Confirmar acción</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p id="confirmModalBody" class="small text-muted"></p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button id="confirmModalOk" type="button" class="btn btn-danger">Confirmar</button>
-          </div>
+    <!-- Navegación Complete -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills nav-fill">
+                <li class="nav-item">
+                    <button class="nav-link active" data-section="dashboard">📊 Dashboard</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-section="users">👥 Usuarios</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-section="actas">📋 Actas</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-section="system">⚙️ Sistema</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-section="database">🗄️ Base de Datos</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-section="maintenance">🛠️ Mantenimiento</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-danger" data-section="danger">⚠️ Zona Peligrosa</button>
+                </li>
+            </ul>
         </div>
-      </div>
     </div>
 
-    <!-- Global loader with a small cart animation -->
-    <div id="globalLoader" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1200; align-items:center; justify-content:center;">
-        <div style="width:320px; max-width:90%; text-align:center; color:#fff;">
-            <div id="cartProgress" style="height:90px; position:relative;">
-                <div id="cartTrack" style="height:6px; background:rgba(255,255,255,0.15); border-radius:4px; position:absolute; left:10px; right:10px; top:40px;"></div>
-                <div id="cart" style="position:absolute; left:10px; top:0; transform:translateX(0); transition:transform 0.2s linear;">
-                    <!-- simple cart icon -->
-                    <svg width="80" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                      <circle cx="10" cy="20" r="1.6" fill="#fff" />
-                      <circle cx="18" cy="20" r="1.6" fill="#fff" />
-                    </svg>
+    <!-- Sección Dashboard -->
+    <div id="section-dashboard" class="section-content">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5>Usuarios Totales</h5>
+                        <h2 id="statUsuarios">-</h2>
+                    </div>
                 </div>
             </div>
-            <div class="mt-2 small">Procesando... <span id="loaderPercent">0%</span></div>
-            <div id="loaderMsg" class="small text-light mt-1"></div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5>Actas Totales</h5>
+                        <h2 id="statActas">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5>Actas Recientes</h5>
+                        <h2 id="statRecent">-</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Información del Sistema</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="btnAppInfo" class="btn btn-outline-primary">Ver Información de App</button>
+                        <pre id="appInfo" class="mt-3" style="display: none; max-height: 300px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Sección Usuarios -->
+    <div id="section-users" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Gestión de Usuarios</h5>
+                        <button id="btnLoadUsers" class="btn btn-primary btn-sm">🔄 Cargar Usuarios</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table id="usersTable" class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuario</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            Haz clic en "Cargar Usuarios" para ver la lista
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Actas -->
+    <div id="section-actas" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Gestión de Actas</h5>
+                        <button id="btnLoadActas" class="btn btn-primary btn-sm">🔄 Cargar Actas</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <h6>Total Actas</h6>
+                                        <h4 id="actasTotal">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body text-center">
+                                        <h6>Pendientes</h6>
+                                        <h4 id="actasPendientes">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <h6>Procesadas</h6>
+                                        <h4 id="actasProcesadas">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-danger text-white">
+                                    <div class="card-body text-center">
+                                        <h6>Anuladas</h6>
+                                        <h4 id="actasAnuladas">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="actasTable" class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Número</th>
+                                        <th>Placa</th>
+                                        <th>Razón Social</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            Haz clic en "Cargar Actas" para ver la lista
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Sistema -->
+    <div id="section-system" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>⚙️ Herramientas del Sistema Laravel</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Comandos de Optimización</h6>
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-outline-primary system-action" data-action="optimize">🚀 Optimizar Sistema</button>
+                                    <button class="btn btn-outline-warning system-action" data-action="migrate">🔄 Ejecutar Migraciones</button>
+                                    <button class="btn btn-outline-info system-action" data-action="storage_link">🔗 Crear Storage Link</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Resultado</h6>
+                                <pre id="systemOutput" class="bg-light p-2 rounded" style="min-height: 200px;">Selecciona una acción para ver el resultado...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Base de Datos -->
+    <div id="section-database" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🗄️ Mantenimiento de Base de Datos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Operaciones de BD</h6>
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-outline-primary db-action" data-action="vacuum">🗜️ Optimizar Tablas</button>
+                                    <button class="btn btn-outline-warning db-action" data-action="cleanup_sessions">🧹 Limpiar Sesiones</button>
+                                    <button class="btn btn-outline-info db-action" data-action="cleanup_notifications">🔔 Limpiar Notificaciones</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Resultado</h6>
+                                <pre id="databaseOutput" class="bg-light p-2 rounded" style="min-height: 200px;">Selecciona una operación para ver el resultado...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Mantenimiento -->
+    <div id="section-maintenance" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>🛠️ Comandos Artisan de Mantenimiento</h5>
+                        <button id="btnRunAll" class="btn btn-success btn-sm">⚡ Ejecutar Todos</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Comandos Individuales</h6>
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-outline-primary run-cmd" data-cmd="cache:clear">🧹 Limpiar Caché</button>
+                                    <button class="btn btn-outline-success run-cmd" data-cmd="config:cache">⚙️ Cachear Configuración</button>
+                                    <button class="btn btn-outline-warning run-cmd" data-cmd="route:clear">🛣️ Limpiar Rutas</button>
+                                    <button class="btn btn-outline-info run-cmd" data-cmd="view:clear">👁️ Limpiar Vistas</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Log de Comandos</h6>
+                                <pre id="cmdOutput" class="bg-dark text-light p-2 rounded" style="min-height: 300px; overflow-y: auto;">Listo para ejecutar comandos...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Zona Peligrosa -->
+    <div id="section-danger" class="section-content" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5>⚠️ Zona Peligrosa - Operaciones Críticas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger">
+                            <strong>ADVERTENCIA:</strong> Las operaciones de esta sección pueden afectar gravemente el sistema.
+                        </div>
+
+                        <h6>Reset de Actas</h6>
+                        <div class="mb-3">
+                            <button id="btnResetActasPreview" class="btn btn-warning btn-sm">👀 Vista Previa</button>
+                            <button id="btnResetActasSuper" class="btn btn-danger btn-sm">💀 Reset Destructivo</button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="superConfirm" class="form-label">Para reset destructivo, escribe "CONFIRMAR":</label>
+                            <input type="text" id="superConfirm" class="form-control" placeholder="Escribe CONFIRMAR">
+                        </div>
+                        
+                        <div id="resetActasFeedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
 @endsection
 
 @section('scripts')
 <script>
-(() => {
-    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+// Panel Superadmin - Versión Simplificada
+document.addEventListener('DOMContentLoaded', function() {
+    const token = '{{ csrf_token() }}';
+    let currentSection = 'dashboard';
 
-    function showToast(title, body, type = 'info') {
-        const id = 't' + Date.now();
-        const color = type === 'error' ? 'bg-danger text-white' : (type === 'success' ? 'bg-success text-white' : 'bg-primary text-white');
-        const html = `
-            <div id="${id}" class="toast ${color}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
-              <div class="d-flex">
-                <div class="toast-body small">${title}<div class="small text-white-50">${body}</div></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
-            </div>`;
-        const container = document.getElementById('toastContainer');
-        container.insertAdjacentHTML('beforeend', html);
-        const toastEl = document.getElementById(id);
-        const bs = new bootstrap.Toast(toastEl);
-        bs.show();
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    // Funciones básicas de UI
+    function showLoader() {
+        document.getElementById('globalLoader').style.display = 'block';
     }
 
-    // Global loader controls
-    const loader = document.getElementById('globalLoader');
-    const cart = document.getElementById('cart');
-    const percent = document.getElementById('loaderPercent');
-    const loaderMsg = document.getElementById('loaderMsg');
-    let loaderInterval;
-
-    function startLoader(initialMsg = '') {
-        loader.style.display = 'flex';
-        loaderMsg.textContent = initialMsg;
-        let p = 0;
-        percent.textContent = p + '%';
-        cart.style.transform = `translateX(${p}%)`;
-        clearInterval(loaderInterval);
-        loaderInterval = setInterval(() => {
-            // simulate progress but never reach 100% until finished
-            p = Math.min(95, p + Math.floor(Math.random() * 8) + 3);
-            percent.textContent = p + '%';
-            cart.style.transform = `translateX(${p}%)`;
-        }, 400);
-    }
-    function finishLoader(finalMsg = '') {
-        clearInterval(loaderInterval);
-        percent.textContent = '100%';
-        cart.style.transform = 'translateX(100%)';
-        loaderMsg.textContent = finalMsg;
-        setTimeout(() => { loader.style.display = 'none'; cart.style.transform = 'translateX(0)'; percent.textContent = '0%'; loaderMsg.textContent = ''; }, 800);
+    function hideLoader() {
+        document.getElementById('globalLoader').style.display = 'none';
     }
 
-    async function doPost(url, body = {}, opts = {}) {
-        startLoader(opts.message || 'Ejecutando...');
-        try {
-            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token }, body: JSON.stringify(body) });
-            const data = await res.json();
-            finishLoader(opts.finalMessage || 'Finalizado');
-            return data;
-        } catch (e) {
-            finishLoader('Error');
-            throw e;
+    function showMessage(message, type = 'info') {
+        // Sin notificaciones - solo console log
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
+
+    // Navegación entre secciones
+    function showSection(sectionName) {
+        // Ocultar todas las secciones
+        document.querySelectorAll('.section-content').forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Remover clase activa
+        document.querySelectorAll('[data-section]').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Mostrar sección y activar botón
+        const sectionEl = document.getElementById(`section-${sectionName}`);
+        const btnEl = document.querySelector(`[data-section="${sectionName}"]`);
+        
+        if (sectionEl && btnEl) {
+            sectionEl.style.display = 'block';
+            btnEl.classList.add('active');
+            currentSection = sectionName;
+            
+            // Cargar datos si es necesario
+            if (sectionName === 'dashboard') {
+                loadStats();
+            }
         }
     }
 
-    async function doGet(url, opts = {}) {
-        startLoader(opts.message || 'Consultando...');
+    // Event listeners para navegación
+    document.querySelectorAll('[data-section]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const section = this.dataset.section;
+            showSection(section);
+        });
+    });
+
+    // Función para cargar estadísticas
+    async function loadStats() {
         try {
-            const res = await fetch(url);
-            const data = await res.json();
-            finishLoader(opts.finalMessage || 'Finalizado');
-            return data;
-        } catch (e) {
-            finishLoader('Error');
-            throw e;
+            showLoader();
+            console.log('Cargando estadísticas...');
+            
+            const response = await fetch('{{ route('admin.super.stats') }}');
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('Data received:', data);
+            
+            hideLoader();
+            
+            if (data && data.ok && data.stats) {
+                document.getElementById('statUsuarios').textContent = data.stats.total_usuarios || '0';
+                document.getElementById('statActas').textContent = data.stats.total_actas || '0';
+                document.getElementById('statRecent').textContent = (data.stats.actas_recientes || []).length || '0';
+                showMessage('Estadísticas cargadas correctamente', 'success');
+            } else {
+                throw new Error('Datos no válidos recibidos del servidor');
+            }
+            
+        } catch (error) {
+            console.error('Error cargando estadísticas:', error);
+            hideLoader();
+            
+            // Mostrar error en lugar de loader infinito
+            document.getElementById('statUsuarios').textContent = 'Error';
+            document.getElementById('statActas').textContent = 'Error';
+            document.getElementById('statRecent').textContent = 'Error';
+            
+            showMessage(`Error al cargar estadísticas: ${error.message}`, 'error');
         }
     }
 
-    // App info
+    // Botón de información de app
     document.getElementById('btnAppInfo')?.addEventListener('click', async function() {
-        const pre = document.getElementById('appInfo');
-        pre.style.display = 'block';
-        pre.textContent = 'Cargando...';
         try {
-            const data = await doGet('{{ route('admin.super.app-info') }}', { message: 'Obteniendo info...' });
+            showLoader();
+            const response = await fetch('{{ route('admin.super.app-info') }}');
+            const data = await response.json();
+            hideLoader();
+            
+            const pre = document.getElementById('appInfo');
             pre.textContent = JSON.stringify(data.info || data, null, 2);
-        } catch (e) {
-            pre.textContent = 'Error: ' + e.message;
-            showToast('Error', 'No se pudo obtener info', 'error');
+            pre.style.display = 'block';
+            
+            showMessage('Información del sistema cargada', 'success');
+        } catch (error) {
+            hideLoader();
+            showMessage(`Error: ${error.message}`, 'error');
         }
     });
 
-    // Run single command
-    document.querySelectorAll('.run-cmd').forEach(function(btn) {
+    // Cargar usuarios
+    document.getElementById('btnLoadUsers')?.addEventListener('click', async function() {
+        try {
+            showLoader();
+            const response = await fetch('{{ route('admin.super.users') }}');
+            const data = await response.json();
+            hideLoader();
+            
+            if (data.ok && data.users) {
+                const tbody = document.querySelector('#usersTable tbody');
+                tbody.innerHTML = '';
+                
+                data.users.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.email || '-'}</td>
+                            <td><span class="badge bg-primary">${user.role}</span></td>
+                            <td><span class="badge bg-${user.status === 'active' ? 'success' : 'warning'}">${user.status}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success" onclick="alert('Aprobar usuario ${user.id}')">✅</button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="alert('Toggle usuario ${user.id}')">🔄</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+                
+                showMessage(`${data.users.length} usuarios cargados`, 'success');
+            }
+        } catch (error) {
+            hideLoader();
+            showMessage(`Error cargando usuarios: ${error.message}`, 'error');
+        }
+    });
+
+    // Cargar actas
+    document.getElementById('btnLoadActas')?.addEventListener('click', async function() {
+        try {
+            showLoader();
+            const response = await fetch('{{ route('admin.super.actas') }}');
+            const data = await response.json();
+            hideLoader();
+            
+            if (data.ok) {
+                // Actualizar estadísticas
+                document.getElementById('actasTotal').textContent = data.stats.total || '0';
+                document.getElementById('actasPendientes').textContent = data.stats.pendientes || '0';
+                document.getElementById('actasProcesadas').textContent = data.stats.procesadas || '0';
+                document.getElementById('actasAnuladas').textContent = data.stats.anuladas || '0';
+                
+                // Actualizar tabla
+                const tbody = document.querySelector('#actasTable tbody');
+                tbody.innerHTML = '';
+                
+                if (data.actas && data.actas.length > 0) {
+                    data.actas.forEach(acta => {
+                        const row = `
+                            <tr>
+                                <td>${acta.id}</td>
+                                <td>${acta.numero_acta || '-'}</td>
+                                <td>${acta.placa || '-'}</td>
+                                <td>${acta.razon_social || '-'}</td>
+                                <td><span class="badge bg-${acta.estado === 'pendiente' ? 'warning' : acta.estado === 'procesada' ? 'success' : 'danger'}">${acta.estado}</span></td>
+                                <td>${new Date(acta.created_at).toLocaleDateString('es-ES')}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="alert('Eliminar acta ${acta.id}')">🗑️</button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay actas disponibles</td></tr>';
+                }
+                
+                showMessage(`${data.actas.length} actas cargadas`, 'success');
+            }
+        } catch (error) {
+            hideLoader();
+            showMessage(`Error cargando actas: ${error.message}`, 'error');
+        }
+    });
+
+    // Herramientas del Sistema
+    document.querySelectorAll('.system-action')?.forEach(btn => {
         btn.addEventListener('click', async function() {
-            const cmd = this.dataset.cmd;
-            if (!confirm(`Ejecutar comando: ${cmd}? Esta acción será registrada.`)) return;
-            const outPre = document.getElementById('cmdOutput');
-            outPre.style.display = 'block';
-            outPre.textContent = `Ejecutando ${cmd}...`;
-            try {
-                const data = await doPost('{{ route('admin.super.run-command') }}', { command: cmd }, { message: `Ejecutando ${cmd}...`, finalMessage: `${cmd} finalizado` });
-                outPre.textContent = JSON.stringify(data, null, 2);
-                showToast('Comando ejecutado', cmd, 'success');
-            } catch (e) {
-                outPre.textContent = 'Error: ' + e.message;
-                showToast('Error', `Fallo al ejecutar ${cmd}`, 'error');
+            const action = this.dataset.action;
+            const actionNames = {
+                optimize: 'Optimizar Sistema',
+                migrate: 'Ejecutar Migraciones',
+                storage_link: 'Crear Storage Link'
+            };
+            
+            if (confirm(`¿Ejecutar: ${actionNames[action]}?`)) {
+                try {
+                    showLoader();
+                    const response = await fetch('{{ route('admin.super.system') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ action })
+                    });
+                    
+                    const data = await response.json();
+                    hideLoader();
+                    
+                    document.getElementById('systemOutput').textContent = JSON.stringify(data, null, 2);
+                    showMessage(`${actionNames[action]} completado`, 'success');
+                } catch (error) {
+                    hideLoader();
+                    document.getElementById('systemOutput').textContent = `Error: ${error.message}`;
+                    showMessage(`Error en ${actionNames[action]}`, 'error');
+                }
             }
         });
     });
 
-    // Run all sequentially
-    document.getElementById('btnRunAll')?.addEventListener('click', async function() {
-        const cmds = ['cache:clear','config:cache','route:clear','view:clear'];
-        if (!confirm('Ejecutar todos los comandos permitidos en secuencia?')) return;
-        const outPre = document.getElementById('cmdOutput');
-        outPre.style.display = 'block';
-        outPre.textContent = '';
-        for (const c of cmds) {
-            outPre.textContent += `\n--- Ejecutando ${c} ---\n`;
-            try {
-                const data = await doPost('{{ route('admin.super.run-command') }}', { command: c }, { message: `Ejecutando ${c}...`, finalMessage: `${c} finalizado` });
-                outPre.textContent += JSON.stringify(data, null, 2) + '\n';
-            } catch (e) {
-                outPre.textContent += `Error al ejecutar ${c}: ${e.message}\n`;
-                showToast('Error', `Fallo en ${c}`, 'error');
+    // Operaciones de Base de Datos
+    document.querySelectorAll('.db-action')?.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const action = this.dataset.action;
+            const actionNames = {
+                vacuum: 'Optimizar Tablas',
+                cleanup_sessions: 'Limpiar Sesiones',
+                cleanup_notifications: 'Limpiar Notificaciones'
+            };
+            
+            if (confirm(`¿Ejecutar: ${actionNames[action]}?`)) {
+                try {
+                    showLoader();
+                    const response = await fetch('{{ route('admin.super.database') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ action })
+                    });
+                    
+                    const data = await response.json();
+                    hideLoader();
+                    
+                    document.getElementById('databaseOutput').textContent = JSON.stringify(data, null, 2);
+                    showMessage(`${actionNames[action]} completado`, 'success');
+                } catch (error) {
+                    hideLoader();
+                    document.getElementById('databaseOutput').textContent = `Error: ${error.message}`;
+                    showMessage(`Error en ${actionNames[action]}`, 'error');
+                }
             }
-            // small pause between commands
-            await new Promise(r => setTimeout(r, 400));
-        }
-        showToast('Secuencia', 'Todos los comandos han terminado', 'success');
+        });
     });
 
-    // Reset actas: preview (safe) and destructive
+    // Comandos Artisan individuales
+    document.querySelectorAll('.run-cmd')?.forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const cmd = this.dataset.cmd;
+            
+            if (confirm(`¿Ejecutar comando: ${cmd}?`)) {
+                try {
+                    showLoader();
+                    const response = await fetch('{{ route('admin.super.run-command') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ command: cmd })
+                    });
+                    
+                    const data = await response.json();
+                    hideLoader();
+                    
+                    const output = document.getElementById('cmdOutput');
+                    output.textContent += `\n=== COMANDO: ${cmd} ===\n` + JSON.stringify(data, null, 2) + '\n';
+                    output.scrollTop = output.scrollHeight;
+                    
+                    showMessage(`Comando ${cmd} ejecutado`, 'success');
+                } catch (error) {
+                    hideLoader();
+                    const output = document.getElementById('cmdOutput');
+                    output.textContent += `\n=== ERROR EN ${cmd} ===\n` + error.message + '\n';
+                    showMessage(`Error ejecutando ${cmd}`, 'error');
+                }
+            }
+        });
+    });
+
+    // Ejecutar todos los comandos en secuencia
+    document.getElementById('btnRunAll')?.addEventListener('click', async function() {
+        const commands = ['cache:clear', 'config:cache', 'route:clear', 'view:clear'];
+        
+        if (confirm('¿Ejecutar todos los comandos de mantenimiento en secuencia?')) {
+            const output = document.getElementById('cmdOutput');
+            output.textContent = '=== INICIANDO SECUENCIA DE COMANDOS ===\n';
+            
+            for (const cmd of commands) {
+                try {
+                    showLoader();
+                    const response = await fetch('{{ route('admin.super.run-command') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ command: cmd })
+                    });
+                    
+                    const data = await response.json();
+                    output.textContent += `\n=== ${cmd.toUpperCase()} ===\n` + JSON.stringify(data, null, 2) + '\n';
+                    output.scrollTop = output.scrollHeight;
+                    
+                    // Pequeña pausa entre comandos
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    output.textContent += `\n=== ERROR EN ${cmd.toUpperCase()} ===\n` + error.message + '\n';
+                }
+            }
+            
+            hideLoader();
+            output.textContent += '\n=== SECUENCIA COMPLETADA ===\n';
+            showMessage('Secuencia de comandos completada', 'success');
+        }
+    });
+
+    // Reset de actas - Vista previa
     document.getElementById('btnResetActasPreview')?.addEventListener('click', async function() {
         try {
-            const data = await doPost('{{ route('admin.super.reset-actas') }}', { force: false }, { message: 'Comprobando actas...', finalMessage: 'Comprobación terminada' });
-            document.getElementById('resetActasFeedback').innerText = data.message || JSON.stringify(data);
-            showToast('Vista previa', data.message || 'Revisado', 'info');
-        } catch (e) {
-            document.getElementById('resetActasFeedback').innerText = 'Error: ' + e.message;
-            showToast('Error', 'No se pudo previsualizar reset', 'error');
+            showLoader();
+            const response = await fetch('{{ route('admin.super.reset-actas') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ force: false })
+            });
+            
+            const data = await response.json();
+            hideLoader();
+            
+            document.getElementById('resetActasFeedback').innerHTML = `
+                <div class="alert alert-info">
+                    <strong>Vista previa:</strong> ${data.message || 'Operación completada'}
+                </div>
+            `;
+        } catch (error) {
+            hideLoader();
+            showMessage(`Error en vista previa: ${error.message}`, 'error');
         }
     });
 
-    document.getElementById('btnResetActasSuper')?.addEventListener('click', async function() {
-        const v = (document.getElementById('superConfirm').value || '').trim();
-        const force = v === 'CONFIRMAR';
-        const msg = force ? 'Atención: esta acción TRUNCARÁ la tabla actas. Continúe solo si está seguro.' : 'No destructivo: intentará establecer AUTO_INCREMENT a 1 si la tabla está vacía.';
-        // show modal
-        document.getElementById('confirmModalBody').textContent = msg;
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-        document.getElementById('confirmModalOk').onclick = async () => {
-            confirmModal.hide();
-            try {
-                const data = await doPost('{{ route('admin.super.reset-actas') }}', { force: force }, { message: 'Procesando reset actas...', finalMessage: 'Reset finalizado' });
-                document.getElementById('resetActasFeedback').innerText = data.message || JSON.stringify(data);
-                showToast('Reset actas', data.message || 'Completado', 'success');
-            } catch (e) {
-                document.getElementById('resetActasFeedback').innerText = 'Error: ' + e.message;
-                showToast('Error', 'Fallo reset actas', 'error');
-            }
-        };
-        confirmModal.show();
+    // Reset de actas - Destructivo
+    document.getElementById('btnResetActasSuper')?.addEventListener('click', function() {
+        const confirmation = document.getElementById('superConfirm').value.trim();
+        const isDestructive = confirmation === 'CONFIRMAR';
+        
+        if (!isDestructive && confirmation) {
+            showMessage('Debes escribir exactamente "CONFIRMAR" para operaciones destructivas', 'error');
+            return;
+        }
+        
+        const message = isDestructive ? 
+            '¿Estás seguro de ELIMINAR TODAS las actas?' : 
+            '¿Intentar reset no destructivo?';
+            
+        if (confirm(message)) {
+            performReset(isDestructive);
+        }
     });
 
-})();
-</script>
-<script>
-// Users and Stats handlers
-(async function(){
-    const statsUrl = '{{ route('admin.super.stats') }}';
-    const usersUrl = '{{ route('admin.super.users') }}';
-
-    async function loadStats(){
-        try{
-            const r = await doGet(statsUrl, { message: 'Cargando estadísticas...', finalMessage: 'Estadísticas cargadas' });
-            if(r.ok){
-                document.getElementById('statActas').textContent = r.stats.total_actas;
-                document.getElementById('statUsuarios').textContent = r.stats.total_usuarios;
-                document.getElementById('statRecent').textContent = (r.stats.actas_recientes || []).length;
+    async function performReset(force) {
+        try {
+            showLoader();
+            const response = await fetch('{{ route('admin.super.reset-actas') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ force: force })
+            });
+            
+            const data = await response.json();
+            hideLoader();
+            
+            const alertType = data.ok ? 'success' : 'danger';
+            document.getElementById('resetActasFeedback').innerHTML = `
+                <div class="alert alert-${alertType}">
+                    <strong>${force ? 'Reset destructivo' : 'Reset'}:</strong> ${data.message || 'Operación completada'}
+                </div>
+            `;
+            
+            if (currentSection === 'dashboard') {
+                loadStats(); // Recargar estadísticas
             }
-        }catch(e){ console.error(e); }
+            
+        } catch (error) {
+            hideLoader();
+            showMessage(`Error en reset: ${error.message}`, 'error');
+        }
     }
 
-    async function loadUsers(){
-        try{
-            const r = await doGet(usersUrl, { message: 'Cargando usuarios...', finalMessage: 'Usuarios cargados' });
-            if(r.ok){
-                const tbody = document.querySelector('#usersTable tbody');
-                tbody.innerHTML = '';
-                r.users.forEach(u => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${u.id}</td>
-                        <td>${u.username}</td>
-                        <td>${u.email || ''}</td>
-                        <td>${u.role}</td>
-                        <td>${u.status}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary btn-approve" data-id="${u.id}">Aprobar</button>
-                            <button class="btn btn-sm btn-outline-secondary btn-toggle" data-id="${u.id}">Toggle</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                // attach events
-                document.querySelectorAll('.btn-toggle').forEach(b=> b.addEventListener('click', async ()=>{
-                    const id = b.dataset.id;
-                    try{
-                        const res = await doPost(`{{ url('/admin/super/users') }}/${id}/toggle-status`, {}, { message: 'Cambiando estado...', finalMessage: 'Estado cambiado' });
-                        showToast('Usuario', res.message || 'Actualizado', 'success');
-                        loadUsers(); loadStats();
-                    }catch(e){ showToast('Error','No se pudo cambiar estado','error'); }
-                }));
-
-                document.querySelectorAll('.btn-approve').forEach(b=> b.addEventListener('click', async ()=>{
-                    const id = b.dataset.id;
-                    if(!confirm('Aprobar usuario?')) return;
-                    try{
-                        const res = await doPost(`{{ url('/admin/super/users') }}/${id}/approve`, {}, { message: 'Aprobando...', finalMessage: 'Aprobado' });
-                        showToast('Usuario', res.message || 'Aprobado', 'success');
-                        loadUsers(); loadStats();
-                    }catch(e){ showToast('Error','No se pudo aprobar','error'); }
-                }));
-            }
-        }catch(e){ console.error(e); }
-    }
-
-    document.getElementById('btnLoadUsers')?.addEventListener('click', loadUsers);
-    document.getElementById('btnRefreshStats')?.addEventListener('click', loadStats);
-
-    // initial load
-    loadStats();
-})();
+    // Inicialización
+    console.log('Superadmin panel initialized');
+    
+    // Cargar estadísticas iniciales con timeout
+    setTimeout(() => {
+        if (currentSection === 'dashboard') {
+            loadStats();
+        }
+    }, 1000);
+});
 </script>
 @endsection

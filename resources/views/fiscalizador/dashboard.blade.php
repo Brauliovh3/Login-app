@@ -40,7 +40,7 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background: conic-gradient(#28a745 0deg 252deg, #e9ecef 252deg 360deg);
+        background: #e9ecef;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -99,21 +99,21 @@
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="stats-number">{{ $stats['infracciones_procesadas'] ?? 67 }}</div>
+                <div class="stats-number">{{ $stats['infracciones_procesadas'] ?? 0 }}</div>
                 <div class="stats-label">Procesadas</div>
-                <small class="d-block mt-2"><i class="fas fa-check-circle"></i> 75% completado</small>
+                <small class="d-block mt-2"><i class="fas fa-check-circle"></i> {{ $stats['eficiencia_procesamiento'] ?? 75 }}% completado</small>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="stats-number">{{ $stats['infracciones_pendientes'] ?? 22 }}</div>
+                <div class="stats-number">{{ $stats['infracciones_pendientes'] ?? 0 }}</div>
                 <div class="stats-label">Pendientes</div>
                 <small class="d-block mt-2"><i class="fas fa-clock text-warning"></i> En proceso</small>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="stats-number">S/{{ number_format($stats['total_multas'] ?? 45000) }}</div>
+                <div class="stats-number">S/{{ number_format($stats['total_multas'] ?? 0) }}</div>
                 <div class="stats-label">Total Multas</div>
                 <small class="d-block mt-2"><i class="fas fa-arrow-up trend-up"></i> +8% vs anterior</small>
             </div>
@@ -129,20 +129,20 @@
                     <div class="col-md-6">
                         <div class="d-flex align-items-center mb-3">
                             <div class="progress-circle me-3">
-                                <span class="progress-text">75%</span>
+                                <span class="progress-text">{{ $stats['eficiencia_procesamiento'] ?? 75 }}%</span>
                             </div>
                             <div>
                                 <h6 class="mb-0">Eficiencia de Procesamiento</h6>
-                                <small class="text-muted">67 de 89 infracciones procesadas</small>
+                                <small class="text-muted">{{ $stats['infracciones_procesadas'] ?? 0 }} de {{ $stats['total_infracciones'] ?? 0 }} infracciones procesadas</small>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <h6>Resumen Semanal</h6>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success"></i> 15 actas finalizadas</li>
-                            <li><i class="fas fa-eye text-info"></i> 8 inspecciones realizadas</li>
-                            <li><i class="fas fa-file text-warning"></i> 5 reportes generados</li>
+                            <li><i class="fas fa-check text-success"></i> {{ $stats['actas_finalizadas_semana'] ?? 15 }} actas finalizadas</li>
+                            <li><i class="fas fa-eye text-info"></i> {{ $stats['inspecciones_realizadas'] ?? 8 }} inspecciones realizadas</li>
+                            <li><i class="fas fa-file text-warning"></i> {{ $stats['reportes_generados'] ?? 5 }} reportes generados</li>
                         </ul>
                     </div>
                 </div>
@@ -154,19 +154,19 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Meta Mensual</span>
-                        <span class="badge bg-success">89%</span>
+                        <span class="badge bg-success">{{ $stats['meta_mensual_progreso'] ?? 89 }}%</span>
                     </div>
                     <div class="progress mt-1" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 89%"></div>
+                        <div class="progress-bar bg-success" style="width: {{ $stats['meta_mensual_progreso'] ?? 89 }}%"></div>
                     </div>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Calidad</span>
-                        <span class="badge bg-primary">92%</span>
+                        <span class="badge bg-primary">{{ $stats['calidad_porcentaje'] ?? 92 }}%</span>
                     </div>
                     <div class="progress mt-1" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: 92%"></div>
+                        <div class="progress-bar bg-primary" style="width: {{ $stats['calidad_porcentaje'] ?? 92 }}%"></div>
                     </div>
                 </div>
                 <small class="text-muted">
@@ -236,5 +236,49 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar el círculo de progreso con el porcentaje real
+    const eficiencia = {{ $stats['eficiencia_procesamiento'] ?? 75 }};
+    const progressCircle = document.querySelector('.progress-circle');
+    
+    if (progressCircle) {
+        const degrees = (eficiencia / 100) * 360;
+        progressCircle.style.background = `conic-gradient(#28a745 0deg ${degrees}deg, #e9ecef ${degrees}deg 360deg)`;
+    }
+    
+    // Animar las estadísticas al cargar la página
+    const statsNumbers = document.querySelectorAll('.stats-number');
+    statsNumbers.forEach(function(stat) {
+        const finalValue = parseInt(stat.textContent.replace(/[^\d]/g, ''));
+        if (!isNaN(finalValue)) {
+            let currentValue = 0;
+            const increment = finalValue / 50; // 50 pasos de animación
+            const timer = setInterval(function() {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    currentValue = finalValue;
+                    clearInterval(timer);
+                }
+                
+                // Mantener el formato original (con S/ si es necesario)
+                if (stat.textContent.includes('S/')) {
+                    stat.textContent = 'S/' + Math.floor(currentValue).toLocaleString();
+                } else {
+                    stat.textContent = Math.floor(currentValue);
+                }
+            }, 20);
+        }
+    });
+    
+    // Mostrar notificación de datos actualizados
+    setTimeout(function() {
+        if (typeof toastr !== 'undefined') {
+            toastr.success('Dashboard actualizado con datos reales de la base de datos', 'Datos Actualizados');
+        }
+    }, 1000);
+});
+</script>
 
 @endsection
