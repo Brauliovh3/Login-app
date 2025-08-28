@@ -1480,11 +1480,176 @@ if (_infraccionEl && _montoEl) {
                     </div>
                 </div>
                 
-                <!-- Aquí iría el formulario de edición igual al de nueva acta pero con _edit en los nombres -->
-                <p class="text-center text-muted">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Formulario de edición se cargaría aquí con los datos del acta encontrada
-                </p>
+                <!-- Formulario de Edición de Acta -->
+                <div id="formulario-edicion" style="display: none;">
+                    <form id="form-editar-acta" class="needs-validation" novalidate>
+                        <input type="hidden" id="acta-id-editar">
+                        
+                        <!-- Datos Básicos del Acta -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-primary">
+                                <i class="fas fa-file-alt me-2"></i>DATOS BÁSICOS DEL ACTA
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Número de Acta</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-numero-acta" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Fecha</label>
+                                <input type="date" class="form-control form-control-lg" id="edit-fecha" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Hora</label>
+                                <input type="time" class="form-control form-control-lg" id="edit-hora" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Datos de la Empresa -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-success">
+                                <i class="fas fa-building me-2"></i>DATOS DE LA EMPRESA
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Empresa / Operador</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-empresa" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">RUC</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-ruc-empresa" 
+                                       pattern="[0-9]{11}" maxlength="11">
+                            </div>
+                        </div>
+                        
+                        <!-- Datos del Conductor -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-info">
+                                <i class="fas fa-user me-2"></i>DATOS DEL CONDUCTOR
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nombre del Conductor</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-conductor" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">DNI</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-documento" 
+                                       pattern="[0-9]{8}" maxlength="8" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Licencia</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-licencia">
+                            </div>
+                        </div>
+                        
+                        <!-- Datos del Vehículo -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-warning">
+                                <i class="fas fa-car me-2"></i>DATOS DEL VEHÍCULO
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Placa</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-placa" 
+                                       style="text-transform: uppercase;" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tipo de Servicio</label>
+                                <select class="form-select form-select-lg" id="edit-tipo-servicio" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="TRANSPORTE PUBLICO REGULAR">TRANSPORTE PÚBLICO REGULAR</option>
+                                    <option value="TRANSPORTE PUBLICO ESPECIAL">TRANSPORTE PÚBLICO ESPECIAL</option>
+                                    <option value="TRANSPORTE TURISMO">TRANSPORTE TURISMO</option>
+                                    <option value="TRANSPORTE ESCOLAR">TRANSPORTE ESCOLAR</option>
+                                    <option value="TRANSPORTE CARGA">TRANSPORTE DE CARGA</option>
+                                    <option value="TAXI">TAXI</option>
+                                    <option value="REMISSE">REMISSE</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">Origen</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-origen-viaje">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Destino</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-destino-viaje">
+                            </div>
+                        </div>
+                        
+                        <!-- Ubicación y Detalles -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-danger">
+                                <i class="fas fa-map-marker-alt me-2"></i>UBICACIÓN Y DETALLES DE LA INFRACCIÓN
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Lugar de la Intervención</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-ubicacion" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Descripción de los Hechos</label>
+                                <textarea class="form-control" rows="4" id="edit-descripcion-hechos" 
+                                        placeholder="Describa detalladamente los hechos que motivaron la intervención..." required></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Datos de la Sanción -->
+                        <div class="section-header mb-4">
+                            <h5 class="mb-0 fw-bold text-secondary">
+                                <i class="fas fa-gavel me-2"></i>DATOS DE LA SANCIÓN
+                            </h5>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Monto de la Multa (S/)</label>
+                                <input type="number" class="form-control form-control-lg" id="edit-monto-multa" 
+                                       min="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Estado del Acta</label>
+                                <select class="form-select form-select-lg" id="edit-estado" required>
+                                    <option value="pendiente">PENDIENTE</option>
+                                    <option value="pagada">PAGADA</option>
+                                    <option value="anulada">ANULADA</option>
+                                    <option value="en_proceso">EN PROCESO</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Inspector Responsable</label>
+                                <input type="text" class="form-control form-control-lg" id="edit-inspector-responsable" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="row g-3 mt-4">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-secondary btn-lg w-100" onclick="cancelarEdicion()">
+                                    <i class="fas fa-times me-2"></i>CANCELAR
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-save me-2"></i>GUARDAR CAMBIOS
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -2218,6 +2383,11 @@ function abrirModal(modalId) {
     if (modalId === 'modal-nueva-acta') {
         iniciarRegistroAutomatico();
     }
+    
+    // Cargar estadísticas reales en modal de consultas
+    if (modalId === 'modal-consultas') {
+        cargarEstadisticasReales();
+    }
 }
 
 // Función para iniciar el registro automático de tiempo
@@ -2429,12 +2599,54 @@ function buscarActaEditar() {
         return;
     }
     
-    // Simulación de búsqueda
-    document.getElementById('acta-numero-editar').textContent = 'DRTC-APU-2024-001';
-    document.getElementById('resultado-editar').style.display = 'block';
-    
-    // Aquí se haría la llamada AJAX real para buscar el acta
-    console.log('Buscando acta con criterio:', criterio);
+    // Realizar búsqueda real con AJAX
+    fetch(`/buscar-acta-editar/${encodeURIComponent(criterio)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.acta) {
+                const acta = data.acta;
+                
+                // Mostrar el número de acta encontrada
+                document.getElementById('acta-numero-editar').textContent = acta.numero_acta || 'Sin número';
+                document.getElementById('resultado-editar').style.display = 'block';
+                
+                // Mostrar el formulario de edición
+                document.getElementById('formulario-edicion').style.display = 'block';
+                
+                // Poblar todos los campos del formulario
+                document.getElementById('acta-id-editar').value = acta.id;
+                document.getElementById('edit-numero-acta').value = acta.numero_acta || '';
+                document.getElementById('edit-fecha').value = acta.fecha || '';
+                document.getElementById('edit-hora').value = acta.hora || '';
+                document.getElementById('edit-empresa').value = acta.empresa || '';
+                document.getElementById('edit-conductor').value = acta.conductor || '';
+                document.getElementById('edit-documento').value = acta.documento || '';
+                document.getElementById('edit-licencia').value = acta.licencia || '';
+                document.getElementById('edit-placa').value = acta.placa || '';
+                document.getElementById('edit-tipo-servicio').value = acta.tipo_servicio || '';
+                document.getElementById('edit-origen-viaje').value = acta.origen_viaje || '';
+                document.getElementById('edit-destino-viaje').value = acta.destino_viaje || '';
+                document.getElementById('edit-ubicacion').value = acta.ubicacion || '';
+                document.getElementById('edit-descripcion-hechos').value = acta.descripcion_hechos || '';
+                document.getElementById('edit-monto-multa').value = acta.monto_multa || '0';
+                document.getElementById('edit-estado').value = acta.estado || 'pendiente';
+                document.getElementById('edit-inspector-responsable').value = acta.inspector_responsable || '';
+                
+                mostrarNotificacion(`Acta encontrada: ${acta.numero_acta}. Ya puede editar los campos.`, 'success');
+                console.log('Acta encontrada:', acta);
+                
+            } else {
+                document.getElementById('resultado-editar').style.display = 'none';
+                document.getElementById('formulario-edicion').style.display = 'none';
+                mostrarNotificacion(data.message || 'No se encontró ninguna acta con el criterio especificado', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al buscar acta:', error);
+            document.getElementById('resultado-editar').style.display = 'none';
+            document.getElementById('formulario-edicion').style.display = 'none';
+            mostrarNotificacion('Error al buscar el acta. Por favor intente nuevamente.', 'error');
+        });
 }
 
 // Modal Eliminar Acta
@@ -2586,6 +2798,97 @@ function cancelarEliminacion() {
     // Cerrar modal por seguridad
     cerrarModal('modal-eliminar-acta');
 }
+
+// Función para cancelar edición de acta
+function cancelarEdicion() {
+    // Ocultar formulario y resultado
+    document.getElementById('formulario-edicion').style.display = 'none';
+    document.getElementById('resultado-editar').style.display = 'none';
+    
+    // Limpiar formulario
+    document.getElementById('form-editar-acta').reset();
+    document.getElementById('buscar-editar').value = '';
+    
+    mostrarNotificacion('Edición cancelada', 'info');
+}
+
+// Función para manejar el envío del formulario de edición
+document.addEventListener('DOMContentLoaded', function() {
+    const formEditarActa = document.getElementById('form-editar-acta');
+    if (formEditarActa) {
+        formEditarActa.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const actaId = document.getElementById('acta-id-editar').value;
+            if (!actaId) {
+                mostrarNotificacion('Error: ID de acta no encontrado', 'error');
+                return;
+            }
+            
+            // Recopilar datos del formulario
+            const formData = {
+                numero_acta: document.getElementById('edit-numero-acta').value,
+                fecha: document.getElementById('edit-fecha').value,
+                hora: document.getElementById('edit-hora').value,
+                empresa: document.getElementById('edit-empresa').value,
+                conductor: document.getElementById('edit-conductor').value,
+                documento: document.getElementById('edit-documento').value,
+                licencia: document.getElementById('edit-licencia').value,
+                placa: document.getElementById('edit-placa').value,
+                tipo_servicio: document.getElementById('edit-tipo-servicio').value,
+                origen_viaje: document.getElementById('edit-origen-viaje').value,
+                destino_viaje: document.getElementById('edit-destino-viaje').value,
+                ubicacion: document.getElementById('edit-ubicacion').value,
+                descripcion_hechos: document.getElementById('edit-descripcion-hechos').value,
+                monto_multa: document.getElementById('edit-monto-multa').value,
+                estado: document.getElementById('edit-estado').value,
+                inspector_responsable: document.getElementById('edit-inspector-responsable').value
+            };
+            
+            // Enviar datos mediante AJAX
+            const submitButton = formEditarActa.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>GUARDANDO...';
+            submitButton.disabled = true;
+            
+            fetch(`/actualizar-acta/${actaId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarNotificacion('Acta actualizada exitosamente', 'success');
+                    
+                    // Cerrar modal después de un breve delay
+                    setTimeout(() => {
+                        cerrarModal('modal-editar-acta');
+                        
+                        // Actualizar la tabla si existe
+                        if (typeof actualizarTablaActas === 'function') {
+                            actualizarTablaActas();
+                        }
+                    }, 1500);
+                    
+                } else {
+                    mostrarNotificacion(data.message || 'Error al actualizar el acta', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error al actualizar acta:', error);
+                mostrarNotificacion('Error al actualizar el acta. Por favor intente nuevamente.', 'error');
+            })
+            .finally(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+        });
+    }
+});
 
 // Función para consulta rápida por documento
 async function consultarPorDocumento() {
@@ -2743,7 +3046,7 @@ function mostrarResultadosConsulta(result) {
                 <td class="fw-bold">${acta.numero_acta}</td>
                 <td>${fechaFormateada}</td>
                 <td>${acta.empresa || acta.conductor || 'N/A'}</td>
-                <td>${extractDocumento(acta) || 'N/A'}</td>
+                <td>${acta.documento || 'N/A'}</td>
                 <td class="fw-bold">${acta.placa || 'N/A'}</td>
                 <td>${acta.ubicacion ? acta.ubicacion.substring(0, 30) + '...' : 'N/A'}</td>
                 <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
@@ -2775,6 +3078,74 @@ function extractDocumento(acta) {
         return match ? match[1] : null;
     }
     return null;
+}
+
+// Función para cargar estadísticas reales desde la base de datos
+async function cargarEstadisticasReales() {
+    try {
+        const response = await fetch('/api/estadisticas-actas', {
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.estadisticas) {
+            // Actualizar los números del resumen
+            document.getElementById('total-actas').textContent = result.estadisticas.total;
+            document.getElementById('actas-procesadas-modal').textContent = result.estadisticas.procesadas;
+            document.getElementById('actas-pendientes-modal').textContent = result.estadisticas.pendientes;
+            document.getElementById('actas-anuladas-modal').textContent = result.estadisticas.anuladas;
+            
+            // Mostrar el resumen si hay datos
+            if (result.estadisticas.total > 0) {
+                document.getElementById('resumen-consulta').style.display = 'block';
+                
+                // Si hay actas recientes, llenar la tabla con algunas
+                if (result.actas_recientes && result.actas_recientes.length > 0) {
+                    const tbody = document.getElementById('tbody-resultados');
+                    let tableHTML = '';
+                    
+                    result.actas_recientes.forEach(acta => {
+                        const estadoBadge = getEstadoBadge(acta.estado);
+                        const fechaFormateada = acta.fecha ? new Date(acta.fecha).toLocaleDateString('es-PE') : 'N/A';
+                        
+                        tableHTML += `
+                            <tr>
+                                <td class="fw-bold">${acta.numero_acta || 'N/A'}</td>
+                                <td>${fechaFormateada}</td>
+                                <td>N/A</td>
+                                <td>N/A</td>
+                                <td class="fw-bold">${acta.placa || 'N/A'}</td>
+                                <td>${acta.ubicacion ? acta.ubicacion.substring(0, 30) + '...' : 'N/A'}</td>
+                                <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
+                                <td>${estadoBadge}</td>
+                                <td>{{ Auth::user()->name }}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tbody.innerHTML = tableHTML;
+                } else {
+                    document.getElementById('tbody-resultados').innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Use la consulta rápida por documento o los filtros avanzados para ver resultados específicos
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        } else {
+            console.error('Error al cargar estadísticas:', result.message);
+        }
+        
+    } catch (error) {
+        console.error('Error de conexión al cargar estadísticas:', error);
+    }
 }
 
 function exportarExcel() {
