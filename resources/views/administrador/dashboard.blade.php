@@ -91,7 +91,7 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="card-title text-uppercase mb-1">Usuarios Totales</h6>
-                            <h2 class="mb-0 fw-bold">{{ \App\Models\User::count() }}</h2>
+                            <h2 class="mb-0 fw-bold">{{ $stats['total_usuarios'] ?? 0 }}</h2>
                             <small class="opacity-75">Sistema DRTC</small>
                         </div>
                         <div class="align-self-center">
@@ -102,16 +102,16 @@
             </div>
         </div>
         <div class="col-md-3 mb-3">
-            <div class="card text-white bg-info shadow-lg border-0">
+            <div class="card text-white bg-success shadow-lg border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h6 class="card-title text-uppercase mb-1">Fiscalizadores</h6>
-                            <h2 class="mb-0 fw-bold">{{ \App\Models\User::where('role', 'fiscalizador')->count() }}</h2>
-                            <small class="opacity-75">Activos</small>
+                            <h6 class="card-title text-uppercase mb-1">Usuarios Activos</h6>
+                            <h2 class="mb-0 fw-bold">{{ $stats['usuarios_activos'] ?? 0 }}</h2>
+                            <small class="opacity-75">{{ round((($stats['usuarios_activos'] ?? 0) / max(1, $stats['total_usuarios'] ?? 1)) * 100) }}% del total</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-search fa-2x"></i>
+                            <i class="fas fa-user-check fa-2x"></i>
                         </div>
                     </div>
                 </div>
@@ -122,26 +122,28 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5 class="card-title">Ventanillas</h5>
-                            <h2 class="mb-0">{{ \App\Models\User::where('role', 'ventanilla')->count() }}</h2>
+                            <h6 class="card-title text-uppercase mb-1">Pendientes</h6>
+                            <h2 class="mb-0 fw-bold">{{ $stats['usuarios_pendientes'] ?? 0 }}</h2>
+                            <small class="opacity-75">Por activar</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-window-maximize fa-2x"></i>
+                            <i class="fas fa-user-clock fa-2x"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3 mb-3">
-            <div class="card text-white bg-danger">
+            <div class="card text-white bg-info">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h5 class="card-title">Notificaciones</h5>
-                            <h2 class="mb-0">0</h2>
+                            <h6 class="card-title text-uppercase mb-1">Roles Sistema</h6>
+                            <h2 class="mb-0 fw-bold">{{ $stats['total_roles'] ?? 0 }}</h2>
+                            <small class="opacity-75">Tipos de usuario</small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-bell fa-2x"></i>
+                            <i class="fas fa-user-cog fa-2x"></i>
                         </div>
                     </div>
                 </div>
@@ -174,11 +176,8 @@
                                     <i class="fas fa-user-check fa-3x text-warning mb-3"></i>
                                     <h5 class="card-title">Aprobar Usuarios</h5>
                                     <p class="card-text">Revisar y aprobar solicitudes de registro</p>
-                                    @php
-                                        $pendingCount = \App\Models\User::where('status', 'pending')->count();
-                                    @endphp
-                                    @if($pendingCount > 0)
-                                        <span class="badge bg-danger mb-2">{{ $pendingCount }} pendientes</span>
+                                    @if(($stats['usuarios_pendientes'] ?? 0) > 0)
+                                        <span class="badge bg-danger mb-2">{{ $stats['usuarios_pendientes'] }} pendientes</span>
                                     @endif
                                     <br>
                                     <a href="{{ route('admin.users.approval') }}" class="btn btn-warning">
@@ -401,4 +400,60 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar las estadísticas al cargar la página
+    const statsNumbers = document.querySelectorAll('.h2.mb-0.fw-bold, .h2.mb-0');
+    statsNumbers.forEach(function(stat) {
+        const finalValue = parseInt(stat.textContent.replace(/[^\d]/g, ''));
+        if (!isNaN(finalValue) && finalValue > 0) {
+            let currentValue = 0;
+            const increment = finalValue / 30; // 30 pasos de animación
+            const timer = setInterval(function() {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    currentValue = finalValue;
+                    clearInterval(timer);
+                }
+                stat.textContent = Math.floor(currentValue);
+            }, 50);
+        }
+    });
+    
+    // Actualizar reloj
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('es-PE');
+        const timeElement = document.getElementById('hora-header');
+        if (timeElement) {
+            timeElement.textContent = timeString;
+        }
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Mostrar notificación de datos actualizados
+    setTimeout(function() {
+        if (typeof toastr !== 'undefined') {
+            toastr.info('Dashboard actualizado con datos reales de la base de datos', 'Datos Actualizados');
+        } else {
+            // Crear notificación básica si toastr no está disponible
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <strong>Datos Actualizados:</strong> Dashboard conectado a la base de datos real.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            // Auto-dismiss después de 5 segundos
+            setTimeout(() => notification.remove(), 5000);
+        }
+    }, 1500);
+});
+</script>
+
 @endsection

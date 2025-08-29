@@ -1,0 +1,354 @@
+/* Dark mode overrides - improved contrast and accessibility */
+body.dark-mode {
+    background-color: #0b1220 !important;
+    color: #e6eef6 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Containers */
+body.dark-mode .navbar,
+body.dark-mode .card,
+body.dark-mode .sidebar,
+body.dark-mode .dropdown-menu,
+body.dark-mode .modal-content {
+    background-color: #0f1724 !important;
+    color: #e6eef6 !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
+body.dark-mode .card {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.65) !important;
+}
+
+/* Card header / sections */
+body.dark-mode .card-header {
+    background-color: rgba(255,255,255,0.02) !important;
+    color: #e6eef6 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* Links */
+body.dark-mode a,
+body.dark-mode a:link,
+body.dark-mode a:visited {
+    color: #7fb0ff !important;
+}
+body.dark-mode a:hover,
+body.dark-mode a:focus {
+    color: #a6d0ff !important;
+    text-decoration: underline;
+}
+
+/* Forms */
+body.dark-mode label,
+body.dark-mode .form-label {
+    color: #dbeafc !important;
+}
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .input-group-text {
+    background-color: #0b1224 !important;
+    color: #e6eef6 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    box-shadow: none !important;
+}
+body.dark-mode .form-control::placeholder {
+    color: rgba(230,238,246,0.5) !important;
+}
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    border-color: #3a82ff !important;
+    box-shadow: 0 0 0 0.15rem rgba(58,130,255,0.12) !important;
+    outline: none !important;
+}
+
+/* Buttons */
+body.dark-mode .btn-primary {
+    background-color: #1f6feb !important;
+    border-color: #1f6feb !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(31,111,235,0.18) !important;
+}
+body.dark-mode .btn-primary:hover {
+    background-color: #155bd6 !important;
+    border-color: #155bd6 !important;
+}
+
+/* Tables */
+body.dark-mode .table {
+    color: #e6eef6 !important;
+}
+body.dark-mode .table thead th,
+body.dark-mode .table thead td {
+    background-color: rgba(255,255,255,0.02) !important;
+    color: #c8d6e5 !important;
+}
+body.dark-mode .table tbody tr:hover {
+    background-color: rgba(255,255,255,0.02) !important;
+}
+body.dark-mode .table th,
+body.dark-mode .table td {
+    border-color: rgba(255,255,255,0.04) !important;
+}
+
+/* Sidebar / navigation */
+body.dark-mode .sidebar .nav-link {
+    color: rgba(230,238,246,0.92) !important;
+}
+body.dark-mode .sidebar .nav-link.active {
+    background-color: rgba(127,176,255,0.06) !important;
+    color: #9ec8ff !important;
+    border-radius: 6px !important;
+}
+
+/* Dropdowns and badges */
+body.dark-mode .dropdown-menu .dropdown-item:hover,
+body.dark-mode .dropdown-menu .dropdown-item:focus {
+    background-color: rgba(255,255,255,0.03) !important;
+    color: #ffffff !important;
+}
+body.dark-mode .badge {
+    background-color: rgba(255,255,255,0.04) !important;
+    color: #c8d6e5 !important;
+}
+
+/* Muted text and borders */
+body.dark-mode .text-muted,
+body.dark-mode .small {
+    color: rgba(230,238,246,0.62) !important;
+}
+body.dark-mode hr {
+    border-color: rgba(255,255,255,0.04) !important;
+}
+
+/* Improve visibility for gray/secondary text and labels */
+body.dark-mode .text-muted,
+body.dark-mode .text-secondary,
+body.dark-mode .muted,
+body.dark-mode small,
+body.dark-mode .form-check-label,
+body.dark-mode .form-label,
+body.dark-mode .card .card-text,
+body.dark-mode .list-group-item,
+body.dark-mode .breadcrumb-item,
+body.dark-mode .nav-link {
+    color: rgba(230,238,246,0.86) !important; /* brighter gray for readability */
+}
+
+/* Slightly more subtle for truly secondary/contextual text */
+body.dark-mode .text-muted-quiet,
+body.dark-mode .small.quiet {
+    color: rgba(230,238,246,0.68) !important;
+}
+
+/* Ensure icons inherit readable color */
+body.dark-mode .fa,
+body.dark-mode .fas,
+body.dark-mode .fab,
+body.dark-mode .far {
+    color: rgba(230,238,246,0.92) !important;
+}
+
+/* Code / Preformatted */
+body.dark-mode pre,
+body.dark-mode code,
+body.dark-mode .code {
+    background-color: #07101a !important;
+    color: #cfe7ff !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* Footer and breadcrumbs */
+body.dark-mode .footer,
+body.dark-mode .breadcrumb {
+    color: #c8d6e5 !important;
+}
+
+/* Accessibility helpers */
+body.dark-mode .focus-ring:focus {
+    box-shadow: 0 0 0 0.2rem rgba(58,130,255,0.14) !important;
+    outline: none !important;
+}
+
+/* Slightly brighten icons inside dark backgrounds when necessary */
+body.dark-mode img.logo,
+body.dark-mode .brand-img {
+    filter: none !important;
+}
+
+/* Keep selectors intentionally scoped under body.dark-mode to avoid leakage */
+
+/* Force full opacity and stronger text color inside cards and quick-action tiles */
+body.dark-mode .card .card-body,
+body.dark-mode .card .card-body *,
+body.dark-mode .quick-actions .card,
+body.dark-mode .action-tile,
+body.dark-mode .panel {
+    opacity: 1 !important;
+    color: #f3fbff !important;
+}
+
+/* Tables: ensure tbody text is readable even if other utilities set muted color */
+body.dark-mode .table tbody tr,
+body.dark-mode .table tbody td,
+body.dark-mode .table tbody th {
+    color: #e9f6ff !important;
+    opacity: 1 !important;
+}
+
+/* Badges and status chips inside tables */
+body.dark-mode .table .badge,
+body.dark-mode .status-chip {
+    color: #ffffff !important;
+    background-color: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* If some elements use .text-muted too aggressively, override here */
+body.dark-mode .text-muted,
+body.dark-mode .muted,
+body.dark-mode .text-muted *,
+body.dark-mode .muted * {
+    color: rgba(230,238,246,0.86) !important;
+    opacity: 1 !important;
+}
+
+/* Improve visibility of table rows that may be intentionally dimmed (e.g., disabled rows) */
+body.dark-mode .table tbody tr.disabled,
+body.dark-mode .table tbody tr.dimmed {
+    color: rgba(230,238,246,0.74) !important;
+}
+
+/* Override light background utility classes that force white panels */
+body.dark-mode .bg-white,
+body.dark-mode .bg-light,
+body.dark-mode .card.bg-white,
+body.dark-mode .card.bg-light,
+body.dark-mode .panel.bg-white {
+    background-color: #0f1724 !important;
+    color: #e6eef6 !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Ensure card bodies are not left with white backgrounds or faded overlays */
+body.dark-mode .card .card-body,
+body.dark-mode .card .card-body * {
+    background-color: transparent !important;
+    color: #eaf6ff !important;
+    opacity: 1 !important;
+}
+
+/* If there are overlay elements used to 'fade' content, neutralize them */
+body.dark-mode .overlay,
+body.dark-mode .faded,
+body.dark-mode .dim-overlay {
+    opacity: 0 !important;
+    display: none !important;
+}
+
+/* Table rows and cells: stronger color and slightly heavier weight */
+body.dark-mode .table tbody tr,
+body.dark-mode .table tbody td,
+body.dark-mode .table tbody th {
+    color: #eaf6ff !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+/* Specific for rows that appear intentionally muted (make them readable) */
+body.dark-mode .table tbody tr.muted,
+body.dark-mode .table tbody tr.faint {
+    color: rgba(234,246,255,0.82) !important;
+    font-weight: 500 !important;
+}
+
+/* Quick action tiles: ensure icons and labels are visible */
+body.dark-mode .quick-actions .card,
+body.dark-mode .action-tile,
+body.dark-mode .tile {
+    background-color: #0f1724 !important;
+    color: #eaf6ff !important;
+    opacity: 1 !important;
+}
+
+/* Sidebar: keep labels readable even when small/secondary */
+body.dark-mode .sidebar .nav-link .nav-text,
+body.dark-mode .sidebar .nav-link span {
+    color: rgba(234,246,255,0.95) !important;
+    font-weight: 500 !important;
+}
+
+/* Reduce overly light decorative elements inside cards (e.g., inner white panels) */
+body.dark-mode .card .panel-white,
+body.dark-mode .card .inner-white {
+    background-color: transparent !important;
+    color: #eaf6ff !important;
+}
+
+/* Strong override: make ALL cards dark and their text vivid */
+body.dark-mode .card,
+body.dark-mode .card.bg-white,
+body.dark-mode .card.bg-light,
+body.dark-mode .panel,
+body.dark-mode .panel-inner,
+body.dark-mode .box {
+    background: linear-gradient(180deg, #0f1724 0%, #08121a 100%) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6) !important;
+    opacity: 1 !important;
+}
+
+/* Card headers / titles */
+body.dark-mode .card .card-header,
+body.dark-mode .card .card-title,
+body.dark-mode .card h6,
+body.dark-mode .card .card-header * {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    background: transparent !important;
+}
+
+/* Make any white inner panels dark and their text readable */
+body.dark-mode .card .card-body,
+body.dark-mode .card .card-body .panel,
+body.dark-mode .card .card-body .panel-inner,
+body.dark-mode .card .card-body .panel-white {
+    background: transparent !important;
+    color: #f7fdff !important;
+    opacity: 1 !important;
+}
+
+/* Quick action tiles: add gentle colored accents so icons/text stand out */
+body.dark-mode .quick-actions .card,
+body.dark-mode .action-tile,
+body.dark-mode .tile,
+body.dark-mode .action-box {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03)) !important;
+    color: #ffffff !important;
+}
+body.dark-mode .action-tile .icon,
+body.dark-mode .quick-actions .icon {
+    color: #ff9a2e !important;
+}
+
+/* Buttons inside the cards: make them visible */
+body.dark-mode .card .btn,
+body.dark-mode .card .btn-outline-secondary,
+body.dark-mode .card .btn-outline-info,
+body.dark-mode .card .btn-outline-warning {
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Ensure progress bars or pale bars inside cards remain visible */
+body.dark-mode .progress,
+body.dark-mode .progress-bar {
+    background-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Remove any accidental heavy fades */
+body.dark-mode *[style*="opacity"] {
+    opacity: 1 !important;
+}

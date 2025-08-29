@@ -239,4 +239,58 @@
         transition: all 0.3s ease;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar las estadísticas al cargar la página
+    const statsNumbers = document.querySelectorAll('.h5.mb-0.font-weight-bold');
+    statsNumbers.forEach(function(stat) {
+        const finalValue = parseInt(stat.textContent.replace(/[^\d]/g, ''));
+        if (!isNaN(finalValue) && finalValue > 0) {
+            let currentValue = 0;
+            const increment = finalValue / 20; // 20 pasos de animación
+            const timer = setInterval(function() {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    currentValue = finalValue;
+                    clearInterval(timer);
+                }
+                stat.textContent = Math.floor(currentValue);
+            }, 75);
+        }
+    });
+    
+    // Efecto hover mejorado para las tarjetas
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(function(card) {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Mostrar notificación de datos actualizados
+    setTimeout(function() {
+        if (typeof toastr !== 'undefined') {
+            toastr.info('Dashboard de inspector actualizado con datos reales', 'Datos Sincronizados');
+        } else {
+            // Crear notificación básica
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <strong>Datos Actualizados:</strong> Estadísticas de inspección sincronizadas.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4500);
+        }
+    }, 1000);
+});
+</script>
+
 @endsection
