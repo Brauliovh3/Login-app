@@ -1749,10 +1749,6 @@ if (_infraccionEl && _montoEl) {
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Código de Autorización:</label>
-                                        <input type="password" class="form-control border-warning" id="codigo-autorizacion" placeholder="Ingrese código de supervisor" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Supervisor Autorizante:</label>
                                         <input type="text" class="form-control border-warning" id="supervisor-autorizante" placeholder="Nombre del supervisor" required>
                                     </div>
@@ -2715,6 +2711,7 @@ function buscarActaEliminar() {
 }
 
 function confirmarEliminacion() {
+    console.log('Confirmar eliminacion ejecutando');
     const motivo = document.getElementById('motivo-eliminacion').value;
     const supervisor = document.getElementById('supervisor-autorizante').value;
 
@@ -2785,12 +2782,12 @@ function cancelarEliminacion() {
     const motivoEL = document.getElementById('motivo-eliminacion');
     const obsEL = document.getElementById('observaciones-eliminacion');
     const supervisorEL = document.getElementById('supervisor-autorizante');
-    const codigoEL = document.getElementById('codigo-autorizacion');
+    
 
     if (motivoEL) motivoEL.value = '';
     if (obsEL) obsEL.value = '';
     if (supervisorEL) supervisorEL.value = '';
-    if (codigoEL) codigoEL.value = '';
+
 
     // Limpiar id en proceso
     actaIdEnProceso = null;
