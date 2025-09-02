@@ -77,6 +77,21 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
     });
 });
 
+// Rutas web para ver/editar/imprimir actas (páginas que consumen la API existente)
+Route::middleware(['auth', 'user.approved'])->group(function () {
+    Route::get('/actas/{id}', function ($id) {
+        return view('fiscalizador.actas.show', compact('id'));
+    })->name('actas.show');
+
+    Route::get('/actas/{id}/editar', function ($id) {
+        return view('fiscalizador.actas.edit', compact('id'));
+    })->name('actas.edit');
+
+    Route::get('/actas/{id}/imprimir', function ($id) {
+        return view('fiscalizador.actas.imprimir', compact('id'));
+    })->name('actas.imprimir');
+});
+
 // Rutas para administradores y fiscalizadores (infracciones)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
             // Ruta simple para ver infracciones (controlador no presente en este branch)
@@ -339,3 +354,6 @@ Route::get('/api/test-consulta/{documento}', [ActaController::class, 'consultarP
 Route::get('/api/csrf-token', function() {
     return response()->json(['token' => csrf_token()]);
 });
+
+// RUTA DE DEPURACIÓN: permite DELETE sin middleware (temporal, BORRAR tras pruebas)
+Route::delete('/debug/api/actas/{id}', [ActaController::class, 'destroy'])->name('debug.actas.destroy');
