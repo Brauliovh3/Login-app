@@ -489,17 +489,13 @@ function mostrarTablaReporte(tipo) {
 }
 
 function exportarPDF() {
-    showInfo('Generando PDF...');
-    setTimeout(() => {
-        showSuccess('PDF generado correctamente');
-    }, 2000);
+    // use shared helper: export visible table in the modal
+    exportTableToPDF('#tabla-resultados', 'actas-consulta.pdf');
 }
 
 function exportarExcel() {
-    showInfo('Generando archivo Excel...');
-    setTimeout(() => {
-        showSuccess('Excel generado correctamente');
-    }, 2000);
+    // use shared helper: export visible table in the modal
+    exportTableToCSV('#tabla-resultados', 'actas-consulta.csv');
 }
 
 function reporteDiario() {
@@ -530,3 +526,7 @@ function reporteMensual() {
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap5.min.js"></script>
 @endpush
 @endsection
+
+@push('scripts')
+    @include('partials.export-actas-scripts')
+@endpush

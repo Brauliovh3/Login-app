@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Panel de Control')</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo $__env->yieldContent('title', 'Panel de Control'); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    @if(session('user_config.theme') === 'dark')
-        <link href="{{ asset('css/dark-mode.css') }}" rel="stylesheet">
-    @endif
+    <?php if(session('user_config.theme') === 'dark'): ?>
+        <link href="<?php echo e(asset('css/dark-mode.css')); ?>" rel="stylesheet">
+    <?php endif; ?>
     <style>
         :root {
             --sidebar-width: 250px;
@@ -436,24 +436,24 @@
         }
     </style>
 </head>
-<body class="{{ session('user_config.theme', 'light') === 'dark' ? 'dark-mode' : '' }}">
+<body class="<?php echo e(session('user_config.theme', 'light') === 'dark' ? 'dark-mode' : ''); ?>">
     <!-- Sidebar -->
-    <nav class="sidebar sidebar-{{ auth()->user()->role ?? 'default' }}" id="sidebar">
-        @auth
-            @if(auth()->user()->role == 'administrador')
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
-            @elseif(auth()->user()->role == 'fiscalizador')
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('fiscalizador.dashboard') }}">
-            @elseif(auth()->user()->role == 'ventanilla')
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('ventanilla.dashboard') }}">
-            @elseif(auth()->user()->role == 'inspector')
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('inspector.dashboard') }}">
-            @else
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
-            @endif
-        @else
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
-        @endauth
+    <nav class="sidebar sidebar-<?php echo e(auth()->user()->role ?? 'default'); ?>" id="sidebar">
+        <?php if(auth()->guard()->check()): ?>
+            <?php if(auth()->user()->role == 'administrador'): ?>
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('admin.dashboard')); ?>">
+            <?php elseif(auth()->user()->role == 'fiscalizador'): ?>
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('fiscalizador.dashboard')); ?>">
+            <?php elseif(auth()->user()->role == 'ventanilla'): ?>
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('ventanilla.dashboard')); ?>">
+            <?php elseif(auth()->user()->role == 'inspector'): ?>
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('inspector.dashboard')); ?>">
+            <?php else: ?>
+                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('dashboard')); ?>">
+            <?php endif; ?>
+        <?php else: ?>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('dashboard')); ?>">
+        <?php endif; ?>
             <div class="sidebar-brand-icon rotate-n-15">
                 <i class="fas fa-road"></i>
             </div>
@@ -465,33 +465,33 @@
         <ul class="sidebar-nav">
             <!-- Dashboard -->
             <li class="nav-item">
-                @auth
-                    @if(auth()->user()->role == 'administrador')
-                        <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                <?php if(auth()->guard()->check()): ?>
+                    <?php if(auth()->user()->role == 'administrador'): ?>
+                        <a class="nav-link <?php echo e(request()->routeIs('admin.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('admin.dashboard')); ?>">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
-                    @elseif(auth()->user()->role == 'fiscalizador')
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.dashboard') ? 'active' : '' }}" href="{{ route('fiscalizador.dashboard') }}">
+                    <?php elseif(auth()->user()->role == 'fiscalizador'): ?>
+                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.dashboard')); ?>">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
-                    @elseif(auth()->user()->role == 'ventanilla')
-                        <a class="nav-link {{ request()->routeIs('ventanilla.dashboard') ? 'active' : '' }}" href="{{ route('ventanilla.dashboard') }}">
+                    <?php elseif(auth()->user()->role == 'ventanilla'): ?>
+                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.dashboard')); ?>">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
-                    @elseif(auth()->user()->role == 'inspector')
-                        <a class="nav-link {{ request()->routeIs('inspector.dashboard') ? 'active' : '' }}" href="{{ route('inspector.dashboard') }}">
+                    <?php elseif(auth()->user()->role == 'inspector'): ?>
+                        <a class="nav-link <?php echo e(request()->routeIs('inspector.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.dashboard')); ?>">
                             <i class="fas fa-fw fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
-                    @endif
-                @endauth
+                    <?php endif; ?>
+                <?php endif; ?>
             </li>
 
-            @auth
-                @if(auth()->user()->role == 'administrador')
+            <?php if(auth()->guard()->check()): ?>
+                <?php if(auth()->user()->role == 'administrador'): ?>
                     <!-- Admin Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
@@ -499,40 +499,40 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.fiscal') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.fiscal') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('admin.mantenimiento.fiscal') ? 'active' : ''); ?>" href="<?php echo e(route('admin.mantenimiento.fiscal')); ?>">
                             <i class="fas fa-fw fa-user-shield"></i>
                             <span>Mantenimiento Fiscal</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.mantenimiento.conductor') ? 'active' : '' }}" href="{{ route('admin.mantenimiento.conductor') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('admin.mantenimiento.conductor') ? 'active' : ''); ?>" href="<?php echo e(route('admin.mantenimiento.conductor')); ?>">
                             <i class="fas fa-fw fa-id-card"></i>
                             <span>Mantenimiento Conductor</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('users.index') ? 'active': '' }}" href="{{ route('users.index')}}" >
+                        <a class="nav-link <?php echo e(request()->routeIs('users.index') ? 'active': ''); ?>" href="<?php echo e(route('users.index')); ?>" >
                             <i class="fas fa-fw fa-users-cog"></i>
                             <span>Gestionar Usuarios</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.approval') ? 'active': '' }}" href="{{ route('admin.users.approval')}}" >
+                        <a class="nav-link <?php echo e(request()->routeIs('admin.users.approval') ? 'active': ''); ?>" href="<?php echo e(route('admin.users.approval')); ?>" >
                             <i class="fas fa-fw fa-user-check"></i>
                             <span>Aprobar Usuarios</span>
-                            @php
+                            <?php
                                 $pendingCount = \App\Models\User::where('status', 'pending')->count();
-                            @endphp
-                            @if($pendingCount > 0)
-                                <span class="badge bg-warning text-dark ms-2">{{ $pendingCount }}</span>
-                            @endif
+                            ?>
+                            <?php if($pendingCount > 0): ?>
+                                <span class="badge bg-warning text-dark ms-2"><?php echo e($pendingCount); ?></span>
+                            <?php endif; ?>
                         </a>
                     </li>
 
-                @elseif(auth()->user()->role == 'fiscalizador')
+                <?php elseif(auth()->user()->role == 'fiscalizador'): ?>
                     <!-- Fiscalizador Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
@@ -541,7 +541,7 @@
 
                     <!-- Menu Principal con Dropdown -->
                     <li class="nav-item dropdown-hover">
-                        <a class="nav-link dropdown-main {{ request()->routeIs('fiscalizador.actas-contra') ? 'active' : '' }}" href="{{ route('fiscalizador.actas-contra') }}">
+                        <a class="nav-link dropdown-main <?php echo e(request()->routeIs('fiscalizador.actas-contra') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.actas-contra')); ?>">
                             <i class="fas fa-fw fa-file-contract"></i>
                             <span>Actas Contra</span>
                             <i class="fas fa-angle-down dropdown-icon"></i>
@@ -549,25 +549,25 @@
                         <!-- Submenu desplegable -->
                         <ul class="dropdown-submenu">
                             <li>
-                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-nueva-acta')">
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('<?php echo e(route('fiscalizador.actas-contra')); ?>', 'modal-nueva-acta')">
                                     <i class="fas fa-plus-circle me-2"></i>
                                     <span>Nueva Acta</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-editar-acta')">
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('<?php echo e(route('fiscalizador.actas-contra')); ?>', 'modal-editar-acta')">
                                     <i class="fas fa-edit me-2"></i>
                                     <span>Editar Acta</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-eliminar-acta')">
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('<?php echo e(route('fiscalizador.actas-contra')); ?>', 'modal-eliminar-acta')">
                                     <i class="fas fa-trash-alt me-2"></i>
                                     <span>Eliminar Acta</span>
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('{{ route('fiscalizador.actas-contra') }}', 'modal-consultas')">
+                                <a href="#" class="submenu-item" onclick="event.preventDefault(); navegarYAbrirModal('<?php echo e(route('fiscalizador.actas-contra')); ?>', 'modal-consultas')">
                                     <i class="fas fa-search me-2"></i>
                                     <span>Consultas y Reportes</span>
                                 </a>
@@ -581,27 +581,27 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.carga-paga') ? 'active' : '' }}" href="{{ route('fiscalizador.carga-paga') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.carga-paga') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.carga-paga')); ?>">
                             <i class="fas fa-fw fa-truck-loading"></i>
                             <span>Carga y Pasajero</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.empresas') ? 'active' : '' }}" href="{{ route('fiscalizador.empresas') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.empresas') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.empresas')); ?>">
                             <i class="fas fa-fw fa-building"></i>
                             <span>Empresas</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.calendario') ? 'active' : '' }}" href="{{ route('fiscalizador.calendario') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.calendario') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.calendario')); ?>">
                             <i class="fas fa-fw fa-calendar-alt"></i>
                             <span>Calendario</span>
                         </a>
                     </li>
 
-                @elseif(auth()->user()->role == 'ventanilla')
+                <?php elseif(auth()->user()->role == 'ventanilla'): ?>
                     <!-- Ventanilla Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
@@ -609,33 +609,33 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('ventanilla.nueva-atencion') ? 'active' : '' }}" href="{{ route('ventanilla.nueva-atencion') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.nueva-atencion') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.nueva-atencion')); ?>">
                             <i class="fas fa-fw fa-user-plus"></i>
                             <span>Nueva Atención</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('ventanilla.tramites') ? 'active' : '' }}" href="{{ route('ventanilla.tramites') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.tramites') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.tramites')); ?>">
                             <i class="fas fa-fw fa-file-alt"></i>
                             <span>Trámites</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('ventanilla.consultar') ? 'active' : '' }}" href="{{ route('ventanilla.consultar') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.consultar') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.consultar')); ?>">
                             <i class="fas fa-fw fa-search"></i>
                             <span>Consultar Estado</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('ventanilla.cola-espera') ? 'active' : '' }}" href="{{ route('ventanilla.cola-espera') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.cola-espera') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.cola-espera')); ?>">
                             <i class="fas fa-fw fa-users"></i>
                             <span>Cola de Espera</span>
                         </a>
                     </li>
-                @elseif(auth()->user()->role == 'inspector')
+                <?php elseif(auth()->user()->role == 'inspector'): ?>
                     <!-- Inspector Menu -->
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
@@ -643,34 +643,34 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('inspector.nueva-inspeccion') ? 'active' : '' }}" href="{{ route('inspector.nueva-inspeccion') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('inspector.nueva-inspeccion') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.nueva-inspeccion')); ?>">
                             <i class="fas fa-fw fa-plus-circle"></i>
                             <span>Nueva Inspección</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('inspector.inspecciones') ? 'active' : '' }}" href="{{ route('inspector.inspecciones') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('inspector.inspecciones') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.inspecciones')); ?>">
                             <i class="fas fa-fw fa-list-check"></i>
                             <span>Mis Inspecciones</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('inspector.vehiculos') ? 'active' : '' }}" href="{{ route('inspector.vehiculos') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('inspector.vehiculos') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.vehiculos')); ?>">
                             <i class="fas fa-fw fa-car"></i>
                             <span>Vehículos</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('inspector.reportes') ? 'active' : '' }}" href="{{ route('inspector.reportes') }}">
+                        <a class="nav-link <?php echo e(request()->routeIs('inspector.reportes') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.reportes')); ?>">
                             <i class="fas fa-fw fa-chart-bar"></i>
                             <span>Reportes</span>
                         </a>
                     </li>
-                @endif
-            @endauth
+                <?php endif; ?>
+            <?php endif; ?>
         </ul>
 
         <hr class="sidebar-divider d-none d-md-block" style="border-color: rgba(255, 255, 255, 0.1);">
@@ -687,30 +687,30 @@
             <!-- Título de la página actual -->
             <div class="navbar-nav flex-grow-1">
                 <span class="navbar-text text-muted fs-5 fw-light">
-                    @yield('title', 'Panel de Control')
+                    <?php echo $__env->yieldContent('title', 'Panel de Control'); ?>
                 </span>
             </div>
 
             <!-- Usuario en la esquina superior derecha -->
             <ul class="navbar-nav">
-                @auth
+                <?php if(auth()->guard()->check()): ?>
                     <li class="nav-item dropdown no-arrow">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #5a5c69; padding: 0.75rem;">
-                            <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">{{ auth()->user()->name }}</span>
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold"><?php echo e(auth()->user()->name); ?></span>
                             <i class="fas fa-user-circle fa-lg" style="color: #858796;"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                            <a class="dropdown-item" href="{{ route('user.perfil') }}">
+                            <a class="dropdown-item" href="<?php echo e(route('user.perfil')); ?>">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Mi Perfil
                             </a>
-                            <a class="dropdown-item" href="{{ route('user.configuracion') }}">
+                            <a class="dropdown-item" href="<?php echo e(route('user.configuracion')); ?>">
                                 <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Configuración
                             </a>
                             <div class="dropdown-divider"></div>
-                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                                @csrf
+                            <form method="POST" action="<?php echo e(route('logout')); ?>" class="d-inline">
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" class="dropdown-item">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Cerrar Sesión
@@ -718,13 +718,13 @@
                             </form>
                         </div>
                     </li>
-                @endauth
+                <?php endif; ?>
             </ul>
         </nav>
 
         <!-- Page Content -->
         <div class="content-wrapper">
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
         </div>
     </div>
 
@@ -1129,8 +1129,8 @@
         }
     </style>
 
-    @stack('scripts')
-    @yield('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
+    <?php echo $__env->yieldContent('scripts'); ?>
 
     <!-- Scripts para modales flotantes -->
     <script>
@@ -1329,46 +1329,48 @@
     </script>
 
     <!-- Toast Notifications Component -->
-    @include('components.toast-notifications')
+    <?php echo $__env->make('components.toast-notifications', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
     <!-- Scripts específicos de cada página -->
-    @yield('scripts')
+    <?php echo $__env->yieldContent('scripts'); ?>
 
     <!-- Script para mostrar mensajes flash como toasts -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            @if(session('success'))
-                showToast('¡Éxito!', '{{ session('success') }}', 'success');
-            @endif
+            <?php if(session('success')): ?>
+                showToast('¡Éxito!', '<?php echo e(session('success')); ?>', 'success');
+            <?php endif; ?>
 
-            @if(session('error'))
-                showToast('Error', '{{ session('error') }}', 'error');
-            @endif
+            <?php if(session('error')): ?>
+                showToast('Error', '<?php echo e(session('error')); ?>', 'error');
+            <?php endif; ?>
 
-            @if(session('warning'))
-                showToast('Advertencia', '{{ session('warning') }}', 'warning');
-            @endif
+            <?php if(session('warning')): ?>
+                showToast('Advertencia', '<?php echo e(session('warning')); ?>', 'warning');
+            <?php endif; ?>
 
-            @if(session('info'))
-                showToast('Información', '{{ session('info') }}', 'info');
-            @endif
+            <?php if(session('info')): ?>
+                showToast('Información', '<?php echo e(session('info')); ?>', 'info');
+            <?php endif; ?>
 
-            @if(session('status'))
-                showToast('Estado', '{{ session('status') }}', 'info');
-            @endif
+            <?php if(session('status')): ?>
+                showToast('Estado', '<?php echo e(session('status')); ?>', 'info');
+            <?php endif; ?>
 
             // Toast especial con datos personalizados
-            @if(session('toast'))
-                @php $toast = session('toast'); @endphp
+            <?php if(session('toast')): ?>
+                <?php $toast = session('toast'); ?>
                 showToast(
-                    '{{ $toast['title'] ?? 'Notificación' }}', 
-                    '{{ $toast['message'] ?? '' }}', 
-                    '{{ $toast['type'] ?? 'info' }}',
-                    {{ $toast['duration'] ?? 5000 }}
+                    '<?php echo e($toast['title'] ?? 'Notificación'); ?>', 
+                    '<?php echo e($toast['message'] ?? ''); ?>', 
+                    '<?php echo e($toast['type'] ?? 'info'); ?>',
+                    <?php echo e($toast['duration'] ?? 5000); ?>
+
                 );
-            @endif
+            <?php endif; ?>
         });
     </script>
-    @include('partials.export-actas-scripts')
+    <?php echo $__env->make('partials.export-actas-scripts', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\Login-app\resources\views/layouts/dashboard.blade.php ENDPATH**/ ?>

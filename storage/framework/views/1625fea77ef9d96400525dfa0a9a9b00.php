@@ -1,9 +1,7 @@
-@extends('layouts.dashboard')
+<?php $__env->startSection('title', 'Gestión de Actas de Fiscalización'); ?>
 
-@section('title', 'Gestión de Actas de Fiscalización')
-
-@section('content')
-@php
+<?php $__env->startSection('content'); ?>
+<?php
 use Illuminate\Support\Facades\DB;
 // Calcular próximo sufijo numérico para mostrar en el encabezado (reinicio anual)
 try {
@@ -42,7 +40,7 @@ try {
         $proximo_sufijo = str_pad(1, 6, '0', STR_PAD_LEFT);
     }
 }
-@endphp
+?>
 <style>
     :root {
         --drtc-orange: #ff8c00;
@@ -112,9 +110,10 @@ try {
                                 Gestión de Actas de Fiscalización DRTC
                             </h1>
                             <p class="mb-0 fs-5 text-white opacity-75">
-                                <i class="fas fa-user me-2"></i>Inspector: <strong>{{ Auth::user()->name }}</strong>
+                                <i class="fas fa-user me-2"></i>Inspector: <strong><?php echo e(Auth::user()->name); ?></strong>
                                 <span class="ms-3">
-                                    <i class="fas fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}
+                                    <i class="fas fa-calendar-alt me-2"></i><?php echo e(date('d/m/Y')); ?>
+
                                 </span>
                             </p>
                         </div>
@@ -209,7 +208,7 @@ try {
     </div>
 
     <!-- Estadísticas rápidas (valores reales desde la BD) -->
-    @php
+    <?php
         // Obtener contadores actuales desde la base de datos de forma defensiva
         try {
             $totalActas = DB::table('actas')->count();
@@ -227,7 +226,7 @@ try {
             // Fallback a cero si hay problema con la consulta
             $totalActas = 0; $pendientes = 0; $pagadas = 0; $enCobranza = 0; $anuladas = 0;
         }
-    @endphp
+    ?>
 
     <div class="row mb-4">
         <div class="col-md-3">
@@ -235,7 +234,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 id="dashboard-actas-pendientes">{{ $pendientes }}</h4>
+                            <h4 id="dashboard-actas-pendientes"><?php echo e($pendientes); ?></h4>
                             <p class="mb-0">Pendientes</p>
                         </div>
                         <div class="align-self-center">
@@ -250,7 +249,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 id="dashboard-actas-pagadas">{{ $pagadas }}</h4>
+                            <h4 id="dashboard-actas-pagadas"><?php echo e($pagadas); ?></h4>
                             <p class="mb-0">Pagadas</p>
                         </div>
                         <div class="align-self-center">
@@ -265,7 +264,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 id="dashboard-actas-en-cobranza">{{ $enCobranza }}</h4>
+                            <h4 id="dashboard-actas-en-cobranza"><?php echo e($enCobranza); ?></h4>
                             <p class="mb-0">En Cobranza</p>
                         </div>
                         <div class="align-self-center">
@@ -280,7 +279,7 @@ try {
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 id="dashboard-actas-anuladas">{{ $anuladas }}</h4>
+                            <h4 id="dashboard-actas-anuladas"><?php echo e($anuladas); ?></h4>
                             <p class="mb-0">Anuladas</p>
                         </div>
                         <div class="align-self-center">
@@ -316,7 +315,7 @@ try {
                         </tr>
                     </thead>
                     <tbody>
-                        @php
+                        <?php
                             // Obtener las últimas 10 actas reales de la base de datos
                             try {
                                 $recentActas = DB::table('actas')->orderBy('created_at', 'desc')->limit(10)->get();
@@ -324,18 +323,18 @@ try {
                                 $recentActas = collect();
                                 logger()->error('Error obteniendo actas para la vista: ' . $e->getMessage());
                             }
-                        @endphp
+                        ?>
 
-                        @if($recentActas->isEmpty())
+                        <?php if($recentActas->isEmpty()): ?>
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-4">
                                     <i class="fas fa-info-circle me-2"></i>
                                     No hay actas para mostrar en este momento
                                 </td>
                             </tr>
-                        @else
-                            @foreach($recentActas as $acta)
-                                @php
+                        <?php else: ?>
+                            <?php $__currentLoopData = $recentActas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $acta): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
                                     $fecha = $acta->fecha_infraccion ?? $acta->fecha_intervencion ?? ($acta->created_at ?? null);
                                     try {
                                         $fechaForm = $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : 'N/A';
@@ -348,36 +347,36 @@ try {
                                     $placa = $acta->placa_vehiculo ?? $acta->placa ?? 'N/A';
                                     $ubicacion = $acta->ubicacion ?? $acta->lugar_intervencion ?? 'N/A';
                                     $monto = number_format((float)($acta->monto_multa ?? 0), 2, '.', ',');
-                                @endphp
+                                ?>
                                 <tr>
-                                    <td class="fw-bold">{{ $acta->numero_acta ?? 'N/A' }}</td>
-                                    <td>{{ $fechaForm }} {{ $hora ? ' ' . $hora : '' }}</td>
-                                    <td><span class="badge bg-dark">{{ $placa }}</span></td>
-                                    <td>{{ $empresa }}</td>
-                                    <td>{{ isset($acta->codigo_infraccion) && $acta->codigo_infraccion ? $acta->codigo_infraccion . ' - ' : '' }}{{ \Illuminate\Support\Str::limit($acta->descripcion ?? ($acta->descripcion_hechos ?? ''), 40) }}</td>
-                                    <td>{{ $ubicacion != 'N/A' ? (Str::limit($ubicacion, 30) . (strlen($ubicacion) > 30 ? '...' : '')) : 'N/A' }}</td>
-                                    <td><strong>S/ {{ $monto }}</strong></td>
+                                    <td class="fw-bold"><?php echo e($acta->numero_acta ?? 'N/A'); ?></td>
+                                    <td><?php echo e($fechaForm); ?> <?php echo e($hora ? ' ' . $hora : ''); ?></td>
+                                    <td><span class="badge bg-dark"><?php echo e($placa); ?></span></td>
+                                    <td><?php echo e($empresa); ?></td>
+                                    <td><?php echo e(isset($acta->codigo_infraccion) && $acta->codigo_infraccion ? $acta->codigo_infraccion . ' - ' : ''); ?><?php echo e(\Illuminate\Support\Str::limit($acta->descripcion ?? ($acta->descripcion_hechos ?? ''), 40)); ?></td>
+                                    <td><?php echo e($ubicacion != 'N/A' ? (Str::limit($ubicacion, 30) . (strlen($ubicacion) > 30 ? '...' : '')) : 'N/A'); ?></td>
+                                    <td><strong>S/ <?php echo e($monto); ?></strong></td>
                                     <td>
-                                        @if(($acta->estado ?? '') === 'pendiente')
+                                        <?php if(($acta->estado ?? '') === 'pendiente'): ?>
                                             <span class="badge bg-warning">Pendiente</span>
-                                        @elseif(($acta->estado ?? '') === 'pagada')
+                                        <?php elseif(($acta->estado ?? '') === 'pagada'): ?>
                                             <span class="badge bg-success">Pagada</span>
-                                        @elseif(($acta->estado ?? '') === 'anulada')
+                                        <?php elseif(($acta->estado ?? '') === 'anulada'): ?>
                                             <span class="badge bg-secondary">Anulada</span>
-                                        @elseif(($acta->estado ?? '') === 'en_cobranza' || ($acta->estado ?? '') === 'en cobranza' || ($acta->estado ?? '') === 'en_cobranza')
+                                        <?php elseif(($acta->estado ?? '') === 'en_cobranza' || ($acta->estado ?? '') === 'en cobranza' || ($acta->estado ?? '') === 'en_cobranza'): ?>
                                             <span class="badge bg-danger">En Cobranza</span>
-                                        @else
-                                            <span class="badge bg-info">{{ $acta->estado ?? 'Sin estado' }}</span>
-                                        @endif
+                                        <?php else: ?>
+                                            <span class="badge bg-info"><?php echo e($acta->estado ?? 'Sin estado'); ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
-                                        <a href="/actas/{{ $acta->id }}" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="fas fa-eye"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/editar" class="btn btn-sm btn-outline-success" title="Editar"><i class="fas fa-edit"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir"><i class="fas fa-print"></i></a>
+                                        <a href="/actas/<?php echo e($acta->id); ?>" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="fas fa-eye"></i></a>
+                                        <a href="/actas/<?php echo e($acta->id); ?>/editar" class="btn btn-sm btn-outline-success" title="Editar"><i class="fas fa-edit"></i></a>
+                                        <a href="/actas/<?php echo e($acta->id); ?>/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir"><i class="fas fa-print"></i></a>
                                     </td>
                                 </tr>
-                            @endforeach
-                        @endif
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -550,9 +549,9 @@ function submitActa(event) {
         descripcion_hechos: formData.get('descripcion_hechos') || formData.get('descripcion') || '',
 
         // inspector / responsables
-        inspector_responsable: formData.get('inspector_responsable') || formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '{{ Auth::user()->name }}',
-        inspector: formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '{{ Auth::user()->name }}',
-        inspector_principal: formData.get('inspector_principal') || '{{ Auth::user()->name }}',
+        inspector_responsable: formData.get('inspector_responsable') || formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '<?php echo e(Auth::user()->name); ?>',
+        inspector: formData.get('inspector') || formData.get('inspector_principal') || document.querySelector('input[name="inspector_principal"]') && document.querySelector('input[name="inspector_principal"]').value || '<?php echo e(Auth::user()->name); ?>',
+        inspector_principal: formData.get('inspector_principal') || '<?php echo e(Auth::user()->name); ?>',
 
         tipo_agente: formData.get('tipo_agente') || (document.getElementById('tipo_agente_hidden') && document.getElementById('tipo_agente_hidden').value) || '',
         clase_licencia: formData.get('clase_categoria') || (document.getElementById('clase_licencia_hidden') && document.getElementById('clase_licencia_hidden').value) || '',
@@ -792,7 +791,7 @@ function agregarBotonFinalizar() {
                 inspectorHidden.type = 'hidden';
                 inspectorHidden.id = 'inspector_responsable_hidden';
                 inspectorHidden.name = 'inspector_responsable';
-                inspectorHidden.value = '{{ Auth::user()->name }}';
+                inspectorHidden.value = '<?php echo e(Auth::user()->name); ?>';
                 form.appendChild(inspectorHidden);
             }
         }
@@ -822,7 +821,7 @@ if (_infraccionEl && _montoEl) {
     });
 }
 </script>
-@include('partials.export-actas-scripts')
+<?php echo $__env->make('partials.export-actas-scripts', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
 <!-- MODALES FLOTANTES -->
 
@@ -840,14 +839,14 @@ if (_infraccionEl && _montoEl) {
         </div>
         <div class="modal-body-custom">
                 <form id="form-nueva-acta" action="/api/actas" method="POST">
-                @csrf
+                <?php echo csrf_field(); ?>
                 
                 <!-- Campos automáticos ocultos -->
                 <input type="hidden" id="fecha_inspeccion_hidden" name="fecha_inspeccion">
                 <input type="hidden" id="hora_inicio_hidden" name="hora_inicio">
-                <input type="hidden" name="inspector_principal" value="{{ Auth::user()->name }}">
+                <input type="hidden" name="inspector_principal" value="<?php echo e(Auth::user()->name); ?>">
                 <!-- Añadir campos que el backend espera y a veces no llegan desde el formulario -->
-                <input type="hidden" id="inspector_hidden" name="inspector" value="{{ Auth::user()->name }}">
+                <input type="hidden" id="inspector_hidden" name="inspector" value="<?php echo e(Auth::user()->name); ?>">
                 <input type="hidden" id="tipo_agente_hidden" name="tipo_agente" value="transportista">
                 <input type="hidden" id="clase_licencia_hidden" name="clase_licencia" value="">
 
@@ -859,7 +858,7 @@ if (_infraccionEl && _montoEl) {
                             <!-- Logo/Escudo del Perú (izquierdo) -->
                             <div class="col-1 d-flex align-items-center justify-content-center">
                                 <div class="text-center p-1" style="border: 2px solid #000; background: #ffffff; border-radius: 10px; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                                    <img src="{{ asset('images/escudo_peru.png') }}" alt="Escudo del Perú" style="max-width: 45px; max-height: 45px; object-fit: contain;">
+                                    <img src="<?php echo e(asset('images/escudo_peru.png')); ?>" alt="Escudo del Perú" style="max-width: 45px; max-height: 45px; object-fit: contain;">
                                 </div>
                             </div>
                             
@@ -892,7 +891,7 @@ if (_infraccionEl && _montoEl) {
                             <!-- Logo Regional (derecho) -->
                             <div class="col-1 d-flex align-items-center justify-content-center">
                                 <div class="text-center p-1" style="background: #ffffff; border: 2px solid #000; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
-                                    <img src="{{ asset('images/logo-gobierno.png') }}" alt="Logo Gobierno Regional" style="max-width: 50px; max-height: 50px; object-fit: contain;">
+                                    <img src="<?php echo e(asset('images/logo-gobierno.png')); ?>" alt="Logo Gobierno Regional" style="max-width: 50px; max-height: 50px; object-fit: contain;">
                                 </div>
                             </div>
                         </div>
@@ -903,10 +902,10 @@ if (_infraccionEl && _montoEl) {
                                 <div class="d-flex align-items-center justify-content-center mb-2">
                                     <h3 class="mb-0 fw-bold text-dark me-3">ACTA DE CONTROL</h3>
                                     <span class="me-2 fw-bold text-dark" style="font-size: 18px;">Nº</span>
-                                    <span id="proximo_sufijo_span" class="me-2 d-inline-block" style="width: 120px; text-align: center; font-weight: bold; font-size: 18px;">{{ $proximo_sufijo }}</span>
-                                    <span class="fw-bold text-dark" style="font-size: 18px;">- {{ date('Y') }}</span>
-                                    {{-- Hidden con el numero_acta completo para envío al backend --}}
-                                    <input type="hidden" id="numero_acta_hidden" name="numero_acta" value="{{ 'DRTC-APU-' . date('Y') . '-' . $proximo_sufijo }}">
+                                    <span id="proximo_sufijo_span" class="me-2 d-inline-block" style="width: 120px; text-align: center; font-weight: bold; font-size: 18px;"><?php echo e($proximo_sufijo); ?></span>
+                                    <span class="fw-bold text-dark" style="font-size: 18px;">- <?php echo e(date('Y')); ?></span>
+                                    
+                                    <input type="hidden" id="numero_acta_hidden" name="numero_acta" value="<?php echo e('DRTC-APU-' . date('Y') . '-' . $proximo_sufijo); ?>">
                                 </div>
                             </div>
                         </div>
@@ -928,7 +927,8 @@ if (_infraccionEl && _montoEl) {
                                 <div class="d-flex align-items-center">
                                     <span class="fw-bold me-2">Fecha:</span> 
                                     <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
-                                        {{ now()->format('d/m/Y') }}
+                                        <?php echo e(now()->format('d/m/Y')); ?>
+
                                     </div>
                                 </div>
                             </div>
@@ -936,7 +936,8 @@ if (_infraccionEl && _montoEl) {
                                 <div class="d-flex align-items-center">
                                     <span class="fw-bold me-2">Hora:</span> 
                                     <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
-                                        {{ now()->format('H:i') }}
+                                        <?php echo e(now()->format('H:i')); ?>
+
                                     </div>
                                 </div>
                             </div>
@@ -1164,11 +1165,11 @@ if (_infraccionEl && _montoEl) {
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold text-info">Fecha:</label>
-                                <input type="date" class="form-control border-info bg-light" name="fecha_intervencion" value="{{ date('Y-m-d') }}" readonly>
+                                <input type="date" class="form-control border-info bg-light" name="fecha_intervencion" value="<?php echo e(date('Y-m-d')); ?>" readonly>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold text-info">Hora:</label>
-                                <input type="time" class="form-control border-info bg-light" name="hora_intervencion" value="{{ date('H:i') }}" readonly>
+                                <input type="time" class="form-control border-info bg-light" name="hora_intervencion" value="<?php echo e(date('H:i')); ?>" readonly>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label fw-bold text-info">Ubicación completa:</label>
@@ -1195,7 +1196,7 @@ if (_infraccionEl && _montoEl) {
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label class="form-label fw-bold text-info">Inspector Responsable:</label>
-                                <input type="text" class="form-control border-info" name="inspector" value="{{ Auth::user()->name }}" readonly>
+                                <input type="text" class="form-control border-info" name="inspector" value="<?php echo e(Auth::user()->name); ?>" readonly>
                             </div>
                         </div>
                     </div>
@@ -1848,7 +1849,7 @@ if (_infraccionEl && _montoEl) {
                             <div class="row mb-3">
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-info">N° de Acta:</label>
-                                    <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001" value="{{ $proximo_numero_acta ?? '' }}" readonly>
+                                    <input type="text" class="form-control border-info" name="numero_acta" placeholder="DRTC-APU-2025-001" value="<?php echo e($proximo_numero_acta ?? ''); ?>" readonly>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold text-info">Placa del Vehículo:</label>
@@ -1978,7 +1979,7 @@ if (_infraccionEl && _montoEl) {
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
 <script>
 // FUNCIONES PARA APIs DE CONSULTA DNI/RUC
@@ -2937,7 +2938,7 @@ function mostrarResultadosConsulta(result) {
                 <td>${(acta.ubicacion || acta.lugar_intervencion) ? ( (acta.ubicacion || acta.lugar_intervencion).substring(0, 30) + '...' ) : 'N/A'}</td>
                 <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
                 <td>${estadoBadge}</td>
-                <td>{{ Auth::user()->name }}</td>
+                <td><?php echo e(Auth::user()->name); ?></td>
             </tr>
         `;
     });
@@ -3008,7 +3009,7 @@ async function cargarEstadisticasReales() {
                                 <td>${(acta.ubicacion || acta.lugar_intervencion) ? ( (acta.ubicacion || acta.lugar_intervencion).substring(0, 30) + '...' ) : 'N/A'}</td>
                                 <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
                                 <td>${estadoBadge}</td>
-                                <td>{{ Auth::user()->name }}</td>
+                                <td><?php echo e(Auth::user()->name); ?></td>
                             </tr>
                         `;
                     });
@@ -3110,7 +3111,7 @@ function exportarPDF() {
                 ubicacion: cells[5] ? cells[5].textContent.trim() : '',
                 monto_multa: cells[6] ? cells[6].textContent.replace(/[S\/$,\s]/g,'').trim() : '',
                 estado: cells[7] ? cells[7].textContent.trim() : '',
-                inspector: cells[8] ? cells[8].textContent.trim() : '{{ Auth::user()->name ?? "Inspector DRTC" }}'
+                inspector: cells[8] ? cells[8].textContent.trim() : '<?php echo e(Auth::user()->name ?? "Inspector DRTC"); ?>'
             };
 
             const html = buildPrintableActaHTML({
@@ -3277,3 +3278,5 @@ document.addEventListener('DOMContentLoaded', function() {
 function exportarExcel() { exportTableToCSV('#tabla-resultados', `Actas_Consulta_${new Date().toISOString().slice(0,10)}.csv`); }
 function exportarPDF() { exportTableToPDF('#tabla-resultados', `Actas_Export_${new Date().toISOString().slice(0,10)}.pdf`); }
 </script>
+
+<?php echo $__env->make('layouts.dashboard', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Login-app\resources\views/fiscalizador/actas-contra.blade.php ENDPATH**/ ?>

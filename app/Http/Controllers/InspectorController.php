@@ -24,26 +24,38 @@ class InspectorController extends Controller
     public function store(Request $request)
     {
         $data = $request->only(['nombres', 'apellidos', 'dni', 'telefono', 'codigo_inspector']);
-
         $validator = Validator::make($data, [
             'nombres' => 'required|string|max:255',
             'apellidos' => 'nullable|string|max:255',
-            'dni' => 'nullable|string|max:32',
+            'dni' => 'required|string|max:32',
             'telefono' => 'nullable|string|max:32',
-            'codigo_inspector' => 'nullable|string|max:64',
+            'codigo_inspector' => 'required|string|max:64',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-    $id = DB::table('inspectores')->insertGetId(array_merge($data, [
-            'estado' => 'activo',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]));
+        // Check uniqueness to avoid DB exceptions and provide friendly errors
+        if (!empty($data['dni']) && DB::table('inspectores')->where('dni', $data['dni'])->exists()) {
+            return response()->json(['success' => false, 'message' => 'El DNI ya existe'], 409);
+        }
+        if (!empty($data['codigo_inspector']) && DB::table('inspectores')->where('codigo_inspector', $data['codigo_inspector'])->exists()) {
+            return response()->json(['success' => false, 'message' => 'El código de inspector ya existe'], 409);
+        }
 
-        return response()->json(['id' => $id], 201);
+        try {
+            $id = DB::table('inspectores')->insertGetId(array_merge($data, [
+                'estado' => 'activo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
+
+            return response()->json(['success' => true, 'id' => $id], 201);
+    } catch (\Exception $e) {
+            Log::error('InspectorController::store error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno al guardar el inspector'], 500);
+        }
     }
 
     // Show inspector
@@ -51,35 +63,47 @@ class InspectorController extends Controller
     {
         $inspector = DB::table('inspectores')->where('id', $id)->first();
         if (! $inspector) {
-            return response()->json(['error' => 'Inspector not found'], 404);
+            return response()->json(['success' => false, 'message' => 'Inspector not found'], 404);
         }
-        return response()->json(['inspector' => $inspector]);
+        return response()->json(['success' => true, 'inspector' => $inspector]);
     }
 
     // Update inspector
     public function update(Request $request, $id)
     {
         $data = $request->only(['nombres', 'apellidos', 'dni', 'telefono', 'codigo_inspector']);
-
         $validator = Validator::make($data, [
             'nombres' => 'required|string|max:255',
             'apellidos' => 'nullable|string|max:255',
-            'dni' => 'nullable|string|max:32',
+            'dni' => 'required|string|max:32',
             'telefono' => 'nullable|string|max:32',
-            'codigo_inspector' => 'nullable|string|max:64',
+            'codigo_inspector' => 'required|string|max:64',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()->first()], 422);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $updated = DB::table('inspectores')->where('id', $id)->update(array_merge($data, ['updated_at' => now()]));
-
-        if (! $updated) {
-            return response()->json(['error' => 'Update failed or no changes'], 400);
+        // Check uniqueness excluding current record
+        if (!empty($data['dni']) && DB::table('inspectores')->where('dni', $data['dni'])->where('id', '!=', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'El DNI ya pertenece a otro inspector'], 409);
+        }
+        if (!empty($data['codigo_inspector']) && DB::table('inspectores')->where('codigo_inspector', $data['codigo_inspector'])->where('id', '!=', $id)->exists()) {
+            return response()->json(['success' => false, 'message' => 'El código de inspector ya pertenece a otro inspector'], 409);
         }
 
-        return response()->json(['status' => 'ok']);
+        try {
+            $updated = DB::table('inspectores')->where('id', $id)->update(array_merge($data, ['updated_at' => now()]));
+
+            if (! $updated) {
+                return response()->json(['success' => false, 'message' => 'Update failed or no changes'], 400);
+            }
+
+            return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+            Log::error('InspectorController::update error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno al actualizar el inspector'], 500);
+        }
     }
 
     // Delete inspector
@@ -87,9 +111,9 @@ class InspectorController extends Controller
     {
         $deleted = DB::table('inspectores')->where('id', $id)->delete();
         if (! $deleted) {
-            return response()->json(['error' => 'Delete failed'], 400);
+            return response()->json(['success' => false, 'message' => 'Delete failed'], 400);
         }
-        return response()->json(['status' => 'deleted']);
+        return response()->json(['success' => true, 'message' => 'deleted']);
     }
 
     // Toggle estado between 'activo' and 'inactivo'
@@ -104,10 +128,10 @@ class InspectorController extends Controller
             $nuevo = (isset($inspector->estado) && $inspector->estado === 'activo') ? 'inactivo' : 'activo';
             DB::table('inspectores')->where('id', $id)->update(['estado' => $nuevo, 'updated_at' => now()]);
 
-            return response()->json(['status' => 'ok', 'nuevo_estado' => $nuevo]);
-        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'nuevo_estado' => $nuevo]);
+    } catch (\Exception $e) {
             Log::error('toggleStatus inspector error: ' . $e->getMessage());
-            return response()->json(['error' => 'Internal error'], 500);
+            return response()->json(['success' => false, 'message' => 'Internal error'], 500);
         }
     }
 
@@ -122,12 +146,12 @@ class InspectorController extends Controller
                     ->orWhere('dni', 'like', "%{$q}%")
                     ->orWhere('codigo_inspector', 'like', "%{$q}%");
             });
-            }
+        }
 
-            $inspectores = $query->select('inspectores.*', DB::raw("CONCAT(IFNULL(nombres,''), ' ', IFNULL(apellidos,'')) as nombre_completo"))
-                ->orderBy('nombres')
-                ->limit(50)
-                ->get();
-        return response()->json(['inspectores' => $inspectores]);
+        $inspectores = $query->select('inspectores.*', DB::raw("CONCAT(IFNULL(nombres,''), ' ', IFNULL(apellidos,'')) as nombre_completo"))
+            ->orderBy('nombres')
+            ->limit(50)
+            ->get();
+    return response()->json(['success' => true, 'inspectores' => $inspectores]);
     }
 }
