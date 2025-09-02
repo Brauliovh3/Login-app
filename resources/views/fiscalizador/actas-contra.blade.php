@@ -1671,7 +1671,6 @@ if (_infraccionEl && _montoEl) {
         </div>
     </div>
 </div>
-
 <!-- MODAL: ELIMINAR ACTA -->
 <div class="floating-modal" id="modal-eliminar-acta">
     <div class="modal-content-wrapper">
@@ -1732,13 +1731,13 @@ if (_infraccionEl && _montoEl) {
                             <div class="col-md-6">
                                 <div class="info-group p-3 border border-danger rounded bg-white">
                                     <label class="form-label fw-bold text-danger">N° de Acta:</label>
-                                    <p class="mb-0 fs-5" id="eliminar-numero-acta">DRTC-APU-2024-001</p>
+                                    <p class="mb-0 fs-5" id="eliminar-numero-acta"></p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="info-group p-3 border border-danger rounded bg-white">
                                     <label class="form-label fw-bold text-danger">Fecha de Registro:</label>
-                                    <p class="mb-0 fs-5" id="eliminar-fecha-acta">15/08/2024</p>
+                                    <p class="mb-0 fs-5" id="eliminar-fecha-acta"></p>
                                 </div>
                             </div>
                         </div>
@@ -1766,10 +1765,6 @@ if (_infraccionEl && _montoEl) {
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Código de Autorización:</label>
-                                        <input type="password" class="form-control border-warning" id="codigo-autorizacion" placeholder="Ingrese código de supervisor" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
                                         <label class="form-label fw-bold">Supervisor Autorizante:</label>
                                         <input type="text" class="form-control border-warning" id="supervisor-autorizante" placeholder="Nombre del supervisor" required>
                                     </div>
@@ -1790,8 +1785,6 @@ if (_infraccionEl && _montoEl) {
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
 <!-- MODAL: CONSULTAS Y REPORTES -->
 <div class="floating-modal" id="modal-consultas">
@@ -2601,21 +2594,37 @@ function buscarActaEliminar() {
 }
 
 function confirmarEliminacion() {
-    const motivo = document.getElementById('motivo-eliminacion').value;
-    const supervisor = document.getElementById('supervisor-autorizante').value;
-
-    if (!motivo || !supervisor) {
-        mostrarNotificacion('Todos los campos son obligatorios para la eliminación', 'warning');
+       const resultadoEL = document.getElementById('resultado-eliminar');
+    if (!resultadoEL || resultadoEL.style.display === 'none') {
+        mostrarNotificacion('Primero busque y seleccione el acta a eliminar.', 'warning');
         return;
     }
 
-    const actaId = actaIdEnProceso || (document.getElementById('resultado-eliminar') && document.getElementById('resultado-eliminar').dataset.actaId);
+    const motivoEL = document.getElementById('motivo-eliminacion');
+    const obsEL = document.getElementById('observaciones-eliminacion');
+    const supervisorEL = document.getElementById('supervisor-autorizante');
+
+    if (!motivoEL || !obsEL || !supervisorEL) {
+        mostrarNotificacion('Error interno: No se encontraron todos los campos requeridos en el formulario de eliminación.', 'error');
+        return;
+    }
+
+    const motivo = motivoEL.value;
+    const observaciones = obsEL.value;
+    const supervisor = supervisorEL.value;
+
+    if (!motivo || !supervisor) {
+        mostrarNotificacion('Todos los campos son obligatorios para la eliminacion', 'warning');
+        return;
+    }
+
+    const actaId = actaIdEnProceso || resultadoEL.dataset.actaId;
     if (!actaId) {
         mostrarNotificacion('ID de acta no encontrado. Primero busque la acta a eliminar.', 'warning');
         return;
     }
 
-    if (!confirm('¿Está seguro de que desea eliminar esta acta? Esta acción es IRREVERSIBLE')) {
+    if (!confirm('¿Esta seguro de que quiere eliminar esta acta? Esta accion es IRREVERSIBLE')){
         return;
     }
 
@@ -2651,38 +2660,6 @@ function confirmarEliminacion() {
         console.error('Error eliminando acta:', err);
         mostrarNotificacion('Error al eliminar: ' + (err.message || 'Error desconocido'), 'error', 6000);
     });
-}
-
-function cancelarEliminacion() {
-     // Ocultar resultado y limpiar buscador
-    const resultadoEl = document.getElementById('resultado-eliminar');
-    if (resultadoEl) {
-        resultadoEl.style.display = 'none';
-        delete resultadoEl.dataset.actaId;
-    }
-
-    const buscarEL = document.getElementById('buscar-eliminar');
-    if (buscarEL) {
-        buscarEL.value = '';
-        buscarEL.focus();
-    }
-
-    // Limpiar campos del formulario de eliminación
-    const motivoEL = document.getElementById('motivo-eliminacion');
-    const obsEL = document.getElementById('observaciones-eliminacion');
-    const supervisorEL = document.getElementById('supervisor-autorizante');
-    const codigoEL = document.getElementById('codigo-autorizacion');
-
-    if (motivoEL) motivoEL.value = '';
-    if (obsEL) obsEL.value = '';
-    if (supervisorEL) supervisorEL.value = '';
-    if (codigoEL) codigoEL.value = '';
-
-    // Limpiar id en proceso
-    actaIdEnProceso = null;
-
-    // Cerrar modal por seguridad
-    cerrarModal('modal-eliminar-acta');
 }
 
 // Función para cancelar edición de acta
