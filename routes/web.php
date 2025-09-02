@@ -79,7 +79,14 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
 
 // Rutas para administradores y fiscalizadores (infracciones)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
-            // Route::resource('infracciones', InfraccionController::class);
+            // Ruta simple para ver infracciones (controlador no presente en este branch)
+            Route::get('/infracciones', function () {
+                $infracciones = \DB::table('infracciones')
+                    ->select('id', 'codigo_infraccion as codigo', 'descripcion', 'multa_soles', 'tipo_infraccion')
+                    ->get();
+
+                return view('infracciones.index', compact('infracciones'));
+            })->name('infracciones.index');
 });
 
 // Rutas para inspecciones (administrador, fiscalizador, ventanilla)
@@ -95,6 +102,40 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
 Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
     // Dashboard de administrador
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
+
+    // Ruta para gestión de conductores (mantenimiento) — controlador presente en el proyecto
+    Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
+    // Ruta para gestión de inspectores (fiscal) — controlador presente en el proyecto
+    Route::get('/admin/mantenimiento/fiscal', [App\Http\Controllers\InspectorController::class, 'index'])->name('admin.mantenimiento.fiscal');
+    // Rutas CRUD activas para conductores (mapeadas al controlador existente)
+    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
+    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
+    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
+    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
+    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
+    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
+    // Reinicio de AUTO_INCREMENT para la tabla actas (solo administradores)
+    Route::post('/admin/actas/reset-autoincrement', function (\Illuminate\Http\Request $request) {
+        $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
+        try {
+            $count = \DB::table('actas')->count();
+            if ($force) {
+                // Truncate (destructivo) y asegurarse de que la secuencia se reinicia
+                \DB::table('actas')->truncate();
+                return response()->json(['message' => 'Tabla actas truncada y AUTO_INCREMENT reseteado.']);
+            }
+
+            if ($count === 0) {
+                // Sólo ajustar AUTO_INCREMENT si la tabla está vacía
+                \DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
+                return response()->json(['message' => 'AUTO_INCREMENT reseteado a 1.']);
+            }
+
+            return response()->json(['message' => 'La tabla no está vacía. Use force=true para truncar.', 'count' => $count], 400);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al reiniciar auto-increment: ' . $e->getMessage()], 500);
+        }
+    })->name('admin.actas.reset-autoincrement');
 
     // Mantenimientos
     // Nota: las siguientes rutas están comentadas temporalmente porque varios controladores de mantenimiento
@@ -112,12 +153,13 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
 
     // Rutas para Conductor
     Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
-    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('conductores.store');
-    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('conductores.show');
-    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('conductores.update');
-    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
-    Route::post('/admin/conductores/{id}/toggle-status', [App\Http\Controllers\ConductorController::class, 'toggleStatus'])->name('conductores.toggle-status');
-    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
+    // CRUD activo para conductores (mapeado a ConductorController existente)
+    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
+    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
+    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
+    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
+    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
+    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
 
     // Administración de actas: reiniciar AUTO_INCREMENT (solo administradores)
     Route::post('/admin/actas/reset-autoincrement', [App\Http\Controllers\Admin\ActasMaintenanceController::class, 'resetAutoIncrement'])->name('admin.actas.reset-autoincrement');

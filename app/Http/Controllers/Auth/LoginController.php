@@ -52,16 +52,17 @@ class LoginController extends Controller
             }
             
             // Si el usuario está aprobado o no tiene campo status (usuarios antiguos), proceder con el login
-            if (Auth::attempt($credentials, $remember)) {
-                $request->session()->regenerate();
-                
-                // Configurar la duración de la sesión basada en "Recordarme"
-                if (!$remember) {
-                    config(['session.expire_on_close' => true]);
-                }
+            // Usar login directo con el usuario ya verificado para evitar
+            // inconsistencias cuando el provider/modelo usa una tabla personalizada.
+            Auth::login($user, $remember);
+            $request->session()->regenerate();
 
-                return redirect()->intended('dashboard');
+            // Configurar la duración de la sesión basada en "Recordarme"
+            if (!$remember) {
+                config(['session.expire_on_close' => true]);
             }
+
+            return redirect()->intended('dashboard');
         }
 
         return back()->withErrors([
