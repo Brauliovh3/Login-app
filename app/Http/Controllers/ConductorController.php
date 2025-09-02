@@ -123,13 +123,13 @@ class ConductorController extends Controller
         return response()->json(['conductores' => $conductores]);
     }
 
-    public function eliminarActa(Reequest $request, $id)
+    public function eliminarActa(Request $request, $id)
     {
         $request->validate([
             'fiscalizador_autorizante' => 'required|string|max:255',
         ]);
 
-        $acta = DB ::table('actas')->where('id', $id)->first();
+        $acta = DB::table('actas')->where('id', $id)->first();
         if (!$acta) {
             return response()->json(['exito' => false, 'mensaje' => 'Acta no encontrada'], 404);
         }

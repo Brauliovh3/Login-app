@@ -107,6 +107,13 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
     Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
     // Ruta para gestión de inspectores (fiscal) — controlador presente en el proyecto
     Route::get('/admin/mantenimiento/fiscal', [App\Http\Controllers\InspectorController::class, 'index'])->name('admin.mantenimiento.fiscal');
+    // Rutas CRUD activas para conductores (mapeadas al controlador existente)
+    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
+    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
+    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
+    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
+    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
+    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
     // Reinicio de AUTO_INCREMENT para la tabla actas (solo administradores)
     Route::post('/admin/actas/reset-autoincrement', function (\Illuminate\Http\Request $request) {
         $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
@@ -146,12 +153,13 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
 
     // Rutas para Conductor
     Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
-    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('conductores.store');
-    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('conductores.show');
-    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('conductores.update');
-    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
-    Route::post('/admin/conductores/{id}/toggle-status', [App\Http\Controllers\ConductorController::class, 'toggleStatus'])->name('conductores.toggle-status');
-    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
+    // CRUD activo para conductores (mapeado a ConductorController existente)
+    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
+    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
+    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
+    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
+    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
+    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
 
     // Administración de actas: reiniciar AUTO_INCREMENT (solo administradores)
     Route::post('/admin/actas/reset-autoincrement', [App\Http\Controllers\Admin\ActasMaintenanceController::class, 'resetAutoIncrement'])->name('admin.actas.reset-autoincrement');

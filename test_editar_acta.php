@@ -1,5 +1,5 @@
 <?php
-// Test script para probar el endpoint de búsqueda de acta para editar
+
 
 $url = "http://127.0.0.1:8002/buscar-acta-editar/60015091";
 
@@ -24,7 +24,7 @@ if ($error) {
     echo "Response:\n";
     echo $response . "\n";
     
-    // Intentar decodificar JSON
+    
     $data = json_decode($response, true);
     if ($data) {
         echo "\n=== DATOS DECODIFICADOS ===\n";
