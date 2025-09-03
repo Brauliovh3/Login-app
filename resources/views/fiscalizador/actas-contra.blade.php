@@ -1744,7 +1744,7 @@ if (_infraccionEl && _montoEl) {
                         
                         <!-- Motivo de eliminación -->
                         <div class="mb-4">
-                            <label class="form-label fw-bold text-danger">Motivo de la Eliminación (Obligatorio):</label>
+                            <label class="form-label fw-bold text-danger">Motivo de la Eliminación (Obligatorion):</label>
                             <select class="form-select border-danger mb-3" id="motivo-eliminacion" required>
                                 <option value="">Seleccione el motivo...</option>
                                 <option value="error_registro">Error en el registro</option>
@@ -2603,6 +2603,7 @@ function confirmarEliminacion() {
     const motivoEL = document.getElementById('motivo-eliminacion');
     const obsEL = document.getElementById('observaciones-eliminacion');
     const supervisorEL = document.getElementById('supervisor-autorizante');
+    console.log('motivoEL:', motivoEL, 'obsEL:', obsEL, 'supervisorEL:', supervisorEL);
 
     if (!motivoEL || !obsEL || !supervisorEL) {
         mostrarNotificacion('Error interno: No se encontraron todos los campos requeridos en el formulario de eliminación.', 'error');
