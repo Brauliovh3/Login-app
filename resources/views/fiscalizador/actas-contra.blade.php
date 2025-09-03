@@ -371,9 +371,9 @@ try {
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="/actas/{{ $acta->id }}" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="fas fa-eye"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/editar" class="btn btn-sm btn-outline-success" title="Editar"><i class="fas fa-edit"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir"><i class="fas fa-print"></i></a>
+                                        <a href="/actas/{{ $acta->id }}" class="btn btn-sm btn-outline-primary" title="Ver detalle" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-eye"></i></a>
+                                        <a href="/actas/{{ $acta->id }}/editar" class="btn btn-sm btn-outline-success" title="Editar" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-edit"></i></a>
+                                        <a href="/actas/{{ $acta->id }}/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-print"></i></a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -1711,7 +1711,7 @@ if (_infraccionEl && _montoEl) {
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold text-danger">Acción:</label>
-                            <button type="button" class="btn btn-danger d-block w-100 fw-bold" onclick="buscarActaEliminar()">
+                            <button type="button" id="btn-buscar-eliminar" class="btn btn-danger d-block w-100 fw-bold" onclick="buscarActaEliminar()">
                                 <i class="fas fa-search me-2"></i>BUSCAR ACTA
                             </button>
                         </div>
@@ -1774,7 +1774,7 @@ if (_infraccionEl && _montoEl) {
                         
                         <!-- Botones de confirmación -->
                         <div class="text-center">
-                            <button type="button" class="btn btn-danger btn-lg me-3 px-5" onclick="confirmarEliminacion()">
+                            <button type="button" id="btn-confirmar-eliminacion" class="btn btn-danger btn-lg me-3 px-5" onclick="confirmarEliminacion()">
                                 <i class="fas fa-trash me-2"></i>CONFIRMAR ELIMINACIÓN
                             </button>
                             <button type="button" class="btn btn-secondary btn-lg px-5" onclick="cancelarEliminacion()">
@@ -2379,6 +2379,32 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Listeners auxiliares para diagnosticar clicks en modal eliminar
+(function(){
+    document.addEventListener('DOMContentLoaded', function(){
+        const bBuscar = document.getElementById('btn-buscar-eliminar');
+        const bConfirm = document.getElementById('btn-confirmar-eliminacion');
+        if (bBuscar) {
+            bBuscar.addEventListener('click', function(e){
+                console.log('Click detectado: btn-buscar-eliminar');
+                try {
+                    const fn = window.__buscarActaEliminarReal || window.buscarActaEliminar;
+                    if (typeof fn === 'function') fn(); else console.warn('buscarActaEliminar no está definido');
+                } catch(err){ console.error('Error ejecutar buscarActaEliminar():', err); }
+            });
+        }
+        if (bConfirm) {
+            bConfirm.addEventListener('click', function(e){
+                console.log('Click detectado: btn-confirmar-eliminacion');
+                try {
+                    const fn = window.__confirmarEliminacionReal || window.confirmarEliminacion;
+                    if (typeof fn === 'function') fn(); else console.warn('confirmarEliminacion no está definido');
+                } catch(err){ console.error('Error ejecutar confirmarEliminacion():', err); }
+            });
+        }
+    });
+})();
+
 // FUNCIONES PARA MODALES FLOTANTES (código existente)
 let tiempoInicioRegistro = null;
 let actaIdEnProceso = null;
@@ -2634,13 +2660,17 @@ function confirmarEliminacion() {
 
     mostrarNotificacion('Eliminando acta...', 'info', 2000);
 
+    console.log('Eliminación -> actaId:', actaId, 'motivo:', motivo, 'supervisor:', supervisor);
+
     fetch(`/api/actas/${actaId}`, {
         method: 'DELETE',
         credentials: 'same-origin',
         headers: {
             'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrf
+            'X-CSRF-TOKEN': csrf,
+            'Content-Type': 'application/json'
         }
+    , body: JSON.stringify({ motivo: motivo, observaciones: observaciones, supervisor: supervisor })
     })
     .then(async res => {
         const txt = await res.text();
@@ -2662,6 +2692,10 @@ function confirmarEliminacion() {
         mostrarNotificacion('Error al eliminar: ' + (err.message || 'Error desconocido'), 'error', 6000);
     });
 }
+
+// Mantener referencias a las implementaciones reales en caso de que el layout las sobreescriba
+if (typeof buscarActaEliminar === 'function') window.__buscarActaEliminarReal = buscarActaEliminar;
+if (typeof confirmarEliminacion === 'function') window.__confirmarEliminacionReal = confirmarEliminacion;
 
 // Función para cancelar edición de acta
 function cancelarEdicion() {
