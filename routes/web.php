@@ -135,9 +135,30 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
         try {
             $count = \DB::table('actas')->count();
             if ($force) {
-                // Truncate (destructivo) y asegurarse de que la secuencia se reinicia
-                \DB::table('actas')->truncate();
-                return response()->json(['message' => 'Tabla actas truncada y AUTO_INCREMENT reseteado.']);
+                // Use DELETE (respects FK constraints) inside a transaction and reset AUTO_INCREMENT
+                try {
+                    \DB::beginTransaction();
+                    \DB::table('actas')->delete();
+                    \DB::commit();
+
+                    try {
+                        \DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
+                    } catch (\Exception $__e) {
+                        // If ALTER fails, log and continue to return appropriate message
+                        return response()->json(['message' => 'Records deleted but failed to reset AUTO_INCREMENT: ' . $__e->getMessage()], 500);
+                    }
+
+                    return response()->json(['message' => 'Tabla actas eliminada y AUTO_INCREMENT reseteado.']);
+                } catch (\Exception $e) {
+                    try {
+                        if (\DB::getPdo() && \DB::getPdo()->inTransaction()) {
+                            \DB::rollBack();
+                        }
+                    } catch (\Throwable $__t) {
+                        // ignore
+                    }
+                    return response()->json(['message' => 'Error al reiniciar auto-increment (force): ' . $e->getMessage()], 500);
+                }
             }
 
             if ($count === 0) {
@@ -146,7 +167,7 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
                 return response()->json(['message' => 'AUTO_INCREMENT reseteado a 1.']);
             }
 
-            return response()->json(['message' => 'La tabla no está vacía. Use force=true para truncar.', 'count' => $count], 400);
+            return response()->json(['message' => 'La tabla no está vacía. Use force=true para eliminar registros.', 'count' => $count], 400);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error al reiniciar auto-increment: ' . $e->getMessage()], 500);
         }
@@ -286,7 +307,8 @@ Route::middleware(['auth', 'user.approved'])->get('/admin/super/debug-auth', fun
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
     // Rutas para Actas con seguimiento automático de tiempo
     Route::post('/actas', [ActaController::class, 'store']);
-    Route::get('/actas/{id}', [ActaController::class, 'show']);
+    // Aceptar solo ids numéricos para evitar que rutas como '/actas/buscar' sean capturadas como {id}
+    Route::get('/actas/{id}', [ActaController::class, 'show'])->whereNumber('id');
     Route::get('/actas/pendientes', [ActaController::class, 'getPendientes']);
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
@@ -295,6 +317,9 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
     Route::get('/actas/buscar', [ActaController::class, 'buscar']);
     //Eliminar acta por ID (DELETE)
     Route::delete('/actas/{id}', [ActaController::class, 'destroy']);
+
+    // Endpoint para estadísticas del dashboard (JSON)
+    Route::get('/dashboard/fiscalizador', [App\Http\Controllers\DashboardController::class, 'apiFiscalizadorStats']);
 
     // Rutas para datos de formularios
     Route::get('/vehiculos-activos', function () {

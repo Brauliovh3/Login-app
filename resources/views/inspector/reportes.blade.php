@@ -68,7 +68,7 @@
                         <select class="form-select" id="filtro_estado_reporte" name="filtro_estado_reporte">
                             <option value="">Todos los estados</option>
                             <option value="pendiente">Pendiente</option>
-                            <option value="completada">Completada</option>
+                            <option value="procesada">Completada</option>
                             <option value="observada">Con Observaciones</option>
                         </select>
                     </div>

@@ -1851,7 +1851,7 @@ if (_infraccionEl && _montoEl) {
                                     <label class="form-label fw-bold text-info">Estado del Acta:</label>
                                     <select class="form-select border-info" name="estado">
                                         <option value="">Todos los estados</option>
-                                        <option value="registrada">Registrada</option>
+                                        <option value="pendiente">Registrada</option>
                                         <option value="procesada">Procesada</option>
                                         <option value="pendiente">Pendiente</option>
                                         <option value="anulada">Anulada</option>

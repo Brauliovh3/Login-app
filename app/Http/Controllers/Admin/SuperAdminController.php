@@ -55,12 +55,30 @@ class SuperAdminController extends Controller
             return response()->json(['ok' => false, 'message' => 'Table not empty. Set force=true to truncate. Rows: '.$count], 400);
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        DB::table('actas')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
-        DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
+        // Use DELETE instead of TRUNCATE to respect foreign key constraints.
+        try {
+            DB::beginTransaction();
+            // This will cascade deletes if FKs are defined with onDelete('cascade')
+            DB::table('actas')->delete();
+            DB::commit();
 
-        return response()->json(['ok' => true, 'message' => 'Actas truncated and AUTO_INCREMENT reset.']);
+            // Run DDL outside the transaction to avoid implicit commit/transaction mismatch
+            DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
+            Log::warning('Superadmin performed destructive reset of actas table (DELETE + reset AUTO_INCREMENT)', ['user' => auth()->user()->id]);
+            return response()->json(['ok' => true, 'message' => 'Actas deleted and AUTO_INCREMENT reset.']);
+        } catch (\Exception $e) {
+            // Only attempt rollback if a transaction is active
+            try {
+                if (DB::getPdo() && DB::getPdo()->inTransaction()) {
+                    DB::rollBack();
+                }
+            } catch (\Throwable $__t) {
+                // ignore rollback errors
+            }
+
+            Log::error('Failed to reset actas auto-increment', ['err' => $e->getMessage(), 'user' => auth()->user()->id]);
+            return response()->json(['ok' => false, 'message' => 'Failed to truncate actas: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
