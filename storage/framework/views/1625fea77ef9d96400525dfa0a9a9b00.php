@@ -2630,10 +2630,7 @@ function confirmarEliminacion() {
     const motivoEL = document.getElementById('motivo-eliminacion');
     const obsEL = document.getElementById('observaciones-eliminacion');
     const supervisorEL = document.getElementById('supervisor-autorizante');
-<<<<<<< HEAD
     console.log('motivoEL:', motivoEL, 'obsEL:', obsEL, 'supervisorEL:', supervisorEL);
-=======
->>>>>>> f250844b01336a38334dc9d06170029dabe91232
 
     if (!motivoEL || !obsEL || !supervisorEL) {
         mostrarNotificacion('Error interno: No se encontraron todos los campos requeridos en el formulario de eliminación.', 'error');
@@ -2697,13 +2694,10 @@ function confirmarEliminacion() {
     });
 }
 
-<<<<<<< HEAD
-=======
 // Mantener referencias a las implementaciones reales en caso de que el layout las sobreescriba
 if (typeof buscarActaEliminar === 'function') window.__buscarActaEliminarReal = buscarActaEliminar;
 if (typeof confirmarEliminacion === 'function') window.__confirmarEliminacionReal = confirmarEliminacion;
 
->>>>>>> f250844b01336a38334dc9d06170029dabe91232
 // Función para cancelar edición de acta
 function cancelarEdicion() {
     // Ocultar formulario y resultado

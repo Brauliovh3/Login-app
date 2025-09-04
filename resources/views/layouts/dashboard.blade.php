@@ -581,7 +581,7 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('fiscalizador.carga-paga') ? 'active' : '' }}" href="{{ route('fiscalizador.carga-paga') }}">
+                        <a class="nav-link {{ request()->routeIs('carga-pasajero.*') ? 'active' : '' }}" href="{{ route('carga-pasajero.index') }}">
                             <i class="fas fa-fw fa-truck-loading"></i>
                             <span>Carga y Pasajero</span>
                         </a>

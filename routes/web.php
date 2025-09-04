@@ -5,12 +5,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
-// use App\Http\Controllers\NotificationController; // CONTROLADOR ELIMINADO
-// use App\Http\Controllers\InfraccionController;
-// use App\Http\Controllers\InspeccionController; // Comentado: controlador no presente
+
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActaController;
-// use App\Http\Controllers\InspeccionVehicularController; // Comentado: controlador no presente
+use App\Http\Controllers\CargaPasajeroController;
+
 
 // Ruta principal - redirige al login si no está autenticado
 Route::get('/', function () {
@@ -44,12 +43,6 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
     Route::get('/configuracion', [UserController::class, 'configuracion'])->name('user.configuracion');
     Route::put('/configuracion', [UserController::class, 'updateConfiguracion'])->name('user.configuracion.update');
     
-    // Notificaciones - SISTEMA ELIMINADO
-    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    // Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    // Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    // Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    // Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     
     // Información de sesión
     Route::get('/session-info', function () {
@@ -102,16 +95,12 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
 
                 return view('infracciones.index', compact('infracciones'));
             })->name('infracciones.index');
+
+            // CRUD de carga y pasajero
+            Route::resource('carga-pasajero', CargaPasajeroController::class);
 });
 
-// Rutas para inspecciones (administrador, fiscalizador, ventanilla)
-// Comentadas temporalmente porque el controlador InspeccionController no está presente en el proyecto.
-// Si vuelves a agregar el controlador, descomenta la siguiente línea.
-/*
-Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador,ventanilla'])->group(function () {
-    Route::resource('inspecciones', InspeccionController::class);
-});
-*/
+
 
 // Rutas específicas por rol con middleware de protección
 Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
@@ -152,33 +141,7 @@ Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(functi
         }
     })->name('admin.actas.reset-autoincrement');
 
-    // Mantenimientos
-    // Nota: las siguientes rutas están comentadas temporalmente porque varios controladores de mantenimiento
-    // (InspectorController, ConductorController, etc.) no existen en este branch/local. Descomenta si agregas
-    // dichos controladores.
-    /*
-    // Rutas para Inspector/Fiscal
-    Route::get('/admin/mantenimiento/fiscal', [App\Http\Controllers\InspectorController::class, 'index'])->name('admin.mantenimiento.fiscal');
-    Route::post('/admin/inspectores', [App\Http\Controllers\InspectorController::class, 'store'])->name('inspectores.store');
-    Route::get('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'show'])->name('inspectores.show');
-    Route::put('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'update'])->name('inspectores.update');
-    Route::delete('/admin/inspectores/{id}', [App\Http\Controllers\InspectorController::class, 'destroy'])->name('inspectores.destroy');
-    Route::post('/admin/inspectores/{id}/toggle-status', [App\Http\Controllers\InspectorController::class, 'toggleStatus'])->name('inspectores.toggle-status');
-    Route::get('/admin/inspectores/search', [App\Http\Controllers\InspectorController::class, 'search'])->name('inspectores.search');
-
-    // Rutas para Conductor
-    Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
-    // CRUD activo para conductores (mapeado a ConductorController existente)
-    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
-    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
-    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
-    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
-    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
-    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
-
-    // Administración de actas: reiniciar AUTO_INCREMENT (solo administradores)
-    Route::post('/admin/actas/reset-autoincrement', [App\Http\Controllers\Admin\ActasMaintenanceController::class, 'resetAutoIncrement'])->name('admin.actas.reset-autoincrement');
-    */
+    
 });
 
 Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
