@@ -41,7 +41,7 @@
                         <option value="">Todos</option>
                         <option value="pendiente">Pendiente</option>
                         <option value="en_proceso">En Proceso</option>
-                        <option value="completada">Completada</option>
+                        <option value="procesada">Completada</option>
                         <option value="cancelada">Cancelada</option>
                     </select>
                 </div>

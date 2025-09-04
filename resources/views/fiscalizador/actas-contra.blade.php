@@ -100,289 +100,427 @@ try {
 </style>
 
 <div class="container-fluid">
-    <!-- Header principal -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0" style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); border-radius: 20px;">
-                <div class="card-body py-4">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h1 class="mb-2 fw-bold text-white">
-                                <i class="fas fa-file-contract me-3"></i>
-                                Gestión de Actas de Fiscalización DRTC
-                            </h1>
-                            <p class="mb-0 fs-5 text-white opacity-75">
-                                <i class="fas fa-user me-2"></i>Inspector: <strong>{{ Auth::user()->name }}</strong>
-                                <span class="ms-3">
-                                    <i class="fas fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Botones de acción principales -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0" style="border-radius: 20px;">
-                <div class="card-header bg-drtc-orange text-white">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-tasks me-2"></i>Acciones de Fiscalización</h5>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                            <div class="action-btn" onclick="abrirModal('modal-nueva-acta')">
-                                <i class="fas fa-plus-circle"></i>
-                                <strong>Nueva Acta</strong>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                            <div class="action-btn" onclick="abrirModal('modal-editar-acta')">
-                                <i class="fas fa-edit"></i>
-                                <strong>Editar Acta</strong>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                            <div class="action-btn" onclick="abrirModal('modal-consultas')">
-                                <i class="fas fa-search"></i>
-                                <strong>Consultas</strong>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                            <div class="action-btn" onclick="abrirModal('modal-eliminar-acta')">
-                                <i class="fas fa-trash-alt"></i>
-                                <strong>Eliminar Acta</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filtros de búsqueda -->
-    <div class="card mb-4" style="border-color: #ff8c00;">
-        <div class="card-header" style="background-color: #ff8c00; color: white;">
-            <h5 class="mb-0">
-                <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="filtro_numero" class="form-label">N° de Acta</label>
-                    <input type="text" class="form-control" id="filtro_numero" placeholder="ACT-2025-001">
-                </div>
-                <div class="col-md-3">
-                    <label for="filtro_placa" class="form-label">Placa</label>
-                    <input type="text" class="form-control" id="filtro_placa" placeholder="ABC-123">
-                </div>
-                <div class="col-md-3">
-                    <label for="filtro_fecha" class="form-label">Fecha</label>
-                    <input type="date" class="form-control" id="filtro_fecha">
-                </div>
-                <div class="col-md-3">
-                    <label for="filtro_estado" class="form-label">Estado</label>
-                    <select class="form-select" id="filtro_estado">
-                        <option value="">Todos</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="pagada">Pagada</option>
-                        <option value="anulada">Anulada</option>
-                        <option value="en_cobranza">En Cobranza</option>
-                    </select>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <button class="btn btn-primary me-2">
-                        <i class="fas fa-search me-2"></i>Buscar
-                    </button>
-                    <button class="btn btn-outline-secondary">
-                        <i class="fas fa-times me-2"></i>Limpiar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Estadísticas rápidas (valores reales desde la BD) -->
     @php
-        // Obtener contadores actuales desde la base de datos de forma defensiva
+        // Detección flexible del rol del usuario para soportar distintos esquemas (role/rol/type/tipo)
         try {
-            $totalActas = DB::table('actas')->count();
-            $pendientes = DB::table('actas')->where('estado', 'pendiente')->count();
-            $pagadas = DB::table('actas')->where('estado', 'pagada')->count();
-            $anuladas = DB::table('actas')->where('estado', 'anulada')->count();
-            // En cobranza puede almacenarse con ligeras variantes
-            $enCobranza = DB::table('actas')
-                ->where(function($q){
-                    $q->where('estado', 'en_cobranza')
-                      ->orWhere('estado', 'en cobranza')
-                      ->orWhere('estado', 'encobranza');
-                })->count();
+            $u = Auth::user();
+            $role = $u->role ?? $u->rol ?? $u->type ?? $u->tipo ?? null;
         } catch (\Exception $e) {
-            // Fallback a cero si hay problema con la consulta
-            $totalActas = 0; $pendientes = 0; $pagadas = 0; $enCobranza = 0; $anuladas = 0;
+            $role = null;
         }
     @endphp
 
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 id="dashboard-actas-pendientes">{{ $pendientes }}</h4>
-                            <p class="mb-0">Pendientes</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 id="dashboard-actas-pagadas">{{ $pagadas }}</h4>
-                            <p class="mb-0">Pagadas</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x"></i>
+    {{-- Mostrar paneles por rol en una sola vista (administrador / ventanilla / fiscalizador) --}}
+    @if($role === 'administrador')
+        <!-- Panel Administrador (minimal, enlaces rápidos) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-drtc-navy text-white shadow-lg border-0">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="drtc-logo"><i class="fas fa-user-shield"></i></div>
+                            </div>
+                            <div class="col">
+                                <h2 class="mb-1 fw-bold">PANEL DE ADMINISTRACIÓN</h2>
+                                <div class="d-flex align-items-center text-warning">
+                                    <i class="fas fa-user-shield me-2"></i>
+                                    <span class="me-3">Administrador: {{ Auth::user()->name }}</span>
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span class="me-3">{{ date('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                            <div class="col-auto text-end">
+                                <a href="{{ route('users.index') }}" class="btn btn-outline-light">Gestionar Usuarios</a>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-danger">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 id="dashboard-actas-en-cobranza">{{ $enCobranza }}</h4>
-                            <p class="mb-0">En Cobranza</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-secondary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 id="dashboard-actas-anuladas">{{ $anuladas }}</h4>
-                            <p class="mb-0">Anuladas</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-times-circle fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Tabla de actas -->
-    <div class="card">
-        <div class="card-header" style="background-color: #fff3e0; border-color: #ff8c00;">
-            <h5 class="mb-0" style="color: #ff8c00;">
-                <i class="fas fa-list me-2"></i>Lista de Actas de Contra
-            </h5>
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-plus fa-3x text-drtc-orange mb-3"></i>
+                        <h5 class="card-title">Gestionar Usuarios</h5>
+                        <a href="{{ route('users.index') }}" class="btn btn-primary">Gestionar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-cog fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Configuración</h5>
+                        <a href="#" class="btn btn-success">Configurar</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-hashtag fa-3x text-secondary mb-3"></i>
+                        <h5 class="card-title">Numeración Actas</h5>
+                        <button id="btn-reset-actas" class="btn btn-outline-secondary btn-sm">Reiniciar números</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead style="background-color: #ff8c00; color: white;">
-                        <tr>
-                            <th>N° Acta</th>
-                            <th>Fecha/Hora</th>
-                            <th>Placa</th>
-                            <th>Conductor</th>
-                            <th>Infracción</th>
-                            <th>Monto</th>
-                            <th>Vencimiento</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            // Obtener las últimas 10 actas reales de la base de datos
-                            try {
-                                $recentActas = DB::table('actas')->orderBy('created_at', 'desc')->limit(10)->get();
-                            } catch (\Exception $e) {
-                                $recentActas = collect();
-                                logger()->error('Error obteniendo actas para la vista: ' . $e->getMessage());
-                            }
-                        @endphp
 
-                        @if($recentActas->isEmpty())
+    @elseif($role === 'ventanilla')
+        <!-- Panel Ventanilla -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-drtc-light text-dark shadow-lg border-0">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="drtc-logo"><i class="fas fa-window-maximize"></i></div>
+                            </div>
+                            <div class="col">
+                                <h2 class="mb-1 fw-bold text-drtc-navy">SISTEMA DE VENTANILLA</h2>
+                                <div class="d-flex align-items-center text-drtc-navy">
+                                    <i class="fas fa-user-tie me-2"></i>
+                                    <span class="me-3">Operador: {{ Auth::user()->name }}</span>
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span class="me-3">{{ date('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-drtc-orange">
+                    <div class="card-body text-center">
+                        <h6>Atenciones Hoy</h6>
+                        <h3>{{ $stats['atenciones_hoy'] ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h6>En Cola</h6>
+                        <h3>{{ $stats['cola_espera'] ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h6>Completados</h6>
+                        <h3>{{ $stats['tramites_completados'] ?? 0 }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h6>Tiempo Promedio</h6>
+                        <h3>{{ $stats['tiempo_promedio'] ?? 15 }}m</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <a href="{{ route('inspecciones.create') }}" class="btn btn-warning w-100">Nueva Inspección</a>
+            </div>
+            <div class="col-md-6">
+                <a href="{{ route('fiscalizador.actas-contra') }}" class="btn btn-success w-100">Ver Actas</a>
+            </div>
+        </div>
+
+    @else
+        <!-- Default: Fiscalizador (vista original) -->
+        <!-- Header principal -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0" style="background: linear-gradient(135deg, var(--drtc-orange), var(--drtc-dark-orange)); border-radius: 20px;">
+                    <div class="card-body py-4">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h1 class="mb-2 fw-bold text-white">
+                                    <i class="fas fa-file-contract me-3"></i>
+                                    Gestión de Actas de Fiscalización DRTC
+                                </h1>
+                                <p class="mb-0 fs-5 text-white opacity-75">
+                                    <i class="fas fa-user me-2"></i>Inspector: <strong>{{ Auth::user()->name }}</strong>
+                                    <span class="ms-3">
+                                        <i class="fas fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de acción principales -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0" style="border-radius: 20px;">
+                    <div class="card-header bg-drtc-orange text-white">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-tasks me-2"></i>Acciones de Fiscalización</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div class="action-btn" onclick="abrirModal('modal-nueva-acta')">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <strong>Nueva Acta</strong>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div class="action-btn" onclick="abrirModal('modal-editar-acta')">
+                                    <i class="fas fa-edit"></i>
+                                    <strong>Editar Acta</strong>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div class="action-btn" onclick="abrirModal('modal-consultas')">
+                                    <i class="fas fa-search"></i>
+                                    <strong>Consultas</strong>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div class="action-btn" onclick="abrirModal('modal-eliminar-acta')">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <strong>Eliminar Acta</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros de búsqueda -->
+        <div class="card mb-4" style="border-color: #ff8c00;">
+            <div class="card-header" style="background-color: #ff8c00; color: white;">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros de Búsqueda
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="filtro_numero" class="form-label">N° de Acta</label>
+                        <input type="text" class="form-control" id="filtro_numero" placeholder="ACT-2025-001">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtro_placa" class="form-label">Placa</label>
+                        <input type="text" class="form-control" id="filtro_placa" placeholder="ABC-123">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtro_fecha" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" id="filtro_fecha">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filtro_estado" class="form-label">Estado</label>
+                        <select class="form-select" id="filtro_estado">
+                            <option value="">Todos</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagada">Pagada</option>
+                            <option value="anulada">Anulada</option>
+                            <option value="en_cobranza">En Cobranza</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        <button class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas rápidas (valores reales desde la BD) -->
+        @php
+            try {
+                $totalActas = DB::table('actas')->count();
+                $pendientes = DB::table('actas')->where('estado', 'pendiente')->count();
+                $pagadas = DB::table('actas')->where('estado', 'pagada')->count();
+                $anuladas = DB::table('actas')->where('estado', 'anulada')->count();
+                $enCobranza = DB::table('actas')
+                    ->where(function($q){
+                        $q->where('estado', 'en_cobranza')
+                          ->orWhere('estado', 'en cobranza')
+                          ->orWhere('estado', 'encobranza');
+                    })->count();
+            } catch (\Exception $e) {
+                $totalActas = 0; $pendientes = 0; $pagadas = 0; $enCobranza = 0; $anuladas = 0;
+            }
+        @endphp
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 id="dashboard-actas-pendientes">{{ $pendientes }}</h4>
+                                <p class="mb-0">Pendientes</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-clock fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 id="dashboard-actas-pagadas">{{ $pagadas }}</h4>
+                                <p class="mb-0">Pagadas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 id="dashboard-actas-en-cobranza">{{ $enCobranza }}</h4>
+                                <p class="mb-0">En Cobranza</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-exclamation-triangle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-secondary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 id="dashboard-actas-anuladas">{{ $anuladas }}</h4>
+                                <p class="mb-0">Anuladas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-times-circle fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de actas -->
+        <div class="card">
+            <div class="card-header" style="background-color: #fff3e0; border-color: #ff8c00;">
+                <h5 class="mb-0" style="color: #ff8c00;">
+                    <i class="fas fa-list me-2"></i>Lista de Actas de Contra
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead style="background-color: #ff8c00; color: white;">
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    No hay actas para mostrar en este momento
-                                </td>
+                                <th>N° Acta</th>
+                                <th>Fecha/Hora</th>
+                                <th>Placa</th>
+                                <th>Conductor</th>
+                                <th>Infracción</th>
+                                <th>Monto</th>
+                                <th>Vencimiento</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
-                        @else
-                            @foreach($recentActas as $acta)
-                                @php
-                                    $fecha = $acta->fecha_infraccion ?? $acta->fecha_intervencion ?? ($acta->created_at ?? null);
-                                    try {
-                                        $fechaForm = $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : 'N/A';
-                                    } catch (\Exception $ex) {
-                                        $fechaForm = 'N/A';
-                                    }
-                                    $hora = $acta->hora_infraccion ?? $acta->hora_intervencion ?? '';
-                                    $empresa = $acta->razon_social ?? $acta->nombre_conductor ?? 'N/A';
-                                    $documento = $acta->ruc_dni ?? 'N/A';
-                                    $placa = $acta->placa_vehiculo ?? $acta->placa ?? 'N/A';
-                                    $ubicacion = $acta->ubicacion ?? $acta->lugar_intervencion ?? 'N/A';
-                                    $monto = number_format((float)($acta->monto_multa ?? 0), 2, '.', ',');
-                                @endphp
+                        </thead>
+                        <tbody>
+                            @php
+                                try {
+                                    $recentActas = DB::table('actas')->orderBy('created_at', 'desc')->limit(10)->get();
+                                } catch (\Exception $e) {
+                                    $recentActas = collect();
+                                    logger()->error('Error obteniendo actas para la vista: ' . $e->getMessage());
+                                }
+                            @endphp
+
+                            @if($recentActas->isEmpty())
                                 <tr>
-                                    <td class="fw-bold">{{ $acta->numero_acta ?? 'N/A' }}</td>
-                                    <td>{{ $fechaForm }} {{ $hora ? ' ' . $hora : '' }}</td>
-                                    <td><span class="badge bg-dark">{{ $placa }}</span></td>
-                                    <td>{{ $empresa }}</td>
-                                    <td>{{ isset($acta->codigo_infraccion) && $acta->codigo_infraccion ? $acta->codigo_infraccion . ' - ' : '' }}{{ \Illuminate\Support\Str::limit($acta->descripcion ?? ($acta->descripcion_hechos ?? ''), 40) }}</td>
-                                    <td>{{ $ubicacion != 'N/A' ? (Str::limit($ubicacion, 30) . (strlen($ubicacion) > 30 ? '...' : '')) : 'N/A' }}</td>
-                                    <td><strong>S/ {{ $monto }}</strong></td>
-                                    <td>
-                                        @if(($acta->estado ?? '') === 'pendiente')
-                                            <span class="badge bg-warning">Pendiente</span>
-                                        @elseif(($acta->estado ?? '') === 'pagada')
-                                            <span class="badge bg-success">Pagada</span>
-                                        @elseif(($acta->estado ?? '') === 'anulada')
-                                            <span class="badge bg-secondary">Anulada</span>
-                                        @elseif(($acta->estado ?? '') === 'en_cobranza' || ($acta->estado ?? '') === 'en cobranza' || ($acta->estado ?? '') === 'en_cobranza')
-                                            <span class="badge bg-danger">En Cobranza</span>
-                                        @else
-                                            <span class="badge bg-info">{{ $acta->estado ?? 'Sin estado' }}</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="/actas/{{ $acta->id }}" class="btn btn-sm btn-outline-primary" title="Ver detalle" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-eye"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/editar" class="btn btn-sm btn-outline-success" title="Editar" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-edit"></i></a>
-                                        <a href="/actas/{{ $acta->id }}/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-print"></i></a>
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No hay actas para mostrar en este momento
                                     </td>
                                 </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
+                            @else
+                                @foreach($recentActas as $acta)
+                                    @php
+                                        $fecha = $acta->fecha_infraccion ?? $acta->fecha_intervencion ?? ($acta->created_at ?? null);
+                                        try {
+                                            $fechaForm = $fecha ? \Carbon\Carbon::parse($fecha)->format('d/m/Y') : 'N/A';
+                                        } catch (\Exception $ex) {
+                                            $fechaForm = 'N/A';
+                                        }
+                                        $hora = $acta->hora_infraccion ?? $acta->hora_intervencion ?? '';
+                                        $empresa = $acta->razon_social ?? $acta->nombre_conductor ?? 'N/A';
+                                        $documento = $acta->ruc_dni ?? 'N/A';
+                                        $placa = $acta->placa_vehiculo ?? $acta->placa ?? 'N/A';
+                                        $ubicacion = $acta->ubicacion ?? $acta->lugar_intervencion ?? 'N/A';
+                                        $monto = number_format((float)($acta->monto_multa ?? 0), 2, '.', ',');
+                                    @endphp
+                                    <tr>
+                                        <td class="fw-bold">{{ $acta->numero_acta ?? 'N/A' }}</td>
+                                        <td>{{ $fechaForm }} {{ $hora ? ' ' . $hora : '' }}</td>
+                                        <td><span class="badge bg-dark">{{ $placa }}</span></td>
+                                        <td>{{ $empresa }}</td>
+                                        <td>{{ isset($acta->codigo_infraccion) && $acta->codigo_infraccion ? $acta->codigo_infraccion . ' - ' : '' }}{{ \Illuminate\Support\Str::limit($acta->descripcion ?? ($acta->descripcion_hechos ?? ''), 40) }}</td>
+                                        <td>{{ $ubicacion != 'N/A' ? (Str::limit($ubicacion, 30) . (strlen($ubicacion) > 30 ? '...' : '')) : 'N/A' }}</td>
+                                        <td><strong>S/ {{ $monto }}</strong></td>
+                                        <td>
+                                            @if(($acta->estado ?? '') === 'pendiente')
+                                                <span class="badge bg-warning">Pendiente</span>
+                                            @elseif(($acta->estado ?? '') === 'pagada')
+                                                <span class="badge bg-success">Pagada</span>
+                                            @elseif(($acta->estado ?? '') === 'anulada')
+                                                <span class="badge bg-secondary">Anulada</span>
+                                            @elseif(($acta->estado ?? '') === 'en_cobranza' || ($acta->estado ?? '') === 'en cobranza' || ($acta->estado ?? '') === 'en_cobranza')
+                                                <span class="badge bg-danger">En Cobranza</span>
+                                            @else
+                                                <span class="badge bg-info">{{ $acta->estado ?? 'Sin estado' }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="/actas/{{ $acta->id }}" class="btn btn-sm btn-outline-primary" title="Ver detalle" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-eye"></i></a>
+                                            <a href="/actas/{{ $acta->id }}/editar" class="btn btn-sm btn-outline-success" title="Editar" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-edit"></i></a>
+                                            <a href="/actas/{{ $acta->id }}/imprimir" class="btn btn-sm btn-outline-info" title="Imprimir" onclick="event.stopPropagation(); window.location.href=this.href; return false;"><i class="fas fa-print"></i></a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
+
+    @endif
 </div>
 
 <!-- (Removed duplicate Bootstrap modal 'nuevaActaModal' to avoid duplicate/unnamed inputs.) -->
@@ -1851,7 +1989,7 @@ if (_infraccionEl && _montoEl) {
                                     <label class="form-label fw-bold text-info">Estado del Acta:</label>
                                     <select class="form-select border-info" name="estado">
                                         <option value="">Todos los estados</option>
-                                        <option value="registrada">Registrada</option>
+                                        <option value="pendiente">Registrada</option>
                                         <option value="procesada">Procesada</option>
                                         <option value="pendiente">Pendiente</option>
                                         <option value="anulada">Anulada</option>

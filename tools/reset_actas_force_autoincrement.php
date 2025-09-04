@@ -17,17 +17,31 @@ try {
     $count = (int) $stmt->fetchColumn();
     echo "actas row count before truncate: {$count}\n";
 
-    echo "Disabling foreign key checks...\n";
-    $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+    echo "Attempting DELETE from actas inside transaction...\n";
+    try {
+        $pdo->beginTransaction();
+        $pdo->exec('DELETE FROM actas');
+        $pdo->commit();
 
-    echo "Truncating table actas...\n";
-    $pdo->exec('TRUNCATE TABLE actas');
+        // ALTER outside transaction
+        $pdo->exec('ALTER TABLE actas AUTO_INCREMENT = 1');
+    } catch (PDOException $e) {
+        // Some MySQL setups may still block DELETE due to FK constraints. As a last resort,
+        // try disabling foreign key checks and run TRUNCATE (destructive). Log and continue.
+        try {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+        } catch (PDOException $__rb) {
+            // ignore
+        }
 
-    echo "Re-enabling foreign key checks...\n";
-    $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
-
-    echo "Setting AUTO_INCREMENT = 1...\n";
-    $pdo->exec('ALTER TABLE actas AUTO_INCREMENT = 1');
+        fwrite(STDERR, "DELETE failed: " . $e->getMessage() . "\nTrying TRUNCATE with FK checks disabled...\n");
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+        $pdo->exec('TRUNCATE TABLE actas');
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        $pdo->exec('ALTER TABLE actas AUTO_INCREMENT = 1');
+    }
 
     $stmt2 = $pdo->query('SELECT COUNT(*) AS c FROM actas');
     $count2 = (int) $stmt2->fetchColumn();

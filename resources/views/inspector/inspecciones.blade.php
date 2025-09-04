@@ -31,7 +31,7 @@
                     <select class="form-select" id="filtro_estado" name="filtro_estado">
                         <option value="">Todos los estados</option>
                         <option value="pendiente">Pendiente</option>
-                        <option value="completada">Completada</option>
+                        <option value="procesada">Completada</option>
                         <option value="observada">Con Observaciones</option>
                     </select>
                 </div>

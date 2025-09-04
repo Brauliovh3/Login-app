@@ -205,13 +205,8 @@ class DashboardController extends Controller
                 }
             }
             
-            // Si no hay datos, usar valores por defecto
-            if ($totalActas == 0) {
-                $totalActas = 89;
-                $actasProcesadas = 67;
-                $actasPendientes = 22;
-                $totalMultas = 45000;
-            }
+            // No introducir valores por defecto aquí: si la tabla está vacía, devolver los conteos reales (posiblemente 0)
+            // Esto asegura que el dashboard refleje exactamente los datos de la base.
             
             $stats = [
                 'total_infracciones' => $totalActas,
@@ -237,6 +232,50 @@ class DashboardController extends Controller
         $notifications = collect([]);
         
         return view('fiscalizador.dashboard', compact('stats', 'notifications'));
+    }
+
+    /**
+     * API endpoint que devuelve las mismas estadísticas que el dashboard del fiscalizador en JSON
+     */
+    public function apiFiscalizadorStats()
+    {
+        try {
+            // Reusar la lógica existente del método fiscalizadorDashboard para construir $stats
+            $totalActas = 0;
+            $actasProcesadas = 0;
+            $actasPendientes = 0;
+            $totalMultas = 0;
+
+            if (Schema::hasTable('actas')) {
+                $totalActas = DB::table('actas')->count();
+
+                if (Schema::hasColumn('actas', 'estado')) {
+                    $actasProcesadas = DB::table('actas')->where('estado', 1)->count();
+                    $actasPendientes = DB::table('actas')->where('estado', 0)->count();
+                } else {
+                    $actasProcesadas = (int)($totalActas * 0.75);
+                    $actasPendientes = $totalActas - $actasProcesadas;
+                }
+
+                if (Schema::hasColumn('actas', 'monto_multa')) {
+                    $totalMultas = DB::table('actas')->sum('monto_multa') ?: 0;
+                }
+            }
+
+            $stats = [
+                'total_infracciones' => $totalActas,
+                'infracciones_procesadas' => $actasProcesadas,
+                'infracciones_pendientes' => $actasPendientes,
+                'total_multas' => $totalMultas
+            ];
+
+            $datosAdicionales = $this->obtenerDatosAdicionalestFiscalizador();
+            $stats = array_merge($stats, $datosAdicionales);
+
+            return response()->json(['success' => true, 'stats' => $stats]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function ventanillaDashboard()
@@ -370,7 +409,7 @@ class DashboardController extends Controller
                 
                 if (Schema::hasColumn('actas', 'estado')) {
                     $actasCompletadas = DB::table('actas')
-                        ->whereIn('estado', ['pagada', 'completada'])
+                        ->whereIn('estado', ['pagada', 'procesada'])
                         ->count();
                 }
                 

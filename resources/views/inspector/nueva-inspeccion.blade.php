@@ -228,7 +228,7 @@
                                 <label for="estado" class="form-label">Estado de la Inspección <span class="text-danger">*</span></label>
                                 <select class="form-select" id="estado" name="estado" required>
                                     <option value="pendiente">Pendiente</option>
-                                    <option value="completada" selected>Completada</option>
+                                    <option value="procesada" selected>Completada</option>
                                     <option value="observada">Con Observaciones</option>
                                 </select>
                             </div>

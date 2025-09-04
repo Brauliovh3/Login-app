@@ -36,11 +36,24 @@ class ActasMaintenanceController extends Controller
             return response()->json(['ok' => false, 'message' => 'La tabla contiene registros. Envíe {force:true} para truncar (operación destructiva).', 'rows' => $count], 400);
         }
 
-        // Force: truncate the table (destructive)
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        DB::table('actas')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Force: destructive reset. Use DELETE (respects FK constraints) then reset AUTO_INCREMENT.
+        try {
+            DB::beginTransaction();
+            DB::table('actas')->delete();
+            DB::commit();
 
-        return response()->json(['ok' => true, 'message' => 'Tabla actas truncada y AUTO_INCREMENT restablecido.']);
+            $table = DB::getTablePrefix() . 'actas';
+            DB::statement("ALTER TABLE {$table} AUTO_INCREMENT = 1");
+            return response()->json(['ok' => true, 'message' => 'Tabla actas eliminada y AUTO_INCREMENT restablecido.']);
+        } catch (\Exception $e) {
+            try {
+                if (DB::getPdo() && DB::getPdo()->inTransaction()) {
+                    DB::rollBack();
+                }
+            } catch (\Throwable $__t) {
+                // ignore
+            }
+            return response()->json(['ok' => false, 'message' => 'Error al reiniciar: ' . $e->getMessage()], 500);
+        }
     }
 }
