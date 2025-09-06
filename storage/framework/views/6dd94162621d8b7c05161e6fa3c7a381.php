@@ -90,30 +90,30 @@
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="stats-number"><?php echo e($stats['total_infracciones'] ?? 89); ?></div>
+                <div class="stats-number" id="card-total-infracciones"><?php echo e($stats['total_infracciones'] ?? 0); ?></div>
                 <div class="stats-label">Total Infracciones</div>
-                <small class="d-block mt-2"><i class="fas fa-arrow-up trend-up"></i> +12% este mes</small>
+                <small class="d-block mt-2"><i class="fas fa-arrow-up trend-up"></i> <span id="card-total-infracciones-trend">+12% este mes</span></small>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="stats-number"><?php echo e($stats['infracciones_procesadas'] ?? 0); ?></div>
+                <div class="stats-number" id="card-procesadas"><?php echo e($stats['infracciones_procesadas'] ?? 0); ?></div>
                 <div class="stats-label">Procesadas</div>
-                <small class="d-block mt-2"><i class="fas fa-check-circle"></i> <?php echo e($stats['eficiencia_procesamiento'] ?? 75); ?>% completado</small>
+                <small class="d-block mt-2"><i class="fas fa-check-circle"></i> <span id="card-eficiencia"><?php echo e($stats['eficiencia_procesamiento'] ?? 75); ?></span>% completado</small>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="stats-number"><?php echo e($stats['infracciones_pendientes'] ?? 0); ?></div>
+                <div class="stats-number" id="card-pendientes"><?php echo e($stats['infracciones_pendientes'] ?? 0); ?></div>
                 <div class="stats-label">Pendientes</div>
-                <small class="d-block mt-2"><i class="fas fa-clock text-warning"></i> En proceso</small>
+                <small class="d-block mt-2"><i class="fas fa-clock text-warning"></i> <span id="card-pendientes-label">En proceso</span></small>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="stats-number">S/<?php echo e(number_format($stats['total_multas'] ?? 0)); ?></div>
+                <div class="stats-number" id="card-total-multas">S/<?php echo e(number_format($stats['total_multas'] ?? 0)); ?></div>
                 <div class="stats-label">Total Multas</div>
-                <small class="d-block mt-2"><i class="fas fa-arrow-up trend-up"></i> +8% vs anterior</small>
+                <small class="d-block mt-2"><i class="fas fa-arrow-up trend-up"></i> <span id="card-total-multas-trend">+8% vs anterior</span></small>
             </div>
         </div>
     </div>
@@ -277,6 +277,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
 });
+</script>
+
+<script>
+// Poll the API endpoint every 60 seconds to refresh dashboard cards with real data
+function fetchFiscalizadorStats() {
+    fetch('/api/dashboard/fiscalizador', { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(result => {
+            if (!result.success || !result.stats) return;
+            const s = result.stats;
+
+            // Update numeric cards
+            const setText = (id, val, zeroText=null) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if ((val === null || val === undefined || Number(val) === 0) && zeroText) {
+                    el.textContent = zeroText;
+                } else {
+                    if (typeof val === 'number') el.textContent = val;
+                    else el.textContent = val;
+                }
+            };
+
+            setText('card-total-infracciones', s.total_infracciones ?? 0, 'Sin actas');
+            setText('card-procesadas', s.infracciones_procesadas ?? 0, '0');
+            setText('card-pendientes', s.infracciones_pendientes ?? 0, '0');
+            setText('card-total-multas', 'S/' + Number(s.total_multas ?? 0).toLocaleString(), 'S/0');
+
+            // Eficiencia
+            const ef = document.getElementById('card-eficiencia');
+            if (ef) ef.textContent = (s.eficiencia_procesamiento ?? s.eficiencia_procesamiento ?? 0);
+
+            // Update small labels if needed
+            const pendientesLabel = document.getElementById('card-pendientes-label');
+            if (pendientesLabel) pendientesLabel.textContent = ((s.infracciones_pendientes ?? 0) > 0) ? 'En proceso' : 'Sin pendientes';
+
+        }).catch(e => {
+            console.warn('No se pudo obtener stats del dashboard:', e);
+        });
+}
+
+// initial fetch and set interval
+fetchFiscalizadorStats();
+setInterval(fetchFiscalizadorStats, 60000);
 </script>
 
 <?php $__env->stopSection(); ?>

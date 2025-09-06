@@ -13,15 +13,42 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Asegurar que el usuario principal sea DEPOOL (idempotente)
+        // usuario Administrador
         User::updateOrCreate([
-            'username' => 'DEPOOL'
+            'username' => 'ADMIN'
         ], [
-            'name' => 'DEPOOL',
-            'email' => 'velasquezhuillcab@gmail.com',
-            // Cambia la contraseña por la que prefieras
-            'password' => Hash::make('depool123'),
+            'name' => 'Administrador',
+            'email' => 'admin2@example.com',
+            'password' => Hash::make('admin123'),
             'role' => 'administrador',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
+        ]);
+
+        // Usuario Fiscalizador
+        User::updateOrCreate([
+            'username' => 'FISCAL'
+        ], [
+            'name' => 'Fiscalizador',
+            'email' => 'fiscal1@example.com',
+            'password' => Hash::make('fiscal123'),
+            'role' => 'fiscalizador',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
+        ]);
+
+        // Usuario Ventanilla
+        User::updateOrCreate([
+            'username' => 'VENTA'
+        ], [
+            'name' => 'Ventanilla',
+            'email' => 'ventanilla1@example.com',
+            'password' => Hash::make('ventanilla123'),
+            'role' => 'ventanilla',
             'status' => 'approved',
             'approved_at' => now(),
             'approved_by' => 1,

@@ -575,17 +575,18 @@
                         </ul>
                     </li>
 
+
                     <hr class="sidebar-divider" style="border-color: rgba(255, 255, 255, 0.1);">
                     <div class="sidebar-heading" style="color: rgba(255, 255, 255, 0.5); font-size: 0.7rem; padding: 0 1.5rem;">
                         OTROS MÓDULOS
                     </div>
 
-                    <li class="nav-item">
+                    <!-- Menú profesional y desplegable para Carga y Pasajero -->
+                    <li class="nav-item dropdown-hover">
                         <a class="nav-link {{ request()->routeIs('carga-pasajero.*') ? 'active' : '' }}" href="{{ route('carga-pasajero.index') }}">
                             <i class="fas fa-fw fa-truck-loading"></i>
                             <span>Carga y Pasajero</span>
                         </a>
-                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('fiscalizador.empresas') ? 'active' : '' }}" href="{{ route('fiscalizador.empresas') }}">

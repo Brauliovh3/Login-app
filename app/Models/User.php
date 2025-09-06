@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Notification;
 
 class User extends Authenticatable
 {
@@ -123,5 +124,15 @@ class User extends Authenticatable
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+    /**
+     * Verificar si el usuario tiene uno o varios roles
+     */
+    public function hasRole($roles)
+    {
+        if (is_array($roles)) {
+            return in_array($this->role, $roles);
+        }
+        return $this->role === $roles;
     }
 }
