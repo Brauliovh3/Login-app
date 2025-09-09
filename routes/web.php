@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProxyDniController;
 
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ActaController;
@@ -15,6 +16,9 @@ use App\Http\Controllers\CargaPasajeroController;
 Route::get('/', function () {
     return \Illuminate\Support\Facades\Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
+
+// Proxy seguro para consulta de DNI (usa PERUDEVS_KEY en .env)
+Route::get('/api/proxy-dni', [ProxyDniController::class, 'consulta']);
 
 // Ruta de prueba para el formulario de actas
 Route::get('/test-formulario', function () {
@@ -34,8 +38,84 @@ Route::get('/register/success', function () {
 
 // Rutas protegidas por autenticación y aprobación
 Route::middleware(['auth', 'user.approved'])->group(function () {
-    // Dashboard principal - redirige según el rol
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard principal - vista única con secciones condicionadas por rol
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    // Guardar acta (closure para evitar controlador en este flujo)
+    Route::post('/actas', function (\Illuminate\Http\Request $request) {
+        $data = $request->all();
+
+        $validator = \Illuminate\Support\Facades\Validator::make($data, [
+            'numero_acta' => 'required|string',
+            'fecha_intervencion' => 'required|date',
+            'hora_intervencion' => 'required',
+            'tipo_agente' => 'required|string',
+            'placa' => 'required|string',
+            'razon_social' => 'required|string',
+            'ruc_dni' => 'required|string',
+            'descripcion_hechos' => 'required|string',
+            'calificacion' => 'required|in:Leve,Grave,Muy Grave',
+            'monto_multa' => 'nullable|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $insert = [
+                'numero_acta' => $data['numero_acta'],
+                'codigo_ds' => $data['codigo_ds'] ?? '017-2009-MTC',
+                'lugar_intervencion' => $data['lugar_intervencion'] ?? null,
+                'fecha_intervencion' => $data['fecha_intervencion'],
+                'hora_intervencion' => $data['hora_intervencion'],
+                'inspector_responsable' => $data['inspector_responsable'] ?? null,
+                'tipo_servicio' => $data['tipo_servicio'] ?? null,
+                'tipo_agente' => $data['tipo_agente'],
+                'placa' => $data['placa'],
+                'placa_vehiculo' => $data['placa_vehiculo'] ?? null,
+                'razon_social' => $data['razon_social'],
+                'ruc_dni' => $data['ruc_dni'],
+                'nombre_conductor' => $data['nombre_conductor'] ?? null,
+                'licencia' => $data['licencia'] ?? $data['licencia_conductor'] ?? null,
+                'clase_licencia' => $data['clase_licencia'] ?? null,
+                'origen' => $data['origen'] ?? null,
+                'destino' => $data['destino'] ?? null,
+                'numero_personas' => isset($data['numero_personas']) ? (int)$data['numero_personas'] : null,
+                'ubicacion' => $data['ubicacion'] ?? null,
+                'conductor_id' => $data['conductor_id'] ?? null,
+                'infraccion_id' => $data['infraccion_id'] ?? null,
+                'inspector_id' => $data['inspector_id'] ?? null,
+                'vehiculo_id' => $data['vehiculo_id'] ?? null,
+                'descripcion_hechos' => $data['descripcion_hechos'],
+                'medios_probatorios' => $data['medios_probatorios'] ?? null,
+                'calificacion' => $data['calificacion'],
+                'medida_administrativa' => $data['medida_administrativa'] ?? null,
+                'sancion' => $data['sancion'] ?? null,
+                'monto_multa' => isset($data['monto_multa']) ? (float)$data['monto_multa'] : null,
+                'observaciones_intervenido' => $data['observaciones_intervenido'] ?? null,
+                'observaciones_inspector' => $data['observaciones_inspector'] ?? null,
+                'observaciones' => $data['observaciones'] ?? null,
+                'estado' => $data['estado'] ?? 'pendiente',
+                'user_id' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            \Illuminate\Support\Facades\DB::table('actas')->insert($insert);
+
+            \Illuminate\Support\Facades\DB::commit();
+            return redirect()->back()->with('success', 'Acta guardada correctamente.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Log::error('Error guardando acta (closure): ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al guardar acta: ' . $e->getMessage());
+        }
+    })->name('actas.store');
     
     // Perfil y configuración del usuario
     Route::get('/perfil', [UserController::class, 'perfil'])->name('user.perfil');
@@ -249,13 +329,13 @@ Route::middleware(['auth', 'user.approved'])->get('/admin/super/debug-auth', fun
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->prefix('api')->group(function () {
     // Rutas para Actas con seguimiento automático de tiempo
     Route::post('/actas', [ActaController::class, 'store']);
+    // Buscar acta por criterio (GET) debe registrarse antes que la ruta con parámetro {id}
+    Route::get('/actas/buscar', [ActaController::class, 'buscar']);
     Route::get('/actas/{id}', [ActaController::class, 'show']);
     Route::get('/actas/pendientes', [ActaController::class, 'getPendientes']);
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
     Route::post('/actas/{id}/progreso', [ActaController::class, 'guardarProgreso']);
-    // Buscar acta por criterio (GET)
-    Route::get('/actas/buscar', [ActaController::class, 'buscar']);
     //Eliminar acta por ID (DELETE)
     Route::delete('/actas/{id}', [ActaController::class, 'destroy']);
 

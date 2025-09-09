@@ -7,108 +7,68 @@ use Illuminate\Support\Facades\DB;
 try {
     $year = date('Y');
     $prefix = 'DRTC-APU-' . $year . '-';
-    // Preferir la regla sufijo = id - 1: leer el next AUTO_INCREMENT y restar 1
-    try {
-        $tbl = DB::selectOne("SELECT AUTO_INCREMENT as next_id FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'actas'", [env('DB_DATABASE')]);
-        $nextId = ($tbl && isset($tbl->next_id) && is_numeric($tbl->next_id)) ? (int)$tbl->next_id : null;
 
-        // Si no hay filas reales en la tabla, el primer número de acta debe ser 1
-        $countActas = DB::table('actas')->count();
-        if ($countActas === 0) {
-            $next = 1;
-        } elseif ($nextId !== null) {
-            // Mantener la regla sufijo = id - 1, pero garantizar al menos 1
-            $sufijo = max(1, $nextId - 1);
-            $next = $sufijo;
-        } else {
-            // Fallback: usar MAX del sufijo numérico
+    // Intentar obtener AUTO_INCREMENT y calcular sufijo, con fallbacks
+    $countActas = DB::table('actas')->count();
+    if ($countActas === 0) {
+        $next = 1;
+    } else {
+        try {
+            $tbl = DB::selectOne("SELECT AUTO_INCREMENT as next_id FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'actas'", [env('DB_DATABASE')]);
+            $nextId = ($tbl && isset($tbl->next_id) && is_numeric($tbl->next_id)) ? (int)$tbl->next_id : null;
+            if ($nextId !== null) {
+                $sufijo = max(1, $nextId - 1);
+                $next = $sufijo;
+            } else {
+                $res = DB::selectOne("SELECT MAX(CAST(SUBSTRING_INDEX(numero_acta, '-', -1) AS UNSIGNED)) as max_suf FROM `actas` WHERE numero_acta LIKE ?", [$prefix . '%']);
+                $max = ($res && isset($res->max_suf) && is_numeric($res->max_suf)) ? (int)$res->max_suf : null;
+                $next = ($max === null) ? 1 : ($max + 1);
+            }
+        } catch (\Exception $inner) {
             $res = DB::selectOne("SELECT MAX(CAST(SUBSTRING_INDEX(numero_acta, '-', -1) AS UNSIGNED)) as max_suf FROM `actas` WHERE numero_acta LIKE ?", [$prefix . '%']);
             $max = ($res && isset($res->max_suf) && is_numeric($res->max_suf)) ? (int)$res->max_suf : null;
-            $next = ($max === null) ? 0 : ($max + 1);
+            $next = ($max === null) ? 1 : ($max + 1);
         }
-    } catch (\Exception $inner) {
-        // Si falla la consulta a information_schema, usar MAX por sufijo como fallback
-        $res = DB::selectOne("SELECT MAX(CAST(SUBSTRING_INDEX(numero_acta, '-', -1) AS UNSIGNED)) as max_suf FROM `actas` WHERE numero_acta LIKE ?", [$prefix . '%']);
-        $max = ($res && isset($res->max_suf) && is_numeric($res->max_suf)) ? (int)$res->max_suf : null;
-        $next = ($max === null) ? 0 : ($max + 1);
     }
     $proximo_sufijo = str_pad($next, 6, '0', STR_PAD_LEFT);
 } catch (\Exception $e) {
-    try {
-        $proximo_sufijo = str_pad(DB::table('actas')->count() + 1, 6, '0', STR_PAD_LEFT);
-    } catch (\Exception $e) {
-        $proximo_sufijo = str_pad(1, 6, '0', STR_PAD_LEFT);
-    }
+    $proximo_sufijo = str_pad(1, 6, '0', STR_PAD_LEFT);
 }
 ?>
-<style>
-    :root {
-        --drtc-orange: #ff8c00;
-        --drtc-dark-orange: #e67c00;
-        --drtc-light-orange: #ffffff;
-        --drtc-orange-bg: #fff4e6;
-        --drtc-navy: #1e3a8a;
-    }
-    
-    .bg-drtc-orange { background-color: var(--drtc-orange) !important; }
-    .bg-drtc-dark { background-color: var(--drtc-dark-orange) !important; }
-    .bg-drtc-light { background-color: var(--drtc-light-orange) !important; }
-    .bg-drtc-soft { background-color: var(--drtc-orange-bg) !important; }
-    .bg-drtc-navy { background-color: var(--drtc-navy) !important; }
-    .text-drtc-orange { color: var(--drtc-orange) !important; }
-    .text-drtc-navy { color: var(--drtc-navy) !important; }
-    .border-drtc-orange { border-color: var(--drtc-orange) !important; }
-    
-    .action-btn {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 15px;
-        padding: 15px;
-        text-align: center;
-        transition: all 0.3s ease;
-        height: 100px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        text-decoration: none;
-        color: #333;
-        margin-bottom: 15px;
-    }
-    
-    .action-btn:hover {
-        border-color: var(--drtc-orange);
-        background: var(--drtc-orange-bg);
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(255, 140, 0, 0.2);
-        color: var(--drtc-orange);
-        text-decoration: none;
-    }
-    
-    .action-btn i {
-        font-size: 24px;
-        margin-bottom: 5px;
-        color: var(--drtc-orange);
-    }
-    
-    .action-btn:hover i {
-        color: var(--drtc-dark-orange);
-    }
-</style>
 
-<div class="container-fluid">
+    
     <?php
-        // Detección flexible del rol del usuario para soportar distintos esquemas (role/rol/type/tipo)
-        try {
-            $u = Auth::user();
-            $role = $u->role ?? $u->rol ?? $u->type ?? $u->tipo ?? null;
-        } catch (\Exception $e) {
-            $role = null;
+        // Asegurar que la variable $role esté definida para evitar errors en la vista.
+        // Preferir la variable inyectada; si no existe, intentar determinar desde el usuario autenticado.
+        $role = $role ?? null;
+        if (!$role) {
+            if (Auth::check()) {
+                $user = Auth::user();
+                // Campos comunes donde puede almacenarse el rol
+                if (isset($user->role) && $user->role) {
+                    $role = $user->role;
+                } elseif (isset($user->rol) && $user->rol) {
+                    $role = $user->rol;
+                } elseif (method_exists($user, 'getRoleNames')) {
+                    $names = $user->getRoleNames();
+                    $role = count($names) ? $names[0] : 'fiscalizador';
+                } elseif (property_exists($user, 'roles') && is_iterable($user->roles)) {
+                    // Intentar obtener el primer rol de una colección/array
+                    try {
+                        $first = is_array($user->roles) ? ($user->roles[0]->name ?? $user->roles[0]->nombre ?? null) : (count($user->roles) ? ($user->roles[0]->name ?? $user->roles[0]->nombre ?? null) : null);
+                        $role = $first ?: 'fiscalizador';
+                    } catch (\Throwable $e) {
+                        $role = 'fiscalizador';
+                    }
+                } else {
+                    $role = 'fiscalizador';
+                }
+            } else {
+                $role = 'guest';
+            }
         }
     ?>
 
-    
     <?php if($role === 'administrador'): ?>
         <!-- Panel Administrador (minimal, enlaces rápidos) -->
         <div class="row mb-4">
@@ -624,7 +584,7 @@ function submitActa(event) {
     // Validar campos obligatorios (origen/destino son opcionales ahora)
     const camposObligatorios = {
         'placa_1': 'Placa del vehículo',
-        'nombre_conductor_1': 'Nombre del conductor', 
+        'apellidos_nombres': 'Apellidos y Nombres (completo)',
         'licencia_conductor_1': 'Licencia del conductor',
         'ruc_dni': 'RUC/DNI',
         'lugar_intervencion': 'Lugar de intervención',
@@ -657,9 +617,14 @@ function submitActa(event) {
     // Preparar datos para envío (mapear a los campos que espera el backend)
     // Aceptar nombres alternativos de campos (compatibilidad con distintos formularios)
     const placaValor = formData.get('placa_1') || formData.get('placa_vehiculo') || formData.get('placa') || '';
-    const nombreConductorValor = formData.get('nombre_conductor_1') || formData.get('nombre_conductor') || formData.get('nombre') || '';
+    // Combinar campo 'apellidos_nombres' con 'nombre_conductor_1' si se proporciona
+    // Ahora solo usamos 'apellidos_nombres' como nombre completo del conductor. 'nombre_conductor_1' se mantiene hidden solo para compatibilidad.
+    const apellidosNombres = formData.get('apellidos_nombres') || '';
+    const nombreConductorValor = apellidosNombres.trim();
     const licenciaValor = formData.get('licencia_conductor_1') || formData.get('licencia_conductor') || formData.get('licencia') || '';
     const documentoValor = formData.get('ruc_dni') || formData.get('dni_conductor') || formData.get('dni') || '';
+    // Prenombres (campo hidden usado como compatibilidad). Puede ser llenado por la búsqueda DNI.
+    const nombreConductorRaw = formData.get('nombre_conductor_1') || '';
 
     // Incluir explícitamente campos que backend espera. Usar cadena vacía cuando el campo existe
     // para que no sea omitido en el envío y así llene columnas que ahora aparecen NULL.
@@ -669,8 +634,10 @@ function submitActa(event) {
         placa: placaValor,
         placa_vehiculo: placaValor,
 
-        // conductor / licencia
-        nombre_conductor_1: nombreConductorValor,
+    // conductor / licencia
+    nombre_conductor_1: nombreConductorRaw,
+    // Normalized full name for backend
+    nombre_conductor: nombreConductorValor,
         licencia_conductor_1: licenciaValor,
 
         // datos fiscales
@@ -753,7 +720,7 @@ function submitActa(event) {
     }
 
     // Asegurarse explícitamente de copiar los campos principales que el backend puede leer
-    const explicitFields = ['placa_1','nombre_conductor_1','licencia_conductor_1','tipo_servicio','inspector','inspector_responsable','razon_social','ruc_dni','placa','placa_vehiculo'];
+    const explicitFields = ['placa_1','licencia_conductor_1','tipo_servicio','inspector','inspector_responsable','razon_social','ruc_dni','placa','placa_vehiculo'];
     explicitFields.forEach(k => {
         try {
             const el = form.querySelector('[name="' + k + '"]');
@@ -815,7 +782,7 @@ function submitActa(event) {
             submitBtn.disabled = false;
         }
         
-        if (result.success) {
+    if (result.success) {
             // Mostrar notificación de éxito
             // Preferir mostrar el numero_acta oficial; el ID de la BD es interno
             let mensajeExito = `🎉 ¡Acta ${result.numero_acta} registrada exitosamente!\n` +
@@ -830,11 +797,15 @@ function submitActa(event) {
             // cerrar modal y recargar la tabla de actas, pero NO redirigir a otra página.
             console.log('✅ Acta creada exitosamente con ID:', result.acta_id);
 
-            // Limpiar formulario para nueva entrada
+            // NO limpiar el formulario automáticamente: mantener datos para impresión/descarga
+            // Guardar identificadores retornados por el servidor para prevenir duplicados
             try {
-                form.reset();
+                window.__lastSavedActa = {
+                    id: result.acta_id || null,
+                    numero_acta: result.numero_acta || (document.getElementById('numero_acta_hidden') && document.getElementById('numero_acta_hidden').value) || null
+                };
             } catch (e) {
-                console.warn('No se pudo limpiar el formulario automáticamente:', e);
+                console.warn('No se pudo almacenar metadatos del acta:', e);
             }
 
             // Actualizar el sufijo mostrado para el siguiente acta (incremento inmediato)
@@ -855,23 +826,22 @@ function submitActa(event) {
             } catch (e) {
                 console.warn('No se pudo actualizar el sufijo en el DOM:', e);
             }
-
-            // Cerrar el modal actual si está abierto
+            // Mantener modal abierto para impresión/descarga. Habilitar botones de imprimir/descargar.
             try {
-                if (typeof cerrarModal === 'function') {
-                    cerrarModal('modal-nueva-acta');
+                const btnPdf = document.getElementById('btn-descargar-pdf');
+                const btnPrint = document.getElementById('btn-imprimir-acta');
+                const btnClear = document.getElementById('btn-limpiar-acta');
+                if (btnPdf) btnPdf.style.display = 'inline-block';
+                if (btnPrint) btnPrint.style.display = 'inline-block';
+                if (btnClear) btnClear.style.display = 'none';
+
+                // Deshabilitar el botón de guardar para evitar reenvíos
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Acta Guardada';
                 }
             } catch (e) {
-                console.warn('No se pudo cerrar el modal automáticamente:', e);
-            }
-
-            // Recargar la tabla de actas si la función existe (no fuerza navegación)
-            try {
-                if (typeof cargarActas === 'function') {
-                    setTimeout(() => { cargarActas(); }, 800);
-                }
-            } catch (e) {
-                console.warn('No se pudo recargar la tabla automáticamente:', e);
+                console.warn('No se pudo ajustar botones post-guardado:', e);
             }
             
         } else {
@@ -1059,27 +1029,7 @@ if (_infraccionEl && _montoEl) {
                             </div>
                         </div>
                         
-                        <!-- Información adicional del documento -->
-                        <div class="row mt-3">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold me-2">Fecha:</span> 
-                                    <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
-                                        <?php echo e(now()->format('d/m/Y')); ?>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center">
-                                    <span class="fw-bold me-2">Hora:</span> 
-                                    <div class="border-bottom border-dark px-3" style="min-width: 120px; text-align: center; font-weight: bold;">
-                                        <?php echo e(now()->format('H:i')); ?>
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Información adicional del documento (fecha/hora superior removida por requerimiento) -->
                     </div>
                 </div>
 
@@ -1130,13 +1080,13 @@ if (_infraccionEl && _montoEl) {
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-warning">Razón Social/Nombres y Apellidos: <small class="text-muted">(Opcional)</small></label>
-                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Se autocompletará con los datos de RENIEC/SUNAT - Campo opcional">
+                                <label class="form-label fw-bold text-warning">Razón Social: <small class="text-muted">(Opcional)</small></label>
+                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Razón social (empresa) - opcional">
                                 <div id="loading-data" class="form-text text-info" style="display: none;">
                                     <i class="fas fa-spinner fa-spin"></i> Consultando datos...
                                 </div>
                                 <div class="form-text mt-1">
-                                    <small class="text-muted">Datos obtenidos de APIs oficiales</small>
+                                    <small class="text-muted">Datos de empresa (SUNAT) o nombre del operador si aplica</small>
                                     <a href="/ver-consultas.html" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">
                                         <i class="fas fa-database me-1"></i>Ver Consultas
                                     </a>
@@ -1150,9 +1100,9 @@ if (_infraccionEl && _montoEl) {
                         
                         <!-- Datos adicionales del conductor -->
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold text-warning">Nombre del Conductor:</label>
-                                <input type="text" class="form-control border-warning" name="nombre_conductor_1" placeholder="Nombres y apellidos completos" required>
+                            <div class="col-md-6 mb-3" style="display: none;">
+                                <!-- Mantener campo prenombres como hidden para compatibilidad en servidor -->
+                                <input type="hidden" class="form-control border-warning" name="nombre_conductor_1" placeholder="Nombres (prenombres)">
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-warning">N° Licencia de Conducir:</label>
@@ -1169,6 +1119,15 @@ if (_infraccionEl && _montoEl) {
                                     <option value="A-IIIb">A-IIIb (Automóviles, camionetas)</option>
                                     <option value="A-IIIc">A-IIIc (Buses, camiones)</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Nuevo campo: Apellidos y Nombres (se muestra debajo del nombre principal) -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-warning">Apellidos y Nombres (completo):</label>
+                                <input type="text" class="form-control border-warning" name="apellidos_nombres" id="apellidos_nombres" placeholder="Apellido paterno Apellido materno Nombres">
+                                <div class="form-text"><small class="text-muted">Opcional: si completa aquí, se usará como nombre completo del conductor.</small></div>
                             </div>
                         </div>
                     </div>
@@ -1388,18 +1347,19 @@ if (_infraccionEl && _montoEl) {
                     </button>
 
                     <!-- Descargar PDF -->
-                    <button type="button" class="btn btn-outline-primary btn-lg me-2 px-4" id="btn-descargar-pdf" onclick="descargarPDF()" title="Descargar acta en PDF">
-                        <i class="fas fa-file-pdf me-2"></i>DESCARGAR PDF
-                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-lg me-2 px-4" id="btn-descargar-pdf" onclick="descargarPDF()" title="Descargar acta en PDF" style="display:none;">
+                            <i class="fas fa-file-pdf me-2"></i>DESCARGAR PDF
+                        </button>
 
-                    <!-- Imprimir -->
-                    <button type="button" class="btn btn-outline-info btn-lg me-3 px-4" id="btn-imprimir-acta" onclick="imprimirActa()" title="Imprimir acta">
-                        <i class="fas fa-print me-2"></i>IMPRIMIR
-                    </button>
+                        <!-- Imprimir -->
+                        <button type="button" class="btn btn-outline-info btn-lg me-3 px-4" id="btn-imprimir-acta" onclick="imprimirActa()" title="Imprimir acta" style="display:none;">
+                            <i class="fas fa-print me-2"></i>IMPRIMIR
+                        </button>
 
-                    <button type="reset" class="btn btn-secondary btn-lg px-5">
-                        <i class="fas fa-undo me-2"></i>LIMPIAR FORMULARIO
-                    </button>
+                        <!-- Botón limpiar: oculto hasta que se haya impreso/exportado -->
+                        <button type="button" class="btn btn-secondary btn-lg px-5" id="btn-limpiar-acta" style="display:none;" onclick="limpiarDespuesDeExport()">
+                            <i class="fas fa-undo me-2"></i>LIMPIAR FORMULARIO
+                        </button>
                 </div>
 
                 <!-- Script: imprimir y descargar PDF -->
@@ -1447,11 +1407,7 @@ if (_infraccionEl && _montoEl) {
                         html += `<div class="logo"><img src="${data.logo || '/images/logo-gobierno.png'}" style="max-width:48px; max-height:48px;"/></div>`;
                         html += `</div>`;
 
-                        // Meta bloque (fecha/hora)
-                        html += `<div class="row" style="margin-top:8px;">`;
-                        html += `<div class="col"><div class="label">Fecha</div><div class="value big-value">${data.fecha || ''}</div></div>`;
-                        html += `<div class="col"><div class="label">Hora</div><div class="value big-value">${data.hora || ''}</div></div>`;
-                        html += `</div>`;
+                        // Nota: se elimina fecha/hora en el header impreso por requerimiento
 
                         // Secciones principales
                         html += `<div class="section">`;
@@ -1511,7 +1467,8 @@ if (_infraccionEl && _montoEl) {
                             ruc_dni: fd.get('ruc_dni') || '',
                             razon_social: fd.get('razon_social') || '',
                             placa: fd.get('placa_1') || fd.get('placa') || '',
-                            nombre_conductor: fd.get('nombre_conductor_1') || fd.get('nombre_conductor') || '',
+                            // Preferir campo 'apellidos_nombres' si existe
+                            nombre_conductor: (fd.get('apellidos_nombres') && fd.get('apellidos_nombres').trim() !== '') ? fd.get('apellidos_nombres').trim() : (fd.get('nombre_conductor') || ''),
                             licencia: fd.get('licencia_conductor_1') || fd.get('licencia_conductor') || '',
                             clase_categoria: fd.get('clase_categoria') || '',
                             lugar_intervencion: fd.get('lugar_intervencion') || '',
@@ -1531,7 +1488,11 @@ if (_infraccionEl && _montoEl) {
                         printWindow.document.write(html);
                         printWindow.document.close();
                         printWindow.focus();
-                        setTimeout(function(){ printWindow.print(); }, 600);
+                        setTimeout(function(){
+                            printWindow.print();
+                            // Mostrar botón limpiar después de imprimir
+                            try { document.getElementById('btn-limpiar-acta').style.display = 'inline-block'; } catch(e){}
+                        }, 600);
                     }
 
                     /**
@@ -1550,7 +1511,7 @@ if (_infraccionEl && _montoEl) {
                             ruc_dni: fd.get('ruc_dni') || '',
                             razon_social: fd.get('razon_social') || '',
                             placa: fd.get('placa_1') || fd.get('placa') || '',
-                            nombre_conductor: fd.get('nombre_conductor_1') || fd.get('nombre_conductor') || '',
+                            nombre_conductor: (fd.get('apellidos_nombres') && fd.get('apellidos_nombres').trim() !== '') ? fd.get('apellidos_nombres').trim() : (fd.get('nombre_conductor') || ''),
                             licencia: fd.get('licencia_conductor_1') || fd.get('licencia_conductor') || '',
                             clase_categoria: fd.get('clase_categoria') || '',
                             lugar_intervencion: fd.get('lugar_intervencion') || '',
@@ -1580,7 +1541,10 @@ if (_infraccionEl && _montoEl) {
                         wrapper.innerHTML = printableHTML;
 
                         // html2pdf espera un elemento DOM
-                        html2pdf().set(opt).from(wrapper).save();
+                            // html2pdf devuelve una Promise
+                            return html2pdf().set(opt).from(wrapper).save().then(() => {
+                                try { document.getElementById('btn-limpiar-acta').style.display = 'inline-block'; } catch(e){}
+                            });
                     }
                 </script>
             </form>
@@ -2092,6 +2056,7 @@ if (_infraccionEl && _montoEl) {
                                     <th>MONTO</th>
                                     <th>ESTADO</th>
                                     <th>INSPECTOR</th>
+                                    <th>ACTIONS</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-resultados">
@@ -2397,33 +2362,77 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Función para consultar DNI - DESHABILITADA (APIs no reales)
+    // Función para consultar DNI usando el proxy local (PeruDevs). Autocompleta Apellidos y Nombres.
     async function consultarDNI(dni) {
-        // Auto llenado de DNI deshabilitado porque las APIs no son reales
-        console.log('Consulta DNI deshabilitada - Complete los datos manualmente');
-        
-        // Mostrar mensaje informativo
-        const infoData = document.getElementById('info-data');
-        if (infoData) {
-            infoData.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Complete los datos manualmente - APIs de DNI deshabilitadas';
-            setTimeout(() => {
-                infoData.innerHTML = '<i class="fas fa-info-circle me-1"></i>RUC: 11 dígitos | DNI: 8 dígitos';
-            }, 3000);
+        try {
+            if (!dni || !/^[0-9]{8}$/.test(dni)) {
+                mostrarNotificacion('DNI inválido. Debe ser 8 dígitos.', 'warning');
+                return;
+            }
+
+            loadingData.style.display = 'block';
+
+            // Elementos objetivo
+            const apellidosInput = document.getElementById('apellidos_nombres');
+            const nombreInput = document.querySelector('input[name="nombre_conductor_1"]'); // hidden fallback
+
+            if (apellidosInput) apellidosInput.value = '';
+            if (nombreInput) nombreInput.value = '';
+
+            const url = `/api/proxy-dni?dni=${dni}`;
+            const res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+
+            if (!res.ok) {
+                throw new Error('API DNI responded with status ' + res.status);
+            }
+
+            const json = await res.json();
+
+            // PeruDevs responde con { estado, mensaje, resultado: { id, nombres, apellido_paterno, apellido_materno, nombre_completo } }
+            const payload = (json && (json.resultado || json.data)) ? (json.resultado || json.data) : json || {};
+
+            const nombreCompleto = (payload.nombre_completo || '').trim();
+            const nombres = (payload.nombres || payload.nombres || '').trim();
+            const apellidoP = (payload.apellido_paterno || payload.apellidoPaterno || '').trim();
+            const apellidoM = (payload.apellido_materno || payload.apellidoMaterno || '').trim();
+
+            const combined = (nombreCompleto && nombreCompleto.length > 0) ? nombreCompleto : [apellidoP, apellidoM, nombres].filter(Boolean).join(' ').trim();
+
+            if (combined) {
+                if (apellidosInput) {
+                    apellidosInput.value = combined;
+                    apellidosInput.style.backgroundColor = '#d4edda';
+                    apellidosInput.style.borderColor = '#28a745';
+                }
+
+                if (nombreInput) {
+                    // Guardar prenombres en el campo hidden por compatibilidad (intentar extraer prenombres)
+                    const prenombres = nombres || '';
+                    nombreInput.value = prenombres;
+                    nombreInput.style.backgroundColor = '#d4edda';
+                    nombreInput.style.borderColor = '#28a745';
+                }
+
+                mostrarNotificacion('Datos del DNI cargados automáticamente', 'success');
+            } else {
+                mostrarNotificacion('No se encontraron datos con el DNI proporcionado; complete manualmente.', 'warning');
+                if (razonSocialInput) {
+                    razonSocialInput.placeholder = 'Ingrese el nombre completo manualmente';
+                    razonSocialInput.style.backgroundColor = '#fff3cd';
+                    razonSocialInput.style.borderColor = '#ffc107';
+                }
+            }
+        } catch (err) {
+            console.error('Error consultando DNI (proxy):', err);
+            mostrarNotificacion('No fue posible obtener datos del DNI desde la API (fallback a ingreso manual).', 'error');
+            if (razonSocialInput) {
+                razonSocialInput.placeholder = 'Ingrese el nombre completo manualmente';
+                razonSocialInput.style.backgroundColor = '#fff3cd';
+                razonSocialInput.style.borderColor = '#ffc107';
+            }
+        } finally {
+            loadingData.style.display = 'none';
         }
-        
-        // Configurar campo para llenado manual
-        razonSocialInput.value = '';
-        razonSocialInput.placeholder = 'Ingrese el nombre completo manualmente';
-        razonSocialInput.style.backgroundColor = '#fff3cd';
-        razonSocialInput.style.borderColor = '#ffc107';
-        razonSocialInput.focus();
-        
-        // Restaurar estilo después de 3 segundos
-        setTimeout(() => {
-            razonSocialInput.placeholder = 'Ingrese razón social o nombres y apellidos';
-            razonSocialInput.style.backgroundColor = '';
-            razonSocialInput.style.borderColor = '';
-        }, 3000);
     }
     
     // Event listener para RUC/DNI único
@@ -2543,6 +2552,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 })();
+
+// Limpiar formulario luego de exportar o imprimir, evitando duplicados
+function limpiarDespuesDeExport() {
+    try {
+        // Si tenemos metadatos de la última acta guardada, validar que exista en BD (opcionalmente pedir al servidor)
+        const meta = window.__lastSavedActa || null;
+        if (meta && meta.id) {
+            // Evitar reenvío: pedir confirmación al usuario
+            if (!confirm('¿Desea limpiar el formulario ahora? Se conservará el registro guardado.')) return;
+        }
+
+        // Limpiar el formulario
+        const form = document.getElementById('form-nueva-acta');
+        if (form) form.reset();
+
+        // Reset UI: ocultar botones de imprimir/descarga/limpiar y habilitar guardar
+        try {
+            const btnPdf = document.getElementById('btn-descargar-pdf');
+            const btnPrint = document.getElementById('btn-imprimir-acta');
+            const btnClear = document.getElementById('btn-limpiar-acta');
+            const submitBtn = document.getElementById('btn-guardar-acta');
+            if (btnPdf) btnPdf.style.display = 'none';
+            if (btnPrint) btnPrint.style.display = 'none';
+            if (btnClear) btnClear.style.display = 'none';
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>GUARDAR ACTA'; }
+        } catch (e) { console.warn('No se pudo resetear UI:', e); }
+
+        // Intentar recargar tabla de actas si existe la función
+        try { if (typeof cargarActas === 'function') cargarActas(); } catch (e) { }
+
+        // Borrar metadatos locales
+        try { delete window.__lastSavedActa; } catch(e){}
+    } catch (e) {
+        console.warn('Error limpiando después de export:', e);
+    }
+}
 
 // FUNCIONES PARA MODALES FLOTANTES (código existente)
 let tiempoInicioRegistro = null;
@@ -3079,7 +3124,7 @@ function mostrarResultadosConsulta(result) {
         const fechaFormateada = new Date(acta.fecha).toLocaleDateString('es-PE');
         
         tableHTML += `
-            <tr>
+            <tr data-acta-id="${acta.id || ''}">
                 <td class="fw-bold">${acta.numero_acta}</td>
                 <td>${fechaFormateada}</td>
                 <td>${acta.empresa || acta.conductor || 'N/A'}</td>
@@ -3089,6 +3134,13 @@ function mostrarResultadosConsulta(result) {
                 <td><span class="badge bg-info">S/ ${acta.monto_multa || '0.00'}</span></td>
                 <td>${estadoBadge}</td>
                 <td><?php echo e(Auth::user()->name); ?></td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary" type="button" onclick="verActa(${acta.id || 'null'})">Ver</button>
+                        <button class="btn btn-sm btn-outline-success" type="button" onclick="imprimirActa(${acta.id || 'null'})">Imprimir</button>
+                        <button class="btn btn-sm btn-outline-danger" type="button" onclick="descargarActaPDF(${acta.id || 'null'})">PDF</button>
+                    </div>
+                </td>
             </tr>
         `;
     });
@@ -3373,6 +3425,128 @@ document.addEventListener('click', function(e){
         // noop
     }
 });
+
+// Helpers to view/print/download a single acta by id
+async function fetchActaById(id) {
+    if (!id) throw new Error('ID de acta inválido');
+    try {
+        const res = await fetch(`/api/actas/${id}`, { credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } });
+        if (!res.ok) {
+            const txt = await res.text();
+            let j = null; try { j = JSON.parse(txt); } catch(_) { }
+            throw new Error((j && j.message) ? j.message : `HTTP ${res.status}`);
+        }
+        const json = await res.json();
+        if (!json.success || !json.acta) throw new Error(json.message || 'Acta no encontrada');
+        return json.acta;
+    } catch (err) {
+        console.error('fetchActaById error:', err);
+        throw err;
+    }
+}
+
+async function verActa(id) {
+    try {
+        const acta = await fetchActaById(id);
+        const html = buildPrintableActaHTML({
+            numero_acta: acta.numero_acta || acta.numero || '',
+            anio: new Date().getFullYear(),
+            fecha: acta.fecha_infraccion || acta.fecha || acta.created_at || '',
+            hora: acta.hora_infraccion || '',
+            ruc_dni: acta.ruc_dni || '',
+            razon_social: acta.razon_social || acta.empresa || '',
+            placa: acta.placa_vehiculo || acta.placa || '',
+            nombre_conductor: acta.nombre_conductor || acta.conductor || '',
+            licencia: acta.licencia || '',
+            clase_categoria: acta.clase_categoria || '',
+            lugar_intervencion: acta.lugar_intervencion || acta.ubicacion || '',
+            tipo_servicio: acta.tipo_servicio || '',
+            descripcion_hechos: acta.descripcion_hechos || acta.descripcion || '',
+            monto_multa: acta.monto_multa || '',
+            vencimiento: acta.vencimiento || '',
+            inspector: acta.inspector_responsable || acta.inspector || '<?php echo e(Auth::user()->name); ?>'
+        });
+
+        const w = window.open('', '_blank');
+        w.document.write(html);
+        w.document.close();
+    } catch (err) {
+        mostrarNotificacion('No se pudo cargar la acta: ' + (err.message || ''), 'error');
+    }
+}
+
+async function imprimirActa(id) {
+    try {
+        const acta = await fetchActaById(id);
+        const html = buildPrintableActaHTML({
+            numero_acta: acta.numero_acta || acta.numero || '',
+            anio: new Date().getFullYear(),
+            fecha: acta.fecha_infraccion || acta.fecha || acta.created_at || '',
+            hora: acta.hora_infraccion || '',
+            ruc_dni: acta.ruc_dni || '',
+            razon_social: acta.razon_social || acta.empresa || '',
+            placa: acta.placa_vehiculo || acta.placa || '',
+            nombre_conductor: acta.nombre_conductor || acta.conductor || '',
+            licencia: acta.licencia || '',
+            clase_categoria: acta.clase_categoria || '',
+            lugar_intervencion: acta.lugar_intervencion || acta.ubicacion || '',
+            tipo_servicio: acta.tipo_servicio || '',
+            descripcion_hechos: acta.descripcion_hechos || acta.descripcion || '',
+            monto_multa: acta.monto_multa || '',
+            vencimiento: acta.vencimiento || '',
+            inspector: acta.inspector_responsable || acta.inspector || '<?php echo e(Auth::user()->name); ?>'
+        });
+
+        const w = window.open('', '_blank');
+        w.document.write(html);
+        w.document.close();
+        w.focus();
+        w.print();
+    } catch (err) {
+        mostrarNotificacion('No se pudo imprimir la acta: ' + (err.message || ''), 'error');
+    }
+}
+
+async function descargarActaPDF(id) {
+    try {
+        const acta = await fetchActaById(id);
+        const html = buildPrintableActaHTML({
+            numero_acta: acta.numero_acta || acta.numero || '',
+            anio: new Date().getFullYear(),
+            fecha: acta.fecha_infraccion || acta.fecha || acta.created_at || '',
+            hora: acta.hora_infraccion || '',
+            ruc_dni: acta.ruc_dni || '',
+            razon_social: acta.razon_social || acta.empresa || '',
+            placa: acta.placa_vehiculo || acta.placa || '',
+            nombre_conductor: acta.nombre_conductor || acta.conductor || '',
+            licencia: acta.licencia || '',
+            clase_categoria: acta.clase_categoria || '',
+            lugar_intervencion: acta.lugar_intervencion || acta.ubicacion || '',
+            tipo_servicio: acta.tipo_servicio || '',
+            descripcion_hechos: acta.descripcion_hechos || acta.descripcion || '',
+            monto_multa: acta.monto_multa || '',
+            vencimiento: acta.vencimiento || '',
+            inspector: acta.inspector_responsable || acta.inspector || '<?php echo e(Auth::user()->name); ?>'
+        });
+
+        // Use html2pdf if available
+        if (window.html2pdf) {
+            const wrapper = document.createElement('div'); wrapper.innerHTML = html;
+            await html2pdf().set({ margin: 10, filename: `Acta_${acta.numero_acta || 'acta'}.pdf`, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(wrapper).save();
+            mostrarNotificacion('PDF generado y descargado', 'success');
+            return;
+        }
+
+        // Fallback: download HTML file
+        const a = document.createElement('a');
+        a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+        a.download = `Acta_${acta.numero_acta || 'acta'}.html`;
+        a.click();
+        mostrarNotificacion('Exportación HTML iniciada (fallback)', 'info');
+    } catch (err) {
+        mostrarNotificacion('No se pudo descargar la acta: ' + (err.message || ''), 'error');
+    }
+}
 
 function generarReporte() {
     mostrarNotificacion('Generando reporte estadístico...', 'info', 3000);

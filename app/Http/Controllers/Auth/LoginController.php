@@ -52,8 +52,6 @@ class LoginController extends Controller
             }
             
             // Si el usuario está aprobado o no tiene campo status (usuarios antiguos), proceder con el login
-            // Usar login directo con el usuario ya verificado para evitar
-            // inconsistencias cuando el provider/modelo usa una tabla personalizada.
             Auth::login($user, $remember);
             $request->session()->regenerate();
 
@@ -62,7 +60,32 @@ class LoginController extends Controller
                 config(['session.expire_on_close' => true]);
             }
 
-            return redirect()->intended('dashboard');
+            // Redirección por rol, respetando la URL intended si existe
+            $role = $user->role ?? null;
+            // Mapa de roles a rutas nombradas
+            $map = [
+                'administrador' => 'admin.dashboard',
+                'fiscalizador' => 'fiscalizador.dashboard',
+                'ventanilla' => 'ventanilla.dashboard',
+                'inspector' => 'inspector.dashboard',
+                'superadmin' => 'admin.super.index',
+            ];
+
+            // Si había una URL intended (por middleware auth) la respetamos
+            if ($request->session()->has('url.intended')) {
+                return redirect()->intended();
+            }
+
+            if ($role && isset($map[$role])) {
+                try {
+                    return redirect()->route($map[$role]);
+                } catch (\Exception $e) {
+                    // Si la ruta nombrada no existe, caeremos al dashboard unificado
+                }
+            }
+
+            // Fallback: dashboard unificado
+            return redirect()->route('dashboard');
         }
 
         return back()->withErrors([

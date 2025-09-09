@@ -101,6 +101,17 @@ class ActaController extends Controller
     }
     public function index()
     {
+    // Construir expresión segura para la descripción de infracción respetando el esquema
+        $infraccionParts = ['infracciones.descripcion'];
+        if (Schema::hasColumn('actas', 'descripcion')) {
+            $infraccionParts[] = 'actas.descripcion';
+        }
+        if (Schema::hasColumn('actas', 'descripcion_hechos')) {
+            $infraccionParts[] = 'actas.descripcion_hechos';
+        }
+        // Asegurar al menos un fallback vacío
+        $infraccionExpr = "COALESCE(" . implode(', ', $infraccionParts) . ", '') as infraccion_descripcion";
+
         $actas = DB::table('actas')
             ->leftJoin('inspectores', 'actas.inspector_id', '=', 'inspectores.id')
             ->leftJoin('vehiculos', 'actas.vehiculo_id', '=', 'vehiculos.id')
@@ -111,7 +122,7 @@ class ActaController extends Controller
                 DB::raw("COALESCE(actas.inspector_responsable, CONCAT_WS(' ', inspectores.nombres, inspectores.apellidos)) as inspector_nombre"),
                 DB::raw("COALESCE(actas.placa_vehiculo, vehiculos.placa, actas.placa) as placa"),
                 DB::raw("COALESCE(actas.nombre_conductor, CONCAT_WS(' ', conductores.nombres, conductores.apellidos)) as conductor_nombre"),
-                DB::raw("COALESCE(infracciones.descripcion, actas.descripcion, actas.descripcion_hechos) as infraccion_descripcion")
+                DB::raw($infraccionExpr)
             )
             ->orderBy('actas.created_at', 'desc')
             ->paginate(15);
@@ -873,7 +884,15 @@ class ActaController extends Controller
         $licenciaExpr .= ", '') as licencia";
         $select[] = DB::raw($licenciaExpr);
 
-        $select[] = DB::raw("COALESCE(infracciones.descripcion, actas.descripcion, actas.descripcion_hechos, '') as infraccion_descripcion");
+        // Selección segura para descripción de infracción
+        $infraccionParts = ['infracciones.descripcion'];
+        if (Schema::hasColumn('actas', 'descripcion')) {
+            $infraccionParts[] = 'actas.descripcion';
+        }
+        if (Schema::hasColumn('actas', 'descripcion_hechos')) {
+            $infraccionParts[] = 'actas.descripcion_hechos';
+        }
+        $select[] = DB::raw("COALESCE(" . implode(', ', $infraccionParts) . ", '') as infraccion_descripcion");
         $select[] = DB::raw("COALESCE(infracciones.codigo, '') as infraccion_codigo");
         $select[] = DB::raw("COALESCE(empresas.razon_social, '') as empresa_nombre");
 
@@ -888,10 +907,10 @@ class ActaController extends Controller
             ->first();
 
         if (!$acta) {
-            return response()->json(['error' => 'Acta no encontrada'], 404);
+            return response()->json(['success' => false, 'message' => 'Acta no encontrada'], 404);
         }
 
-        return response()->json(['acta' => $acta]);
+        return response()->json(['success' => true, 'acta' => $acta]);
     }
 
     public function updateStatus(Request $request, $id)
@@ -1455,109 +1474,72 @@ class ActaController extends Controller
 
         $hora = Carbon::now()->toDateTimeString();
 
-        DB::beginTransaction();
         try {
-            // Asegurar existencia de tabla actas_backup (crear como copia de actas si no existe)
-            try {
-                if (!Schema::hasTable('actas_backup')) {
-                    DB::statement('CREATE TABLE `actas_backup` LIKE `actas`');
+            DB::transaction(function() use ($acta, $id, $motivo, $observaciones, $supervisor, $hora) {
+                // Asegurar existencia de tabla actas_eliminadas; si falta, crearla como copia de actas
+                try {
+                    if (!Schema::hasTable('actas_eliminadas')) {
+                        DB::statement('CREATE TABLE `actas_eliminadas` LIKE `actas`');
+                    }
+                } catch (\Exception $e) {
+                    logger()->warning('No se pudo crear tabla actas_eliminadas: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                logger()->warning('No se pudo crear tabla actas_backup: ' . $e->getMessage());
-            }
 
-            // Asegurar columnas de metadatos en actas_backup
-            try {
-                if (Schema::hasTable('actas_backup')) {
-                    if (!Schema::hasColumn('actas_backup', 'motivo_eliminacion')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN motivo_eliminacion TEXT NULL");
+                // Asegurar columnas de metadatos en actas_eliminadas
+                try {
+                    if (Schema::hasTable('actas_eliminadas')) {
+                        if (!Schema::hasColumn('actas_eliminadas', 'motivo_eliminacion')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN motivo_eliminacion TEXT NULL");
+                        }
+                        if (!Schema::hasColumn('actas_eliminadas', 'observaciones_eliminacion')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN observaciones_eliminacion TEXT NULL");
+                        }
+                        if (!Schema::hasColumn('actas_eliminadas', 'supervisor_eliminante')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN supervisor_eliminante VARCHAR(255) NULL");
+                        }
+                        if (!Schema::hasColumn('actas_eliminadas', 'deleted_at')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN deleted_at DATETIME NULL");
+                        }
+                        if (!Schema::hasColumn('actas_eliminadas', 'deleted_by')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN deleted_by INT NULL");
+                        }
+                        if (!Schema::hasColumn('actas_eliminadas', 'original_acta_id')) {
+                            DB::statement("ALTER TABLE `actas_eliminadas` ADD COLUMN original_acta_id INT NULL");
+                        }
                     }
-                    if (!Schema::hasColumn('actas_backup', 'observaciones_eliminacion')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN observaciones_eliminacion TEXT NULL");
-                    }
-                    if (!Schema::hasColumn('actas_backup', 'supervisor_eliminante')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN supervisor_eliminante VARCHAR(255) NULL");
-                    }
-                    if (!Schema::hasColumn('actas_backup', 'deleted_at')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN deleted_at DATETIME NULL");
-                    }
-                    if (!Schema::hasColumn('actas_backup', 'deleted_by')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN deleted_by INT NULL");
-                    }
-                    if (!Schema::hasColumn('actas_backup', 'original_acta_id')) {
-                        DB::statement("ALTER TABLE `actas_backup` ADD COLUMN original_acta_id INT NULL");
-                    }
+                } catch (\Exception $e) {
+                    logger()->warning('No se pudo asegurar columnas en actas_eliminadas: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                logger()->warning('No se pudo asegurar columnas en actas_backup: ' . $e->getMessage());
-            }
 
-            // Preparar copia a insertar en actas_backup
-            $original = (array) $acta;
-            // preservar id original en original_acta_id y quitar id para evitar conflictos PK
-            $original['original_acta_id'] = $original['id'];
-            unset($original['id']);
+                // Preparar copia a insertar en actas_eliminadas
+                $original = (array) $acta;
+                $original['original_acta_id'] = $original['id'];
+                // No sobrescribir la PK en la tabla destino
+                unset($original['id']);
 
-            // Añadir metadatos de eliminación
-            $original['motivo_eliminacion'] = $motivo;
-            $original['observaciones_eliminacion'] = $observaciones;
-            $original['supervisor_eliminante'] = $supervisor;
-            $original['deleted_at'] = $hora;
-            $original['deleted_by'] = Auth::id() ?? null;
+                // Añadir metadatos de eliminación
+                $original['motivo_eliminacion'] = $motivo;
+                $original['observaciones_eliminacion'] = $observaciones;
+                $original['supervisor_eliminante'] = $supervisor;
+                $original['deleted_at'] = $hora;
+                $original['deleted_by'] = Auth::id() ?? null;
 
-            // Insertar en actas_backup
-            try {
-                if (Schema::hasTable('actas_backup')) {
-                    DB::table('actas_backup')->insert($original);
+                // Insertar en actas_eliminadas (si la tabla existe)
+                if (Schema::hasTable('actas_eliminadas')) {
+                    // filtrar columnas que realmente existen en la tabla destino
+                    $cols = Schema::getColumnListing('actas_eliminadas');
+                    $toInsert = array_intersect_key($original, array_flip($cols));
+                    DB::table('actas_eliminadas')->insert($toInsert);
                 }
-            } catch (\Exception $e) {
-                logger()->warning('No se pudo insertar en actas_backup: ' . $e->getMessage());
-            }
 
-            // Preparar actualización lógica de la fila original (limpiar PII y dejar nota)
-            $nota = "REGISTRO MARCADO COMO ELIMINADO el {$hora} por: " . ($supervisor ?: (Auth::check() ? Auth::user()->name : 'Sistema')) . ". Motivo: {$motivo}. Observaciones: " . ($observaciones ?: 'N/A');
+                // Finalmente eliminar la fila original de la tabla actas para no dejar campos nulos
+                DB::table('actas')->where('id', $id)->delete();
+            });
 
-            $update = ['updated_at' => $hora];
+            logger()->info('Acta eliminada y respaldada en actas_eliminadas', ['acta_id' => $id, 'backup_original_id' => $acta->id, 'user_id' => Auth::id(), 'motivo' => $motivo]);
 
-            if (Schema::hasColumn('actas', 'motivo_eliminacion')) $update['motivo_eliminacion'] = $motivo;
-            if (Schema::hasColumn('actas', 'observaciones_eliminacion')) $update['observaciones_eliminacion'] = $observaciones;
-            if (Schema::hasColumn('actas', 'supervisor_eliminante')) $update['supervisor_eliminante'] = $supervisor;
-
-            if (Schema::hasColumn('actas', 'descripcion_hechos')) {
-                $update['descripcion_hechos'] = $nota;
-            } elseif (Schema::hasColumn('actas', 'descripcion')) {
-                $update['descripcion'] = $nota;
-            } elseif (Schema::hasColumn('actas', 'razon_social')) {
-                $update['razon_social'] = $nota;
-            }
-
-            // Campos identificables a limpiar
-            $colsToClear = [
-                'numero_acta','nombre_conductor','ruc_dni','placa','placa_vehiculo','monto_multa',
-                'licencia','licencia_conductor','razon_social','fecha_infraccion','hora_infraccion',
-                'fecha_intervencion','hora_intervencion','ubicacion','lugar_intervencion','inspector_responsable'
-            ];
-            foreach ($colsToClear as $c) {
-                if (Schema::hasColumn('actas', $c)) {
-                    $update[$c] = null;
-                }
-            }
-
-            if (Schema::hasColumn('actas', 'estado')) {
-                $val = $this->estadoValueForDeletion();
-                if ($val !== null) $update['estado'] = $val;
-            }
-
-            DB::table('actas')->where('id', $id)->update($update);
-
-            DB::commit();
-
-            logger()->info('Acta marcada como eliminada y respaldada en actas_backup', ['acta_id' => $id, 'backup_original_id' => $original['original_acta_id'], 'user_id' => Auth::id(), 'motivo' => $motivo]);
-
-            return response()->json(['success' => true, 'message' => 'Acta eliminada (copia guardada en actas_backup)']);
-
+            return response()->json(['success' => true, 'message' => 'Acta eliminada y respaldada en actas_eliminadas']);
         } catch (\Exception $e) {
-            DB::rollBack();
             logger()->error('Error procesando eliminación de acta: ' . $e->getMessage(), ['acta_id' => $id, 'user_id' => Auth::id()]);
             return response()->json(['success' => false, 'message' => 'Error procesando la eliminación: ' . $e->getMessage()], 500);
         }
