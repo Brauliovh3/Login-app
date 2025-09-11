@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('tipo_servicio')->nullable();
 
             // Datos del infractor
-            $table->enum('tipo_agente', ['Transportista', 'Operador de Ruta', 'Conductor']);
+            $table->enum('tipo_agente', ['Transportista', 'Operador de Ruta', 'Conductor', 'Inspector']);
             $table->string('placa');
             // Campo legacy usado por seeders y vistas
             $table->string('placa_vehiculo')->nullable();
