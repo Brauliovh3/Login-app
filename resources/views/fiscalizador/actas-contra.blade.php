@@ -246,16 +246,105 @@ try {
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                                <div class="action-btn" onclick="mostrarModalConsultasSimple()">
+                                <div class="action-btn" onclick="abrirConsultasDirecto()">
                                     <i class="fas fa-search"></i>
                                     <strong>Consultas</strong>
                                 </div>
+                                <script>
+                                // Función para abrir modal de consultas (sin alert)
+                                function abrirConsultasDirecto() {
+                                    console.log('Abriendo modal de consultas...');
+                                    
+                                    var modal = document.getElementById('modal-consultas');
+                                    
+                                    if (modal) {
+                                        // Aplicar estilos forzados
+                                        modal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background-color: rgba(0, 0, 0, 0.5) !important; z-index: 99999 !important; justify-content: center !important; align-items: center !important; visibility: visible !important; opacity: 1 !important;';
+                                        
+                                        // Forzar propiedades adicionales
+                                        modal.style.setProperty('display', 'flex', 'important');
+                                        modal.style.setProperty('visibility', 'visible', 'important');
+                                        modal.style.setProperty('opacity', 1, 'important');
+                                        modal.style.setProperty('pointer-events', 'auto', 'important');
+                                        
+                                        // Asegurar que elementos padre no estén ocultos
+                                        var elemento = modal;
+                                        while (elemento && elemento !== document.body) {
+                                            if (elemento.style.display === 'none') {
+                                                elemento.style.setProperty('display', 'block', 'important');
+                                            }
+                                            if (elemento.style.visibility === 'hidden') {
+                                                elemento.style.setProperty('visibility', 'visible', 'important');
+                                            }
+                                            elemento = elemento.parentNode;
+                                        }
+                                        
+                                        // Remover clases que puedan estar ocultando
+                                        modal.classList.remove('d-none', 'hidden', 'invisible');
+                                        modal.classList.add('d-flex');
+                                        
+                                        document.body.style.overflow = 'hidden';
+                                        
+                                        // Verificar si el modal original necesita ser restaurado
+                                        setTimeout(function() {
+                                            if (modal.offsetWidth === 0 || modal.offsetHeight === 0) {
+                                                // Mover al body si está en contenedor problemático
+                                                if (modal.parentNode !== document.body) {
+                                                    document.body.appendChild(modal);
+                                                }
+                                                
+                                                // Inyectar CSS forzado
+                                                var estilosForzados = document.createElement('style');
+                                                estilosForzados.innerHTML = '#modal-consultas { display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0,0,0,0.5) !important; z-index: 999999 !important; visibility: visible !important; opacity: 1 !important; }';
+                                                document.head.appendChild(estilosForzados);
+                                            }
+                                        }, 50);
+                                        
+                                        // Cargar estadísticas si la función existe
+                                        if (typeof cargarEstadisticasReales === 'function') {
+                                            try {
+                                                cargarEstadisticasReales();
+                                            } catch (e) {
+                                                console.log('Error cargando estadísticas:', e);
+                                            }
+                                        }
+                                        
+                                    } else {
+                                        console.error('Modal no encontrado');
+                                    }
+                                }
+                                </script>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                                <div class="action-btn" onclick="mostrarModalEliminarSimple()">
+                                <div class="action-btn" onclick="abrirEliminarDirecto()">
                                     <i class="fas fa-trash-alt"></i>
                                     <strong>Eliminar Acta</strong>
                                 </div>
+                                <script>
+                                // Función para abrir modal de eliminar (sin alert)
+                                function abrirEliminarDirecto() {
+                                    console.log('Abriendo modal eliminar...');
+                                    
+                                    var modal = document.getElementById('modal-eliminar-acta');
+                                    
+                                    if (modal) {
+                                        modal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background-color: rgba(0, 0, 0, 0.5) !important; z-index: 99999 !important; justify-content: center !important; align-items: center !important; visibility: visible !important; opacity: 1 !important;';
+                                        
+                                        modal.style.setProperty('display', 'flex', 'important');
+                                        modal.style.setProperty('visibility', 'visible', 'important');
+                                        modal.style.setProperty('opacity', 1, 'important');
+                                        
+                                        modal.classList.remove('d-none', 'hidden', 'invisible');
+                                        modal.classList.add('d-flex');
+                                        
+                                        document.body.style.overflow = 'hidden';
+                                        
+                                        console.log('Modal eliminar abierto');
+                                    } else {
+                                        console.error('Modal eliminar no encontrado');
+                                    }
+                                }
+                                </script>
                             </div>
                         </div>
                     </div>
@@ -1787,7 +1876,7 @@ if (_infraccionEl && _montoEl) {
                 <i class="fas fa-trash-alt me-2"></i>
                 ELIMINAR ACTA DEL SISTEMA
             </h4>
-            <button class="close-modal" onclick="cerrarModalEliminarSimple()">
+            <button class="close-modal" onclick="cerrarEliminarDirecto()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -1902,7 +1991,7 @@ if (_infraccionEl && _montoEl) {
                 <i class="fas fa-search me-2"></i>
                 CONSULTAS Y REPORTES DRTC
             </h4>
-            <button class="close-modal" onclick="cerrarModalConsultasSimple()">
+            <button class="close-modal" onclick="cerrarConsultasDirecto(); console.log('Botón X clickeado');">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -2080,9 +2169,146 @@ if (_infraccionEl && _montoEl) {
     </div>
 </div>
 
-@endsection
-
 <script>
+// FUNCIONES GLOBALES PARA MODALES
+function cerrarConsultasDirecto() {
+    console.log('Cerrando modal de consultas...');
+    var modal = document.getElementById('modal-consultas');
+    if (modal) {
+        // Método 1: Estilos CSS agresivos
+        modal.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important;';
+        
+        // Método 2: Propiedades individuales
+        modal.style.setProperty('display', 'none', 'important');
+        modal.style.setProperty('visibility', 'hidden', 'important');
+        modal.style.setProperty('opacity', '0', 'important');
+        modal.style.setProperty('pointer-events', 'none', 'important');
+        
+        // Método 3: Clases
+        modal.classList.remove('d-flex', 'show');
+        modal.classList.add('d-none');
+        
+        // Método 4: Remover del DOM temporalmente y volver a agregar
+        var padre = modal.parentNode;
+        var siguienteHermano = modal.nextSibling;
+        padre.removeChild(modal);
+        modal.style.display = 'none';
+        padre.insertBefore(modal, siguienteHermano);
+        
+        // Método 5: Inyectar CSS específico para ocultar
+        var estiloOcultar = document.getElementById('estilo-ocultar-modal');
+        if (!estiloOcultar) {
+            estiloOcultar = document.createElement('style');
+            estiloOcultar.id = 'estilo-ocultar-modal';
+            estiloOcultar.innerHTML = '#modal-consultas { display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important; }';
+            document.head.appendChild(estiloOcultar);
+        }
+        
+        document.body.style.overflow = '';
+        console.log('Modal de consultas cerrado');
+        
+        // Verificación final
+        setTimeout(function() {
+            console.log('Verificación post-cierre:');
+            console.log('- Display:', modal.style.display);
+            console.log('- Visibility:', modal.style.visibility);
+            console.log('- Opacity:', modal.style.opacity);
+            console.log('- Visible:', modal.offsetWidth > 0 && modal.offsetHeight > 0);
+        }, 100);
+        
+    } else {
+        console.error('Modal consultas no encontrado para cerrar');
+    }
+}
+
+function cerrarEliminarDirecto() {
+    console.log('Cerrando modal de eliminar...');
+    var modal = document.getElementById('modal-eliminar-acta');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.style.zIndex = '';
+        modal.classList.remove('d-flex');
+        document.body.style.overflow = '';
+        console.log('Modal eliminar cerrado');
+    } else {
+        console.error('Modal eliminar no encontrado para cerrar');
+    }
+}
+
+// Función universal para cerrar cualquier modal
+function cerrarModalUniversal(modalId) {
+    console.log('Cerrando modal:', modalId);
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.style.zIndex = '';
+        modal.classList.remove('d-flex');
+        document.body.style.overflow = '';
+        console.log('Modal cerrado:', modalId);
+    }
+}
+
+// Hacer funciones disponibles globalmente
+window.cerrarConsultasDirecto = cerrarConsultasDirecto;
+window.cerrarEliminarDirecto = cerrarEliminarDirecto;
+window.cerrarModalUniversal = cerrarModalUniversal;
+
+// Función de emergencia para cerrar todos los modales
+window.cerrarTodosLosModalesEmergencia = function() {
+    console.log('EMERGENCIA: Cerrando todos los modales');
+    const modales = document.querySelectorAll('.floating-modal');
+    modales.forEach(function(modal) {
+        modal.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important;';
+        modal.classList.remove('d-flex', 'show');
+        modal.classList.add('d-none');
+    });
+    
+    // Inyectar CSS ultra-agresivo
+    var estiloEmergencia = document.createElement('style');
+    estiloEmergencia.innerHTML = '.floating-modal { display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important; }';
+    document.head.appendChild(estiloEmergencia);
+    
+    document.body.style.overflow = '';
+    console.log('Todos los modales cerrados FORZADAMENTE');
+};
+
+// Función específica para ocultar modal de consultas brutalmente
+window.ocultarModalConsultasBrutal = function() {
+    console.log('MÉTODO BRUTAL: Ocultando modal consultas');
+    
+    // Método 1: CSS directo
+    var modal = document.getElementById('modal-consultas');
+    if (modal) {
+        modal.remove(); // Eliminar completamente del DOM
+        console.log('Modal eliminado del DOM');
+    }
+    
+    // Método 2: CSS global
+    var estiloBrutal = document.createElement('style');
+    estiloBrutal.innerHTML = '#modal-consultas, .floating-modal { display: none !important; visibility: hidden !important; opacity: 0 !important; z-index: -9999 !important; height: 0 !important; width: 0 !important; }';
+    document.head.appendChild(estiloBrutal);
+    
+    document.body.style.overflow = '';
+    console.log('Modal ocultado brutalmente');
+};
+
+// Función para testear el botón de cerrar específico
+window.testearBotonCerrar = function() {
+    const modalConsultas = document.getElementById('modal-consultas');
+    if (modalConsultas) {
+        const boton = modalConsultas.querySelector('.close-modal');
+        if (boton) {
+            console.log('Botón encontrado:', boton);
+            console.log('Onclick:', boton.getAttribute('onclick'));
+            boton.click();
+        } else {
+            console.error('Botón close-modal no encontrado');
+        }
+    } else {
+        console.error('Modal consultas no encontrado');
+    }
+};
+
 // FUNCIONES PARA APIs DE CONSULTA DNI/RUC
 document.addEventListener('DOMContentLoaded', function() {
     // API para consulta de RUC/DNI único
@@ -3734,55 +3960,217 @@ function exportarPDF() { exportTableToPDF('#tabla-resultados', `Actas_Export_${n
 </style>
 
 <script>
-// Función simple para testing del modal
+// Sistema de gestión de modales mejorado
+let modalZIndexBase = 10000;
+let modalesAbiertos = [];
+
+function cerrarTodosLosModales() {
+    console.log('Cerrando todos los modales');
+    const modales = ['modal-consultas', 'modal-eliminar-acta', 'modal-nueva-acta', 'modal-editar-acta'];
+    modales.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            modal.style.zIndex = '';
+        }
+    });
+    modalesAbiertos = [];
+    document.body.style.overflow = '';
+}
+
 function mostrarModalConsultasSimple() {
-    console.log('Función simple llamada');
+    console.log('Abriendo modal de consultas');
+    
+    // Cerrar otros modales primero
+    cerrarTodosLosModales();
+    
     const modal = document.getElementById('modal-consultas');
     if (modal) {
+        modalZIndexBase += 10;
         modal.style.display = 'flex';
-        modal.style.zIndex = '99999';
+        modal.style.zIndex = modalZIndexBase;
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
         modal.style.width = '100%';
         modal.style.height = '100%';
         modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        
         document.body.style.overflow = 'hidden';
-        console.log('Modal consultasabierto');
+        modalesAbiertos.push('modal-consultas');
+        
+        console.log('Modal de consultas abierto con z-index:', modalZIndexBase);
+        
+        // Cargar estadísticas si la función existe
+        if (typeof cargarEstadisticasReales === 'function') {
+            try {
+                cargarEstadisticasReales();
+            } catch (e) {
+                console.log('Error cargando estadísticas:', e);
+            }
+        }
     } else {
-        console.error('Modal no encontrado');
+        console.error('Modal modal-consultas no encontrado');
     }
 }
 
 function cerrarModalConsultasSimple() {
+    console.log('Cerrando modal de consultas');
     const modal = document.getElementById('modal-consultas');
     if (modal) {
         modal.style.display = 'none';
-        document.body.style.overflow = '';
+        modal.style.zIndex = '';
+        
+        // Remover de la lista de modales abiertos
+        modalesAbiertos = modalesAbiertos.filter(id => id !== 'modal-consultas');
+        
+        // Si no hay más modales abiertos, restaurar scroll
+        if (modalesAbiertos.length === 0) {
+            document.body.style.overflow = '';
+        }
     }
 }
 
 function mostrarModalEliminarSimple() {
     console.log('Abriendo modal eliminar');
+    
+    // No cerrar otros modales automáticamente para testing
+    
     const modal = document.getElementById('modal-eliminar-acta');
     if (modal) {
+        modalZIndexBase += 10;
         modal.style.display = 'flex';
-        modal.style.zIndex = '99999';
+        modal.style.zIndex = modalZIndexBase;
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
         modal.style.width = '100%';
         modal.style.height = '100%';
         modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        
         document.body.style.overflow = 'hidden';
+        modalesAbiertos.push('modal-eliminar-acta');
+        
+        console.log('Modal eliminar abierto con z-index:', modalZIndexBase);
+    } else {
+        console.error('Modal modal-eliminar-acta no encontrado');
     }
 }
 
 function cerrarModalEliminarSimple() {
+    console.log('Cerrando modal eliminar');
     const modal = document.getElementById('modal-eliminar-acta');
     if (modal) {
         modal.style.display = 'none';
-        document.body.style.overflow = '';
+        modal.style.zIndex = '';
+        
+        // Remover de la lista de modales abiertos
+        modalesAbiertos = modalesAbiertos.filter(id => id !== 'modal-eliminar-acta');
+        
+        // Si no hay más modales abiertos, restaurar scroll
+        if (modalesAbiertos.length === 0) {
+            document.body.style.overflow = '';
+        }
     }
 }
+
+// Función de emergencia para debugging
+function debugModales() {
+    console.log('=== DEBUG MODALES ===');
+    console.log('Modales abiertos:', modalesAbiertos);
+    console.log('Z-index base:', modalZIndexBase);
+    
+    const modalConsultas = document.getElementById('modal-consultas');
+    const modalEliminar = document.getElementById('modal-eliminar-acta');
+    
+    console.log('Modal consultas existe:', !!modalConsultas);
+    if (modalConsultas) {
+        console.log('Consultas display:', modalConsultas.style.display);
+        console.log('Consultas z-index:', modalConsultas.style.zIndex);
+    }
+    
+    console.log('Modal eliminar existe:', !!modalEliminar);
+    if (modalEliminar) {
+        console.log('Eliminar display:', modalEliminar.style.display);
+        console.log('Eliminar z-index:', modalEliminar.style.zIndex);
+    }
+}
+
+// Hacer función disponible globalmente para testing
+window.debugModales = debugModales;
+window.cerrarTodosLosModales = cerrarTodosLosModales;
+
+// Event listeners para cerrar modales al hacer clic en el overlay
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para manejar clicks en overlay
+    function manejarClickOverlay(event) {
+        if (event.target.classList.contains('floating-modal')) {
+            const modalId = event.target.id;
+            if (modalId === 'modal-consultas') {
+                cerrarConsultasDirecto();
+            } else if (modalId === 'modal-eliminar-acta') {
+                cerrarEliminarDirecto();
+            }
+        }
+    }
+    
+    // Agregar event listeners a los modales
+    const modalConsultas = document.getElementById('modal-consultas');
+    const modalEliminar = document.getElementById('modal-eliminar-acta');
+    
+    if (modalConsultas) {
+        modalConsultas.addEventListener('click', manejarClickOverlay);
+        
+        // Event listener directo para el botón de cerrar
+        const btnCerrarConsultas = modalConsultas.querySelector('.close-modal');
+        if (btnCerrarConsultas) {
+            btnCerrarConsultas.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Botón cerrar consultas clickeado (event listener)');
+                cerrarConsultasDirecto();
+            });
+        }
+    }
+    
+    if (modalEliminar) {
+        modalEliminar.addEventListener('click', manejarClickOverlay);
+        
+        // Event listener directo para el botón de cerrar
+        const btnCerrarEliminar = modalEliminar.querySelector('.close-modal');
+        if (btnCerrarEliminar) {
+            btnCerrarEliminar.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Botón cerrar eliminar clickeado (event listener)');
+                cerrarEliminarDirecto();
+            });
+        }
+    }
+    
+    console.log('Event listeners de modales configurados');
+    
+    // Event listener para cerrar modales con tecla Escape
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            // Buscar cualquier modal abierto y cerrarlo
+            const modalesAbiertos = document.querySelectorAll('.floating-modal');
+            modalesAbiertos.forEach(function(modal) {
+                if (modal.style.display === 'flex') {
+                    console.log('Cerrando modal con Escape:', modal.id);
+                    modal.style.display = 'none';
+                    modal.style.zIndex = '';
+                    modal.classList.remove('d-flex');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+    });
+});
 </script>
+
+@endsection
