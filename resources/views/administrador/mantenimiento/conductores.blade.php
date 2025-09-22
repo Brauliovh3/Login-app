@@ -68,9 +68,9 @@
             @endif
         </div>
         <div class="card-footer text-muted small d-flex justify-content-between align-items-center">
-            <div>Mostrando {{ $conductores->total() ?? (isset($conductores) ? count($conductores) : 0) }} conductores</div>
+            <div>Mostrando {{ isset($conductores) ? count($conductores) : 0 }} conductores</div>
             <div>
-                {{ $conductores->links() }}
+                <!-- Paginación removida - mostrando todos los resultados -->
             </div>
         </div>
     </div>

@@ -68,10 +68,9 @@
             <?php endif; ?>
         </div>
         <div class="card-footer text-muted small d-flex justify-content-between align-items-center">
-            <div>Mostrando <?php echo e($conductores->total() ?? (isset($conductores) ? count($conductores) : 0)); ?> conductores</div>
+            <div>Mostrando <?php echo e(isset($conductores) ? count($conductores) : 0); ?> conductores</div>
             <div>
-                <?php echo e($conductores->links()); ?>
-
+                <!-- Paginación removida - mostrando todos los resultados -->
             </div>
         </div>
     </div>

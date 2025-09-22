@@ -246,13 +246,13 @@ try {
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                                <div class="action-btn" onclick="abrirModal('modal-consultas')">
+                                <div class="action-btn" onclick="mostrarModalConsultasSimple()">
                                     <i class="fas fa-search"></i>
                                     <strong>Consultas</strong>
                                 </div>
                             </div>
                             <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                                <div class="action-btn" onclick="abrirModal('modal-eliminar-acta')">
+                                <div class="action-btn" onclick="mostrarModalEliminarSimple()">
                                     <i class="fas fa-trash-alt"></i>
                                     <strong>Eliminar Acta</strong>
                                 </div>
@@ -1073,24 +1073,31 @@ if (_infraccionEl && _montoEl) {
                         
                         <!-- Datos del operador/conductor -->
                         <div class="row">
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-2 mb-3">
                                 <label class="form-label fw-bold text-warning">RUC/DNI:</label>
-                                <input type="text" class="form-control border-warning" name="ruc_dni" id="ruc_dni" placeholder="20123456789 o 12345678" maxlength="11" required>
+                                <div class="input-group">
+                                    <input type="text" class="form-control border-warning" name="ruc_dni" id="ruc_dni" placeholder="20123456789 o 123" maxlength="11" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="btn-probar-ruc-dni">
+                                        <i class="fas fa-search"></i> Probar
+                                    </button>
+                                </div>
                                 <div class="form-text">
                                     <small class="text-muted">DNI: 8 dígitos | RUC: 11 dígitos</small>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-7 mb-3">
                                 <label class="form-label fw-bold text-warning">Razón Social: <small class="text-muted">(Opcional)</small></label>
-                                <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Razón social (empresa) - opcional">
+                                <div class="input-group">
+                                    <input type="text" class="form-control border-warning" name="razon_social" id="razon_social" placeholder="Razón social (empresa) - opcional">
+                                    <a href="/ver-consultas.html" target="_blank" class="btn btn-outline-secondary">
+                                        <i class="fas fa-database me-1"></i>Ver Consultas
+                                    </a>
+                                </div>
                                 <div id="loading-data" class="form-text text-info" style="display: none;">
                                     <i class="fas fa-spinner fa-spin"></i> Consultando datos...
                                 </div>
                                 <div class="form-text mt-1">
                                     <small class="text-muted">Datos de empresa (SUNAT) o nombre del operador si aplica</small>
-                                    <a href="/ver-consultas.html" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">
-                                        <i class="fas fa-database me-1"></i>Ver Consultas
-                                    </a>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
@@ -1099,11 +1106,12 @@ if (_infraccionEl && _montoEl) {
                             </div>
                         </div>
                         
-                        <!-- Datos adicionales del conductor -->
+                        <!-- Segunda línea: Nombres, Licencia y Clase/Categoría -->
                         <div class="row">
-                            <div class="col-md-6 mb-3" style="display: none;">
-                                <!-- Mantener campo prenombres como hidden para compatibilidad en servidor -->
-                                <input type="hidden" class="form-control border-warning" name="nombre_conductor_1" placeholder="Nombres (prenombres)">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-warning">Apellidos y Nombres (completo):</label>
+                                <input type="text" class="form-control border-warning" name="apellidos_nombres" id="apellidos_nombres" placeholder="Apellido paterno Apellido materno Nombres" required>
+                                <div class="form-text"><small class="text-muted">Opcional: si completa aquí, se usará como nombre completo del conductor.</small></div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label fw-bold text-warning">N° Licencia de Conducir:</label>
@@ -1122,14 +1130,10 @@ if (_infraccionEl && _montoEl) {
                                 </select>
                             </div>
                         </div>
-
-                        <!-- Nuevo campo: Apellidos y Nombres (se muestra debajo del nombre principal) -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-warning">Apellidos y Nombres (completo):</label>
-                                <input type="text" class="form-control border-warning" name="apellidos_nombres" id="apellidos_nombres" placeholder="Apellido paterno Apellido materno Nombres">
-                                <div class="form-text"><small class="text-muted">Opcional: si completa aquí, se usará como nombre completo del conductor.</small></div>
-                            </div>
+                        
+                        <!-- Campo hidden para compatibilidad con servidor -->
+                        <div style="display: none;">
+                            <input type="hidden" class="form-control border-warning" name="nombre_conductor_1" placeholder="Nombres (prenombres)">
                         </div>
                     </div>
                 </div>
@@ -1374,23 +1378,23 @@ if (_infraccionEl && _montoEl) {
                     function buildPrintableActaHTML(data) {
                         // Nota: mantener estilos inline para evitar dependencias externas
                         var css = `
-                            @page { size: A4; margin: 10mm; }
-                            body { font-family: Arial, Helvetica, sans-serif; color: #000; }
-                            .acta-container { width: 210mm; max-width: 100%; margin: 0 auto; padding: 6mm; box-sizing: border-box; }
-                            .header { display:flex; align-items:center; gap:8px; }
-                            .logo { width:60px; height:60px; border:2px solid #000; display:flex; align-items:center; justify-content:center; }
-                            .header-center { flex:1; text-align:center; }
-                            .acta-title { font-size:20px; font-weight:700; }
-                            .acta-meta { margin-top:6px; font-weight:700; display:flex; align-items:center; gap:8px; justify-content:center; }
-                            .numero-box { display:inline-block; min-width:90px; max-width:140px; padding:6px 8px; border:2px solid #000; text-align:center; font-weight:700; background:#fff; }
-                            .section { margin-top:10px; border:1px solid #000; padding:8px; }
-                            .row { display:flex; gap:8px; }
-                            .col { flex:1; }
-                            .label { font-weight:700; font-size:12px; }
-                            .value { font-size:13px; border-bottom:1px dashed #000; padding:4px 2px; }
-                            .big-value { font-size:14px; font-weight:700; }
-                            .signatures { display:flex; justify-content:space-between; margin-top:18px; }
-                            .sig-box { width:45%; text-align:center; border-top:1px solid #000; padding-top:6px; }
+                            @page { size: A4; margin: 8mm; }
+                            body { font-family: Arial, Helvetica, sans-serif; color: #000; margin: 0; padding: 0; }
+                            .acta-container { width: 210mm; max-width: 100%; margin: 0 auto; padding: 4mm; box-sizing: border-box; }
+                            .header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+                            .logo { width: 55px; height: 55px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; }
+                            .header-center { flex: 1; text-align: center; }
+                            .acta-title { font-size: 18px; font-weight: 700; margin: 0; }
+                            .acta-meta { margin-top: 4px; font-weight: 700; display: flex; align-items: center; gap: 6px; justify-content: center; }
+                            .numero-box { display: inline-block; min-width: 85px; max-width: 130px; padding: 4px 6px; border: 2px solid #000; text-align: center; font-weight: 700; background: #fff; }
+                            .section { margin-top: 6px; border: 1px solid #000; padding: 6px; }
+                            .row { display: flex; gap: 6px; margin-bottom: 2px; }
+                            .col { flex: 1; }
+                            .label { font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+                            .value { font-size: 12px; border-bottom: 1px dashed #000; padding: 2px 1px; min-height: 16px; }
+                            .big-value { font-size: 13px; font-weight: 700; }
+                            .signatures { display: flex; justify-content: space-between; margin-top: 12px; }
+                            .sig-box { width: 45%; text-align: center; border-top: 1px solid #000; padding-top: 4px; }
                         `;
 
                         // Seguridad: normalizar undefined
@@ -1413,36 +1417,36 @@ if (_infraccionEl && _montoEl) {
                         // Secciones principales
                         html += `<div class="section">`;
                         html += `<div class="label">I. DATOS DEL OPERADOR/CONDUCTOR</div>`;
-                        html += `<div style="margin-top:6px;">`;
+                        html += `<div style="margin-top:4px;">`;
                         html += `<div class="row"><div class="col"><div class="label">RUC/DNI</div><div class="value">${data.ruc_dni || ''}</div></div>`;
                         html += `<div class="col"><div class="label">Razón social / Nombres</div><div class="value">${data.razon_social || ''}</div></div>`;
                         html += `<div class="col"><div class="label">Placa</div><div class="value">${data.placa || ''}</div></div></div>`;
-                        html += `<div class="row" style="margin-top:6px;"><div class="col"><div class="label">Conductor</div><div class="value">${data.nombre_conductor || ''}</div></div>`;
+                        html += `<div class="row"><div class="col"><div class="label">Conductor</div><div class="value">${data.nombre_conductor || ''}</div></div>`;
                         html += `<div class="col"><div class="label">N° Licencia</div><div class="value">${data.licencia || ''}</div></div>`;
                         html += `<div class="col"><div class="label">Clase/Categoría</div><div class="value">${data.clase_categoria || ''}</div></div></div>`;
                         html += `</div></div>`;
 
                         html += `<div class="section">`;
                         html += `<div class="label">II. DATOS DE LA INTERVENCIÓN</div>`;
-                        html += `<div style="margin-top:6px;">`;
+                        html += `<div style="margin-top:4px;">`;
                         html += `<div class="label">Lugar</div><div class="value">${data.lugar_intervencion || ''}${data.direccion_especifica ? ' - ' + data.direccion_especifica : ''}</div>`;
-                        html += `<div style="margin-top:6px;" class="label">Tipo de Servicio</div><div class="value">${data.tipo_servicio || ''}</div>`;
+                        html += `<div style="margin-top:3px;" class="label">Tipo de Servicio</div><div class="value">${data.tipo_servicio || ''}</div>`;
                         html += `</div></div>`;
 
                         html += `<div class="section">`;
                         html += `<div class="label">III. DESCRIPCIÓN DE LA INFRACCIÓN</div>`;
-                        html += `<div style="margin-top:6px;"><div class="label">Tipo / Código / Gravedad</div><div class="value">${data.tipo_infraccion || ''} ${data.codigo_infraccion ? ' / ' + data.codigo_infraccion : ''} ${data.gravedad ? ' / ' + data.gravedad : ''}</div></div>`;
-                        html += `<div style="margin-top:8px;"><div class="label">Descripción detallada</div><div class="value" style="min-height:70px;">${(data.descripcion_hechos || '').replace(/\n/g, '<br/>')}</div></div>`;
+                        html += `<div style="margin-top:4px;"><div class="label">Tipo / Código / Gravedad</div><div class="value">${data.tipo_infraccion || ''} ${data.codigo_infraccion ? ' / ' + data.codigo_infraccion : ''} ${data.gravedad ? ' / ' + data.gravedad : ''}</div></div>`;
+                        html += `<div style="margin-top:4px;"><div class="label">Descripción detallada</div><div class="value" style="min-height:60px;">${(data.descripcion_hechos || '').replace(/\n/g, '<br/>')}</div></div>`;
                         html += `</div>`;
 
                         // Multa / monto
-                        html += `<div style="margin-top:8px; display:flex; gap:12px;"><div style="flex:1;"><div class="label">Monto de la multa</div><div class="value big-value">${data.monto_multa ? ('S/ ' + Number(data.monto_multa).toFixed(2)) : ''}</div></div>`;
-                        html += `<div style="width:220px;"><div class="label">Vencimiento</div><div class="value">${data.vencimiento || ''}</div></div></div>`;
+                        html += `<div style="margin-top:6px; display:flex; gap:8px;"><div style="flex:1;"><div class="label">Monto de la multa</div><div class="value big-value">${data.monto_multa ? ('S/ ' + Number(data.monto_multa).toFixed(2)) : ''}</div></div>`;
+                        html += `<div style="width:200px;"><div class="label">Vencimiento</div><div class="value">${data.vencimiento || ''}</div></div></div>`;
 
                         // Firmas: no mostrar nombre del inspector en la exportación (se deja el espacio para firma)
                         html += `<div class="signatures">`;
-                        html += `<div class="sig-box">Firma del Inspector<br/><div style="margin-top:10px; font-weight:700;">&nbsp;</div></div>`;
-                        html += `<div class="sig-box">Firma del Operador / Conductor<br/><div style="margin-top:10px; font-weight:700;">${data.nombre_conductor || ''}</div></div>`;
+                        html += `<div class="sig-box">Firma del Inspector<br/><div style="margin-top:8px; font-weight:700;">&nbsp;</div></div>`;
+                        html += `<div class="sig-box">Firma del Operador / Conductor<br/><div style="margin-top:8px; font-weight:700;">${data.nombre_conductor || ''}</div></div>`;
                         html += `</div>`;
 
                         html += `</div>`; // container
@@ -1783,7 +1787,7 @@ if (_infraccionEl && _montoEl) {
                 <i class="fas fa-trash-alt me-2"></i>
                 ELIMINAR ACTA DEL SISTEMA
             </h4>
-            <button class="close-modal" onclick="cerrarModal('modal-eliminar-acta')">
+            <button class="close-modal" onclick="cerrarModalEliminarSimple()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -1898,7 +1902,7 @@ if (_infraccionEl && _montoEl) {
                 <i class="fas fa-search me-2"></i>
                 CONSULTAS Y REPORTES DRTC
             </h4>
-            <button class="close-modal" onclick="cerrarModal('modal-consultas')">
+            <button class="close-modal" onclick="cerrarModalConsultasSimple()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -2085,6 +2089,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const rucDniInput = document.getElementById('ruc_dni');
     const razonSocialInput = document.getElementById('razon_social');
     const loadingData = document.getElementById('loading-data');
+    
+    // Conectar el botón "Probar" con la funcionalidad de consulta
+    const btnProbarRucDni = document.getElementById('btn-probar-ruc-dni');
+    if (btnProbarRucDni) {
+        btnProbarRucDni.addEventListener('click', function() {
+            const valor = rucDniInput.value.trim();
+            if (valor.length === 8) {
+                consultarDNI(valor);
+            } else if (valor.length === 11) {
+                consultarRUC(valor);
+            } else {
+                mostrarNotificacion('Ingrese un DNI (8 dígitos) o RUC (11 dígitos) válido', 'warning');
+            }
+        });
+    }
     
     // Función para consultar RUC en SUNAT (con API de Decolecta mejorada)
     async function consultarRUC(ruc) {
@@ -2595,10 +2614,48 @@ let tiempoInicioRegistro = null;
 let actaIdEnProceso = null;
 let autoguardadoInterval = null;
 
-// Función para abrir modales
+// Función para abrir modales con z-index dinámico
 function abrirModal(modalId) {
-    document.getElementById(modalId).style.display = 'flex';
+    console.log('abrirModal llamado con:', modalId);
+    
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        console.error('Modal no encontrado:', modalId);
+        return;
+    }
+    
+    console.log('Modal encontrado:', modal);
+    
+    // Incrementar z-index base para cada nuevo modal
+    if (!window.modalZIndex) window.modalZIndex = 9999;
+    window.modalZIndex += 10;
+    
+    // Dar boost especial al modal de consultas
+    if (modalId === 'modal-consultas') {
+        window.modalZIndex += 20;
+        console.log('Boost aplicado para modal-consultas');
+    }
+    
+    console.log('Z-index aplicado:', window.modalZIndex);
+    
+    // Limpiar estilos previos
+    modal.style.display = '';
+    modal.style.zIndex = '';
+    modal.classList.remove('show');
+    
+    // Aplicar estilos para mostrar (método que funciona)
+    modal.style.display = 'flex';
+    modal.style.zIndex = window.modalZIndex;
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    
     document.body.style.overflow = 'hidden';
+    
+    console.log('Modal debería estar visible ahora');
     
     // Auto-llenar campos de fecha y hora en modal nueva acta
     if (modalId === 'modal-nueva-acta') {
@@ -2607,7 +2664,37 @@ function abrirModal(modalId) {
     
     // Cargar estadísticas reales en modal de consultas
     if (modalId === 'modal-consultas') {
+        console.log('Cargando estadísticas para modal-consultas');
         cargarEstadisticasReales();
+    }
+}
+
+// Función para cerrar modales
+function cerrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    
+    // Ocultar modal
+    modal.style.display = 'none';
+    modal.style.zIndex = '';
+    modal.classList.remove('show');
+    
+    // Verificar si hay otros modales abiertos
+    const modalesAbiertos = document.querySelectorAll('.floating-modal');
+    let hayModalAbierto = false;
+    
+    for (let i = 0; i < modalesAbiertos.length; i++) {
+        if (modalesAbiertos[i].style.display === 'flex') {
+            hayModalAbierto = true;
+            break;
+        }
+    }
+    
+    // Si no hay modales abiertos, restaurar scroll
+    if (!hayModalAbierto) {
+        document.body.style.overflow = '';
+        // Resetear contador si no hay modales abiertos
+        window.modalZIndex = 9999;
     }
 }
 
@@ -3597,9 +3684,105 @@ document.addEventListener('DOMContentLoaded', function() {
     if (direccionInput) {
         direccionInput.addEventListener('input', actualizarLugarCompleto);
     }
+    
+    // Verificar si hay un modal que abrir desde URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const modalToOpen = urlParams.get('modal');
+    
+    if (modalToOpen) {
+        setTimeout(() => {
+            // Cerrar cualquier modal abierto primero
+            const modalesAbiertos = document.querySelectorAll('.floating-modal.show');
+            modalesAbiertos.forEach(modal => {
+                modal.classList.remove('show');
+            });
+            
+            // Abrir el modal solicitado con z-index alto
+            const modal = document.getElementById(modalToOpen);
+            if (modal) {
+                modal.style.zIndex = '10500'; // Z-index muy alto para modales desde URL
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        }, 300);
+    }
 });
 
 // Wrapper helpers that UI buttons call
 function exportarExcel() { exportTableToCSV('#tabla-resultados', `Actas_Consulta_${new Date().toISOString().slice(0,10)}.csv`); }
 function exportarPDF() { exportTableToPDF('#tabla-resultados', `Actas_Export_${new Date().toISOString().slice(0,10)}.pdf`); }
+</script>
+
+<style>
+/* CSS para modales flotantes */
+.floating-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.floating-modal.show {
+    display: flex !important;
+}
+</style>
+
+<script>
+// Función simple para testing del modal
+function mostrarModalConsultasSimple() {
+    console.log('Función simple llamada');
+    const modal = document.getElementById('modal-consultas');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.zIndex = '99999';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        document.body.style.overflow = 'hidden';
+        console.log('Modal consultasabierto');
+    } else {
+        console.error('Modal no encontrado');
+    }
+}
+
+function cerrarModalConsultasSimple() {
+    const modal = document.getElementById('modal-consultas');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+function mostrarModalEliminarSimple() {
+    console.log('Abriendo modal eliminar');
+    const modal = document.getElementById('modal-eliminar-acta');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.zIndex = '99999';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100%';
+        modal.style.height = '100%';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function cerrarModalEliminarSimple() {
+    const modal = document.getElementById('modal-eliminar-acta');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
 </script>

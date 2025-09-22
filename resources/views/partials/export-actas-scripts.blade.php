@@ -102,7 +102,7 @@ function exportTableToPDF(selector, filename = 'export.pdf') {
 
         // Fallback: open printable window with the table
         const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title>` +
-                     `<style>table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:6px;text-align:left}</style>` +
+                     `<style>body{margin:8px;font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse;margin:0}th,td{border:1px solid #333;padding:4px 6px;text-align:left;font-size:12px}th{background:#f5f5f5;font-weight:bold}</style>` +
                      `</head><body>` + wrapper.innerHTML + `</body></html>`;
         const w = window.open('', '_blank');
         w.document.write(html);

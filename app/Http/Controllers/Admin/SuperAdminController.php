@@ -37,6 +37,36 @@ class SuperAdminController extends Controller
         return response()->json(['ok' => true, 'message' => 'Config cached.']);
     }
 
+    public function resetAutoIncrement(Request $request)
+    {
+        if (! auth()->check() || auth()->user()->role !== 'superadmin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            // Solo reiniciar el AUTO_INCREMENT sin borrar datos
+            $maxId = DB::table('actas')->max('id') ?: 0;
+            $nextId = $maxId + 1;
+            
+            DB::statement("ALTER TABLE actas AUTO_INCREMENT = {$nextId}");
+            
+            Log::info('Superadmin reset AUTO_INCREMENT without deleting data', [
+                'user' => auth()->user()->id,
+                'max_id' => $maxId,
+                'next_id' => $nextId
+            ]);
+            
+            return response()->json([
+                'ok' => true, 
+                'message' => "AUTO_INCREMENT reiniciado al valor {$nextId} (siguiente ID disponible). Datos preservados."
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to reset auto-increment', ['err' => $e->getMessage(), 'user' => auth()->user()->id]);
+            return response()->json(['ok' => false, 'message' => 'Error al reiniciar AUTO_INCREMENT: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function resetActas(Request $request)
     {
         if (! auth()->check() || auth()->user()->role !== 'superadmin') {

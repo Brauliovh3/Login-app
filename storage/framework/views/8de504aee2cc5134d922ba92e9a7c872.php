@@ -440,17 +440,7 @@
     <!-- Sidebar -->
     <nav class="sidebar sidebar-<?php echo e(auth()->user()->role ?? 'default'); ?>" id="sidebar">
         <?php if(auth()->guard()->check()): ?>
-            <?php if(auth()->user()->role == 'administrador'): ?>
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('admin.dashboard')); ?>">
-            <?php elseif(auth()->user()->role == 'fiscalizador'): ?>
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('fiscalizador.dashboard')); ?>">
-            <?php elseif(auth()->user()->role == 'ventanilla'): ?>
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('ventanilla.dashboard')); ?>">
-            <?php elseif(auth()->user()->role == 'inspector'): ?>
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('inspector.dashboard')); ?>">
-            <?php else: ?>
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('dashboard')); ?>">
-            <?php endif; ?>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('dashboard')); ?>">
         <?php else: ?>
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo e(route('dashboard')); ?>">
         <?php endif; ?>
@@ -466,27 +456,10 @@
             <!-- Dashboard -->
             <li class="nav-item">
                 <?php if(auth()->guard()->check()): ?>
-                    <?php if(auth()->user()->role == 'administrador'): ?>
-                        <a class="nav-link <?php echo e(request()->routeIs('admin.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('admin.dashboard')); ?>">
-                            <i class="fas fa-fw fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    <?php elseif(auth()->user()->role == 'fiscalizador'): ?>
-                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.dashboard')); ?>">
-                            <i class="fas fa-fw fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    <?php elseif(auth()->user()->role == 'ventanilla'): ?>
-                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.dashboard')); ?>">
-                            <i class="fas fa-fw fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    <?php elseif(auth()->user()->role == 'inspector'): ?>
-                        <a class="nav-link <?php echo e(request()->routeIs('inspector.dashboard') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.dashboard')); ?>">
-                            <i class="fas fa-fw fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    <?php endif; ?>
+                    <a class="nav-link" href="<?php echo e(route('dashboard')); ?>">
+                        <i class="fas fa-fw fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
                 <?php endif; ?>
             </li>
 
@@ -499,28 +472,28 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('admin.mantenimiento.fiscal') ? 'active' : ''); ?>" href="<?php echo e(route('admin.mantenimiento.fiscal')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('admin.mantenimiento-inspectores')); ?>">
                             <i class="fas fa-fw fa-user-shield"></i>
                             <span>Mantenimiento Fiscal</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('admin.mantenimiento.conductor') ? 'active' : ''); ?>" href="<?php echo e(route('admin.mantenimiento.conductor')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('admin.mantenimiento-conductores')); ?>">
                             <i class="fas fa-fw fa-id-card"></i>
                             <span>Mantenimiento Conductor</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('users.index') ? 'active': ''); ?>" href="<?php echo e(route('users.index')); ?>" >
+                        <a class="nav-link" href="<?php echo e(route('admin.gestionar-usuarios')); ?>">
                             <i class="fas fa-fw fa-users-cog"></i>
                             <span>Gestionar Usuarios</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('admin.users.approval') ? 'active': ''); ?>" href="<?php echo e(route('admin.users.approval')); ?>" >
+                        <a class="nav-link" href="<?php echo e(route('admin.aprobar-usuarios')); ?>">
                             <i class="fas fa-fw fa-user-check"></i>
                             <span>Aprobar Usuarios</span>
                             <?php
@@ -541,7 +514,7 @@
 
                     <!-- Menu Principal con Dropdown -->
                     <li class="nav-item dropdown-hover">
-                        <a class="nav-link dropdown-main <?php echo e(request()->routeIs('fiscalizador.actas-contra') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.actas-contra')); ?>">
+                        <a class="nav-link dropdown-main" href="<?php echo e(route('fiscalizador.actas-contra')); ?>">
                             <i class="fas fa-fw fa-file-contract"></i>
                             <span>Actas Contra</span>
                             <i class="fas fa-angle-down dropdown-icon"></i>
@@ -589,16 +562,44 @@
                         </a>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.empresas') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.empresas')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.empresas')); ?>">
                             <i class="fas fa-fw fa-building"></i>
                             <span>Empresas</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('fiscalizador.calendario') ? 'active' : ''); ?>" href="<?php echo e(route('fiscalizador.calendario')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.calendario')); ?>">
                             <i class="fas fa-fw fa-calendar-alt"></i>
                             <span>Calendario</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.inspecciones')); ?>">
+                            <i class="fas fa-fw fa-search"></i>
+                            <span>Inspecciones</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.carga-paga')); ?>">
+                            <i class="fas fa-fw fa-truck"></i>
+                            <span>Carga Paga</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.consultas')); ?>">
+                            <i class="fas fa-fw fa-question-circle"></i>
+                            <span>Consultas</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?php echo e(route('fiscalizador.reportes')); ?>">
+                            <i class="fas fa-fw fa-chart-bar"></i>
+                            <span>Reportes</span>
                         </a>
                     </li>
 
@@ -610,21 +611,21 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.nueva-atencion') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.nueva-atencion')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('ventanilla.nueva-atencion')); ?>">
                             <i class="fas fa-fw fa-user-plus"></i>
                             <span>Nueva Atención</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.tramites') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.tramites')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('ventanilla.tramites')); ?>">
                             <i class="fas fa-fw fa-file-alt"></i>
                             <span>Trámites</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('ventanilla.consultar') ? 'active' : ''); ?>" href="<?php echo e(route('ventanilla.consultar')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('ventanilla.consultar')); ?>">
                             <i class="fas fa-fw fa-search"></i>
                             <span>Consultar Estado</span>
                         </a>
@@ -644,7 +645,7 @@
                     </div>
 
                     <li class="nav-item">
-                        <a class="nav-link <?php echo e(request()->routeIs('inspector.nueva-inspeccion') ? 'active' : ''); ?>" href="<?php echo e(route('inspector.nueva-inspeccion')); ?>">
+                        <a class="nav-link" href="<?php echo e(route('inspector.generar-acta-inspector')); ?>">
                             <i class="fas fa-fw fa-plus-circle"></i>
                             <span>Nueva Inspección</span>
                         </a>
@@ -1136,9 +1137,15 @@
     <!-- Scripts para modales flotantes -->
     <script>
         // Funciones para gestionar modales flotantes
+        let modalZIndex = 9999; // Z-index base para modales
+        
         function abrirModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
+                // Incrementar z-index para cada modal nuevo
+                modalZIndex += 10;
+                modal.style.zIndex = modalZIndex;
+                
                 modal.classList.add('show');
                 document.body.style.overflow = 'hidden';
                 
@@ -1154,6 +1161,13 @@
                     if (fechaInput) fechaInput.value = fecha;
                     if (horaInput) horaInput.value = hora;
                 }
+                
+                // Lógica especial para modal de consultas
+                if (modalId === 'modal-consultas') {
+                    // Asegurar que el modal de consultas siempre esté encima
+                    modalZIndex += 20;
+                    modal.style.zIndex = modalZIndex;
+                }
             }
         }
 
@@ -1161,7 +1175,16 @@
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('show');
-                document.body.style.overflow = 'auto';
+                
+                // Resetear z-index al cerrar
+                modal.style.zIndex = '';
+                
+                // Si no hay más modales abiertos, restaurar scroll del body
+                const modalesAbiertos = document.querySelectorAll('.floating-modal.show');
+                if (modalesAbiertos.length === 0) {
+                    document.body.style.overflow = 'auto';
+                    modalZIndex = 9999; // Resetear contador
+                }
             }
         }
 
@@ -1370,6 +1393,85 @@
                 );
             <?php endif; ?>
         });
+
+        // Funciones globales para navegación de módulos - DESHABILITADAS
+        // Ya no se usan, se restauró la navegación por URLs
+        /*
+        window.showModule = function(moduleId) {
+            // Verificar si estamos en el dashboard
+            if (window.location.pathname !== '/dashboard') {
+                // Si no estamos en dashboard, navegar allí con el módulo
+                window.location.href = '/dashboard?module=' + moduleId;
+                return;
+            }
+
+            // Ocultar el dashboard principal
+            document.querySelector('.container-fluid > .row').style.display = 'none';
+            document.querySelectorAll('.container-fluid > .row').forEach(row => {
+                row.style.display = 'none';
+            });
+            
+            // Mostrar el contenedor de módulos
+            const modulesContainer = document.getElementById('modules-container');
+            if (modulesContainer) {
+                modulesContainer.style.display = 'block';
+                
+                // Ocultar todos los módulos
+                document.querySelectorAll('.module-content').forEach(module => {
+                    module.style.display = 'none';
+                });
+                
+                // Mostrar el módulo específico
+                const targetModule = document.getElementById('module-' + moduleId);
+                if (targetModule) {
+                    targetModule.style.display = 'block';
+                    
+                    // Scroll hacia arriba
+                    window.scrollTo(0, 0);
+                    
+                    // Actualizar el título de la página
+                    const moduleTitle = targetModule.querySelector('h4').textContent;
+                    document.title = `${moduleTitle} - DRTC Apurímac`;
+                    
+                    // Actualizar URL sin recargar la página
+                    if (history.pushState) {
+                        const newUrl = `/dashboard?module=${moduleId}`;
+                        history.pushState({ module: moduleId }, '', newUrl);
+                    }
+                    
+                    console.log(`Módulo cargado: ${moduleTitle}`);
+                } else {
+                    console.error('Módulo no encontrado: ' + moduleId);
+                    // Si el módulo no existe, regresar al dashboard
+                    hideModules();
+                }
+            } else {
+                // Si no hay contenedor de módulos, navegar con URL
+                window.location.href = '/dashboard?module=' + moduleId;
+            }
+        };
+
+        window.hideModules = function() {
+            const modulesContainer = document.getElementById('modules-container');
+            if (modulesContainer) {
+                // Ocultar el contenedor de módulos
+                modulesContainer.style.display = 'none';
+                
+                // Mostrar el dashboard principal
+                document.querySelectorAll('.container-fluid > .row').forEach(row => {
+                    row.style.display = 'block';
+                });
+                
+                // Actualizar URL
+                if (history.pushState) {
+                    history.pushState(null, '', '/dashboard');
+                }
+                
+                // Restaurar título
+                document.title = 'Dashboard - DRTC Apurímac';
+            }
+        };
+        */
     </script>
     <?php echo $__env->make('partials.export-actas-scripts', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 </body>

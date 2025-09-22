@@ -38,10 +38,8 @@ Route::get('/register/success', function () {
 
 // Rutas protegidas por autenticación y aprobación
 Route::middleware(['auth', 'user.approved'])->group(function () {
-    // Dashboard principal - vista única con secciones condicionadas por rol
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    // Dashboard principal - vista unificada con secciones condicionadas por rol
+    Route::get('/dashboard', [DashboardController::class, 'dashboardUnificado'])->name('dashboard');
 
     // Guardar acta (closure para evitar controlador en este flujo)
     Route::post('/actas', function (\Illuminate\Http\Request $request) {
@@ -142,10 +140,40 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
         
         // Gestión de aprobación de usuarios
         Route::prefix('admin')->name('admin.')->group(function () {
-            Route::get('/users/approval', [App\Http\Controllers\Admin\UserApprovalController::class, 'index'])->name('users.approval');
             Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve'])->name('users.approve');
             Route::post('/users/{user}/reject', [App\Http\Controllers\Admin\UserApprovalController::class, 'reject'])->name('users.reject');
             Route::get('/users/{user}/details', [App\Http\Controllers\Admin\UserApprovalController::class, 'show'])->name('users.details');
+            
+            // Rutas CRUD activas para conductores (mapeadas al controlador existente)
+            Route::get('/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('conductores.index');
+            Route::post('/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('conductores.store');
+            Route::get('/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('conductores.show');
+            Route::put('/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('conductores.update');
+            Route::delete('/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('conductores.destroy');
+            Route::get('/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('conductores.search');
+            
+            // Reinicio de AUTO_INCREMENT para la tabla actas (solo administradores)
+            Route::post('/actas/reset-autoincrement', function (\Illuminate\Http\Request $request) {
+                $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
+                try {
+                    $count = \DB::table('actas')->count();
+                    if ($force) {
+                        // Truncate (destructivo) y asegurarse de que la secuencia se reinicia
+                        \DB::table('actas')->truncate();
+                        return response()->json(['message' => 'Tabla actas truncada y AUTO_INCREMENT reseteado.']);
+                    }
+
+                    if ($count === 0) {
+                        // Sólo ajustar AUTO_INCREMENT si la tabla está vacía
+                        \DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
+                        return response()->json(['message' => 'AUTO_INCREMENT reseteado a 1.']);
+                    }
+
+                    return response()->json(['message' => 'La tabla no está vacía. Use force=true para truncar.', 'count' => $count], 400);
+                } catch (\Exception $e) {
+                    return response()->json(['message' => 'Error al reiniciar auto-increment: ' . $e->getMessage()], 500);
+                }
+            })->name('actas.reset-autoincrement');
         });
     });
 });
@@ -183,117 +211,156 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
 
 
 // Rutas específicas por rol con middleware de protección
-Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
-    // Dashboard de administrador
-    Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
-
-    // Ruta para gestión de conductores (mantenimiento) — controlador presente en el proyecto
-    Route::get('/admin/mantenimiento/conductor', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.mantenimiento.conductor');
-    // Ruta para gestión de inspectores (fiscal) — controlador presente en el proyecto
-    Route::get('/admin/mantenimiento/fiscal', [App\Http\Controllers\InspectorController::class, 'index'])->name('admin.mantenimiento.fiscal');
-    // Rutas CRUD activas para conductores (mapeadas al controlador existente)
-    Route::get('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'index'])->name('admin.conductores.index');
-    Route::post('/admin/conductores', [App\Http\Controllers\ConductorController::class, 'store'])->name('admin.conductores.store');
-    Route::get('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'show'])->name('admin.conductores.show');
-    Route::put('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'update'])->name('admin.conductores.update');
-    Route::delete('/admin/conductores/{id}', [App\Http\Controllers\ConductorController::class, 'destroy'])->name('admin.conductores.destroy');
-    Route::get('/admin/conductores/search', [App\Http\Controllers\ConductorController::class, 'search'])->name('admin.conductores.search');
-    // Reinicio de AUTO_INCREMENT para la tabla actas (solo administradores)
-    Route::post('/admin/actas/reset-autoincrement', function (\Illuminate\Http\Request $request) {
-        $force = filter_var($request->input('force', false), FILTER_VALIDATE_BOOLEAN);
-        try {
-            $count = \DB::table('actas')->count();
-            if ($force) {
-                // Truncate (destructivo) y asegurarse de que la secuencia se reinicia
-                \DB::table('actas')->truncate();
-                return response()->json(['message' => 'Tabla actas truncada y AUTO_INCREMENT reseteado.']);
-            }
-
-            if ($count === 0) {
-                // Sólo ajustar AUTO_INCREMENT si la tabla está vacía
-                \DB::statement('ALTER TABLE actas AUTO_INCREMENT = 1');
-                return response()->json(['message' => 'AUTO_INCREMENT reseteado a 1.']);
-            }
-
-            return response()->json(['message' => 'La tabla no está vacía. Use force=true para truncar.', 'count' => $count], 400);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Error al reiniciar auto-increment: ' . $e->getMessage()], 500);
-        }
-    })->name('admin.actas.reset-autoincrement');
-
+Route::middleware(['auth', 'user.approved'])->group(function () {
+    // Redirecciones de dashboards específicos al dashboard unificado
+    Route::get('/admin/dashboard', function() {
+        return redirect()->route('dashboard');
+    })->middleware('role:administrador')->name('admin.dashboard');
     
+    Route::get('/fiscalizador/dashboard', function() {
+        return redirect()->route('dashboard');
+    })->middleware('role:fiscalizador')->name('fiscalizador.dashboard');
+    
+    Route::get('/ventanilla/dashboard', function() {
+        return redirect()->route('dashboard');
+    })->middleware('role:ventanilla')->name('ventanilla.dashboard');
+    
+    Route::get('/inspector/dashboard', function() {
+        return redirect()->route('dashboard');
+    })->middleware('role:inspector')->name('inspector.dashboard');
 });
 
+// Rutas funcionales específicas para fiscalizador
 Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
-    // Dashboard de fiscalizador
-    Route::get('/fiscalizador/dashboard', [DashboardController::class, 'fiscalizadorDashboard'])->name('fiscalizador.dashboard');
-    
-    // Inspecciones
-    Route::get('/fiscalizador/inspecciones', function () {
-        return view('fiscalizador.inspecciones');
-    })->name('fiscalizador.inspecciones');
-    
-    // Calendario
-    Route::get('/fiscalizador/calendario', function () {
-        return view('fiscalizador.calendario');
-    })->name('fiscalizador.calendario');
-    
-    // Gestión de Actas
-    Route::get('/fiscalizador/actas-contra', function () {
+    Route::get('/fiscalizador/actas-contra', function() {
         return view('fiscalizador.actas-contra');
     })->name('fiscalizador.actas-contra');
     
-    Route::get('/fiscalizador/carga-paga', function () {
+    Route::get('/fiscalizador/calendario', function() {
+        return view('fiscalizador.calendario');
+    })->name('fiscalizador.calendario');
+    
+    Route::get('/fiscalizador/inspecciones', function() {
+        return view('fiscalizador.inspecciones');
+    })->name('fiscalizador.inspecciones');
+    
+    Route::get('/fiscalizador/carga-paga', function() {
         return view('fiscalizador.carga-paga');
     })->name('fiscalizador.carga-paga');
     
-    Route::get('/fiscalizador/empresas', function () {
+    Route::get('/fiscalizador/empresas', function() {
         return view('fiscalizador.empresas');
     })->name('fiscalizador.empresas');
     
-    // Consultas y Reportes
-    Route::get('/fiscalizador/consultas', function () {
+    Route::get('/fiscalizador/consultas', function() {
         return view('fiscalizador.consultas');
     })->name('fiscalizador.consultas');
     
-    Route::get('/fiscalizador/reportes', function () {
+    Route::get('/fiscalizador/reportes', function() {
         return view('fiscalizador.reportes');
     })->name('fiscalizador.reportes');
 });
 
+// Rutas específicas para administrador
+Route::middleware(['auth', 'user.approved', 'role:administrador'])->group(function () {
+    
+    Route::get('/dashboard/admin/{module}', function($module) {
+        // Mapeo de módulos seguros
+        $moduleMap = [
+            'usr' => 'gestionar-usuarios',      // usuarios -> usr
+            'app' => 'aprobar-usuarios',        // aprobación -> app  
+            'inf' => 'infracciones',            // infracciones -> inf
+            'mnt-c' => 'mantenimiento-conductores', // mantenimiento conductores -> mnt-c
+            'mnt-i' => 'mantenimiento-inspectores', // mantenimiento inspectores -> mnt-i
+        ];
+        
+        // Verificar si el módulo existe
+        if (!isset($moduleMap[$module])) {
+            abort(404);
+        }
+        
+        $realModule = $moduleMap[$module];
+        
+        return app('App\Http\Controllers\Admin\ModuleController')->handleModule($realModule);
+    })->name('admin.module');
+    
+    // Ruta con token completamente encriptado
+    Route::get('/dashboard/panel/{token}', function($token) {
+        $module = \App\Helpers\ModuleTokenHelper::decodeToken($token);
+        
+        if (!$module) {
+            abort(404);
+        }
+        
+        return app('App\Http\Controllers\Admin\ModuleController')->handleModule($module);
+    })->name('admin.secure-module');
+    
+    // Mantener las rutas originales para compatibilidad (redirigen a las nuevas)
+    Route::get('/admin/gestionar-usuarios', function() {
+        return redirect()->route('admin.module', ['module' => 'usr']);
+    })->name('admin.gestionar-usuarios');
+    
+    Route::get('/admin/aprobar-usuarios', function() {
+        return redirect()->route('admin.module', ['module' => 'app']);
+    })->name('admin.aprobar-usuarios');
+    
+    Route::get('/admin/infracciones', function() {
+        return redirect()->route('admin.module', ['module' => 'inf']);
+    })->name('admin.infracciones');
+    
+    Route::get('/admin/mantenimiento-conductores', function() {
+        return redirect()->route('admin.module', ['module' => 'mnt-c']);
+    })->name('admin.mantenimiento-conductores');
+    
+    Route::get('/admin/mantenimiento-inspectores', function() {
+        return redirect()->route('admin.module', ['module' => 'mnt-i']);
+    })->name('admin.mantenimiento-inspectores');
+});
+
+// Rutas específicas para ventanilla
 Route::middleware(['auth', 'user.approved', 'role:ventanilla'])->group(function () {
-    // Dashboard de ventanilla
-    Route::get('/ventanilla/dashboard', [DashboardController::class, 'ventanillaDashboard'])->name('ventanilla.dashboard');
-    Route::get('/ventanilla/nueva-atencion', function () {
+    Route::get('/ventanilla/nueva-atencion', function() {
         return view('ventanilla.nueva-atencion');
     })->name('ventanilla.nueva-atencion');
-    Route::get('/ventanilla/tramites', function () {
+    
+    Route::get('/ventanilla/tramites', function() {
         return view('ventanilla.tramites');
     })->name('ventanilla.tramites');
-    Route::get('/ventanilla/consultar', function () {
+    
+    Route::get('/ventanilla/consultar', function() {
         return view('ventanilla.consultar');
     })->name('ventanilla.consultar');
-    Route::get('/ventanilla/cola-espera', function () {
+    
+    Route::get('/ventanilla/cola-espera', function() {
         return view('ventanilla.cola-espera');
     })->name('ventanilla.cola-espera');
 });
 
+// Rutas específicas para inspector
 Route::middleware(['auth', 'user.approved', 'role:inspector'])->group(function () {
-    // Dashboard de inspector
-    Route::get('/inspector/dashboard', [DashboardController::class, 'inspectorDashboard'])->name('inspector.dashboard');
+    Route::get('/inspector/generar-acta-inspector', function() {
+        return view('inspector.generar-acta-inspector');
+    })->name('inspector.generar-acta-inspector');
     
-    // Nueva inspección
-    Route::get('/inspector/nueva-inspeccion', [DashboardController::class, 'inspectorNuevaInspeccion'])->name('inspector.nueva-inspeccion');
-    Route::post('/inspector/nueva-inspeccion', [DashboardController::class, 'inspectorNuevaInspeccionStore'])->name('inspector.nueva-inspeccion.store');
+    Route::get('/inspector/inspecciones', function() {
+        return view('inspector.inspecciones');
+    })->name('inspector.inspecciones');
+});
+
+// Rutas adicionales de redirección para compatibilidad
+Route::middleware(['auth', 'user.approved'])->group(function () {
+    // Redirecciones de administrador
+    Route::get('/admin/users/approval', function() {
+        return redirect('/dashboard?module=aprobar-usuarios');
+    })->name('admin.users.approval');
     
-    // Gestión de inspecciones
-    Route::get('/inspector/inspecciones', [DashboardController::class, 'inspectorInspecciones'])->name('inspector.inspecciones');
+    Route::get('/admin/mantenimiento/conductor', function() {
+        return redirect('/dashboard?module=mantenimiento-conductores');
+    })->name('admin.mantenimiento.conductor');
     
-    // Gestión de vehículos
-    Route::get('/inspector/vehiculos', [DashboardController::class, 'inspectorVehiculos'])->name('inspector.vehiculos');
-    
-    // Reportes
-    Route::get('/inspector/reportes', [DashboardController::class, 'inspectorReportes'])->name('inspector.reportes');
+    Route::get('/admin/mantenimiento/fiscal', function() {
+        return redirect('/dashboard?module=mantenimiento-inspectores');
+    })->name('admin.mantenimiento.fiscal');
 });
 
 // Superadmin hidden panel - access only by users with role 'superadmin'
@@ -302,6 +369,7 @@ Route::middleware(['auth', 'user.approved', 'role:superadmin'])->prefix('admin')
     Route::post('/super/cache-clear', [App\Http\Controllers\Admin\SuperAdminController::class, 'cacheClear'])->name('super.cache-clear');
     Route::post('/super/config-cache', [App\Http\Controllers\Admin\SuperAdminController::class, 'configCache'])->name('super.config-cache');
     Route::post('/super/reset-actas', [App\Http\Controllers\Admin\SuperAdminController::class, 'resetActas'])->name('super.reset-actas');
+    Route::post('/super/reset-auto-increment', [App\Http\Controllers\Admin\SuperAdminController::class, 'resetAutoIncrement'])->name('super.reset-auto-increment');
     Route::get('/super/app-info', [App\Http\Controllers\Admin\SuperAdminController::class, 'appInfo'])->name('super.app-info');
     Route::post('/super/run-command', [App\Http\Controllers\Admin\SuperAdminController::class, 'runCommand'])->name('super.run-command');
     Route::get('/super/stats', [App\Http\Controllers\Admin\SuperAdminController::class, 'stats'])->name('super.stats');
