@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'DRTC Apurímac - Sistema Unificado'); ?>
 
 <?php $__env->startSection('content'); ?>

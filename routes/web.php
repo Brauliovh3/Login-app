@@ -334,6 +334,15 @@ Route::middleware(['auth', 'user.approved', 'role:ventanilla'])->group(function 
     Route::get('/ventanilla/cola-espera', function() {
         return view('ventanilla.cola-espera');
     })->name('ventanilla.cola-espera');
+
+    Route::get('/ventanilla/inspecciones/create', function() {
+        return view('ventanilla.inspecciones.create');
+    })->name('inspecciones.create');
+
+    Route::get('/ventanilla/inspecciones', function() {
+        return view('ventanilla,inspecciones.index');
+    })->name('inspecciones.index');
+
 });
 
 // Rutas específicas para inspector

@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Gestionar Usuarios'); ?>
 
 <?php $__env->startSection('content'); ?>

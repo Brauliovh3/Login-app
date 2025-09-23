@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Aprobar Usuarios'); ?>
 
 <?php $__env->startSection('content'); ?>
