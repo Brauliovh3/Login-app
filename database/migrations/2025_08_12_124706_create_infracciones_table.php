@@ -21,17 +21,16 @@ return new class extends Migration
         Schema::create('infracciones', function (Blueprint $table) {
             $table->id();
             $table->string('codigo_infraccion')->unique();
-            $table->string('descripcion');
-            $table->text('detalle_completo')->nullable();
+            $table->string('aplica_sobre')->nullable();
+            $table->text('reglamento')->nullable();
             $table->string('gravedad')->nullable();
-            $table->float('multa_uit')->nullable();
-            $table->float('multa_soles')->nullable();
-            $table->integer('puntos_licencia')->nullable();
-            $table->boolean('retencion_licencia')->default(false);
-            $table->boolean('retencion_vehiculo')->default(false);
-            $table->boolean('internamiento_deposito')->default(false);
-            $table->string('estado')->default('activo');
-            $table->string('base_legal')->nullable();
+            $table->float('Norma_modificatoria')->nullable();
+            $table->float('clase_pago')->nullable();
+            $table->integer('Sancion')->nullable();
+            $table->boolean('Tipo')->default(false);
+            $table->boolean('Medida_preventiva')->default(false);
+            $table->boolean('gravedad')->default(false);
+            $table->string('Otros_responsables_Otros_beneficios')->default('activo');
             $table->timestamps();
         });
     }

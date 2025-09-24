@@ -22,7 +22,9 @@ class DatabaseSeeder extends Seeder
             InspeccionesSeeder::class,
             ActasSeeder::class,
             ActasFormateadasSeeder::class,
+            CargaPasajeroSeeder::class,
             
+
         ]);
     }
 }
