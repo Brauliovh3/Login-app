@@ -1,0 +1,1 @@
+<?php /**PATH C:\xampp\htdocs\Login-app\resources\views\dashboard\ventanilla.blade.php ENDPATH**/ ?>

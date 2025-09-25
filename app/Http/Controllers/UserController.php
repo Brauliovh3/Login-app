@@ -44,6 +44,66 @@ class UserController extends Controller
         return view('users.index', compact('users'));
     }
 
+    /**
+     * API endpoint para obtener usuarios (para dashboard.php)
+     */
+    public function apiIndex(Request $request)
+    {
+        try {
+            $query = User::query();
+            
+            // Búsqueda si se proporciona
+            if ($request->has('search') && $request->search != '') {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('username', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('role', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            $users = $query->orderBy('created_at', 'desc')
+                          ->select('id', 'name', 'username', 'email', 'role', 'status', 'created_at')
+                          ->get();
+            
+            return response()->json([
+                'success' => true,
+                'users' => $users
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API endpoint para obtener usuarios pendientes de aprobación
+     */
+    public function apiPending(Request $request)
+    {
+        try {
+            $users = User::where('status', 'pending')
+                        ->orderBy('created_at', 'desc')
+                        ->select('id', 'name', 'username', 'email', 'role', 'status', 'created_at')
+                        ->get();
+            
+            return response()->json([
+                'success' => true,
+                'users' => $users
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener usuarios pendientes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     public function create()
     {

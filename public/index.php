@@ -5,6 +5,12 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Redireccionar automáticamente a dashboard.php siempre
+if (file_exists(__DIR__.'/dashboard.php')) {
+    header('Location: dashboard.php');
+    exit;
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;

@@ -845,58 +845,82 @@ class DashboardController extends Controller
     }
     
     /**
-     * Obtener estadísticas para el dashboard unificado - Inspector
+     * API endpoint para obtener estadísticas del dashboard
      */
-    private function getInspectorStats()
+    public function getDashboardStats()
     {
         try {
-            $totalInfracciones = 0;
-            $infraccionesResueltas = 0;
-            $infraccionesPendientes = 0;
-            $totalActas = 0;
-            $actasProcesadas = 0;
-            $actasPendientes = 0;
+            $user = Auth::user();
+            $role = $user->role ?? 'fiscalizador';
             
-            if (Schema::hasTable('actas')) {
-                $totalActas = DB::table('actas')->count();
-                $totalInfracciones = $totalActas;
-                
-                if (Schema::hasColumn('actas', 'estado')) {
-                    $actasProcesadas = DB::table('actas')->where('estado', 1)->count();
-                    $actasPendientes = DB::table('actas')->where('estado', 0)->count();
-                    
-                    $infraccionesResueltas = $actasProcesadas;
-                    $infraccionesPendientes = $actasPendientes;
-                } else {
-                    $infraccionesResueltas = (int)($totalInfracciones * 0.7);
-                    $infraccionesPendientes = $totalInfracciones - $infraccionesResueltas;
-                    $actasProcesadas = (int)($totalActas * 0.8);
-                    $actasPendientes = $totalActas - $actasProcesadas;
-                }
+            switch ($role) {
+                case 'superadmin':
+                case 'administrador':
+                    $stats = $this->getAdminStats();
+                    break;
+                case 'fiscalizador':
+                    $stats = $this->getFiscalizadorStats();
+                    break;
+                case 'ventanilla':
+                    $stats = $this->getVentanillaStats();
+                    break;
+                case 'inspector':
+                    $stats = $this->getInspectorStats();
+                    break;
+                default:
+                    $stats = $this->getFiscalizadorStats();
             }
             
-            $datosAdicionales = $this->obtenerDatosAdicionalesInspector();
-            
-            $stats = [
-                'total_infracciones' => $totalInfracciones,
-                'infracciones_resueltas' => $infraccionesResueltas,
-                'infracciones_pendientes' => $infraccionesPendientes,
-                'total_actas' => $totalActas,
-                'actas_procesadas' => $actasProcesadas,
-                'actas_pendientes' => $actasPendientes
-            ];
-            
-            return array_merge($stats, $datosAdicionales);
+            return response()->json(['success' => true, 'stats' => $stats]);
             
         } catch (\Exception $e) {
-            return [
-                'total_infracciones' => 45,
-                'infracciones_resueltas' => 32,
-                'infracciones_pendientes' => 13,
-                'total_actas' => 67,
-                'actas_procesadas' => 55,
-                'actas_pendientes' => 12
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Obtener estadísticas para el dashboard unificado - Superadmin
+     */
+    private function getSuperadminStats()
+    {
+        // Reutilizar las estadísticas de administrador y agregar datos adicionales
+        $adminStats = $this->getAdminStats();
+        
+        try {
+            // Datos adicionales específicos para superadmin
+            $totalActas = Schema::hasTable('actas') ? DB::table('actas')->count() : 0;
+            $totalInfracciones = Schema::hasTable('infracciones') ? DB::table('infracciones')->count() : 0;
+            
+            $additionalStats = [
+                'total_actas' => $totalActas,
+                'total_infracciones_catalog' => $totalInfracciones,
+                'system_health' => 100, // Porcentaje de salud del sistema
+                'database_size' => $this->getDatabaseSize()
             ];
+            
+            return array_merge($adminStats, $additionalStats);
+            
+        } catch (\Exception $e) {
+            return $adminStats; // Fallback a estadísticas de admin
+        }
+    }
+    
+    /**
+     * Obtener el tamaño aproximado de la base de datos
+     */
+    private function getDatabaseSize()
+    {
+        try {
+            $result = DB::select("
+                SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+            ");
+            
+            return $result[0]->size_mb ?? 0;
+            
+        } catch (\Exception $e) {
+            return 0;
         }
     }
 }

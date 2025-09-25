@@ -20,6 +20,9 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             position: relative;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
         
         body::before {
@@ -33,6 +36,28 @@
                 radial-gradient(circle at 20% 80%, rgba(255, 140, 0, 0.3) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(30, 58, 138, 0.2) 0%, transparent 50%);
             z-index: -1;
+        }
+        
+        /* Asegurar que el container del login ocupe toda la pantalla */
+        .container-fluid {
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            width: 100vw;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Row para centrar el login */
+        .row.justify-content-center.align-items-center.min-vh-100 {
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            width: 100%;
+            max-width: 100%;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
         }
         
         .auth-container {
@@ -85,63 +110,6 @@
                 padding: 3.5rem;
                 max-width: 560px;
                 border-radius: 22px;
-            }
-        }
-        
-        .auth-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .auth-header h2 {
-            color: var(--drtc-navy);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 1.5rem;
-        }
-        
-        .auth-header h5 {
-            font-size: 1.1rem;
-        }
-        
-        .auth-header p {
-            font-size: 0.9rem;
-        }
-        
-        /* Responsividad para elementos del header */
-        @media (min-width: 768px) {
-            .auth-header h2 {
-                font-size: 1.75rem;
-            }
-            .auth-header h5 {
-                font-size: 1.25rem;
-            }
-            .auth-header p {
-                font-size: 1rem;
-            }
-        }
-        
-        @media (min-width: 1200px) {
-            .auth-header h2 {
-                font-size: 2rem;
-            }
-            .auth-header h5 {
-                font-size: 1.5rem;
-            }
-            .auth-header p {
-                font-size: 1.1rem;
-            }
-        }
-        
-        @media (min-width: 1400px) {
-            .auth-header h2 {
-                font-size: 2.25rem;
-            }
-            .auth-header h5 {
-                font-size: 1.75rem;
-            }
-            .auth-header p {
-                font-size: 1.2rem;
             }
         }
         
@@ -418,49 +386,6 @@
             box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
         }
         
-        /* Responsividad para botones */
-        @media (max-width: 576px) {
-            .btn-primary {
-                height: 45px;
-                font-size: 15px;
-                border-radius: 8px;
-            }
-        }
-        
-        @media (min-width: 576px) and (max-width: 768px) {
-            .btn-primary {
-                height: 48px;
-                font-size: 15px;
-            }
-        }
-        
-        @media (min-width: 768px) and (max-width: 992px) {
-            .btn-primary {
-                height: 52px;
-                font-size: 16px;
-            }
-        }
-        
-        @media (min-width: 992px) and (max-width: 1200px) {
-            .btn-primary {
-                height: 55px;
-                font-size: 17px;
-            }
-        }
-        
-        @media (min-width: 1200px) {
-            .btn-primary {
-                height: 58px;
-                font-size: 17px;
-                border-radius: 12px;
-            }
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
         .password-toggle {
             position: absolute;
             top: 50%;
@@ -475,21 +400,6 @@
         
         .password-toggle:hover {
             color: #333;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            height: 50px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
         /* Checkbox personalizado */

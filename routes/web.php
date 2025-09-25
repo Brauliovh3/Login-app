@@ -17,6 +17,12 @@ Route::get('/', function () {
     return \Illuminate\Support\Facades\Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
+// Ruta específica para el dashboard PHP unificado
+Route::get('/dashboard.php', function () {
+    // Esta ruta maneja el archivo dashboard.php directamente
+    return response()->file(public_path('dashboard.php'));
+})->name('dashboard.php');
+
 // Proxy seguro para consulta de DNI (usa PERUDEVS_KEY en .env)
 Route::get('/api/proxy-dni', [ProxyDniController::class, 'consulta']);
 
@@ -409,6 +415,7 @@ Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizado
     // Buscar acta por criterio (GET) debe registrarse antes que la ruta con parámetro {id}
     Route::get('/actas/buscar', [ActaController::class, 'buscar']);
     Route::get('/actas/{id}', [ActaController::class, 'show']);
+    Route::get('/actas', [ActaController::class, 'index']);
     Route::get('/actas/pendientes', [ActaController::class, 'getPendientes']);
     Route::put('/actas/{id}/status', [ActaController::class, 'updateStatus']);
     Route::post('/actas/{id}/finalizar', [ActaController::class, 'finalizarRegistro']);
@@ -477,3 +484,32 @@ Route::get('/api/csrf-token', function() {
 
 // RUTA DE DEPURACIÓN: permite DELETE sin middleware (temporal, BORRAR tras pruebas)
 Route::delete('/debug/api/actas/{id}', [ActaController::class, 'destroy'])->name('debug.actas.destroy');
+
+// Rutas API adicionales para el dashboard unificado
+Route::middleware(['auth', 'user.approved'])->prefix('api')->group(function () {
+    // Dashboard stats
+    Route::get('/dashboard-stats', [DashboardController::class, 'getDashboardStats']);
+    
+    // Gestión de usuarios (solo administradores)
+    Route::middleware(['role:administrador,superadmin'])->group(function () {
+        Route::get('/users', [UserController::class, 'apiIndex']);
+        Route::get('/users/pending', [UserController::class, 'apiPending']);
+        Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserApprovalController::class, 'approve']);
+        Route::post('/users/{user}/reject', [App\Http\Controllers\Admin\UserApprovalController::class, 'reject']);
+        Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    });
+    
+    // Sistema (solo superadmin)
+    Route::middleware(['role:superadmin'])->group(function () {
+        Route::post('/system/clear-cache', function() {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('cache:clear');
+                \Illuminate\Support\Facades\Artisan::call('config:clear');
+                \Illuminate\Support\Facades\Artisan::call('view:clear');
+                return response()->json(['success' => true, 'message' => 'Cache limpiado correctamente']);
+            } catch (\Exception $e) {
+                return response()->json(['success' => false, 'message' => 'Error al limpiar cache: ' . $e->getMessage()]);
+            }
+        });
+    });
+});
