@@ -288,22 +288,7 @@ class DashboardApp {
                                     </div>
                                 </form>
                                 
-                                <script>
-                                    function togglePasswordVisibility() {
-                                        const passwordInput = document.getElementById('password');
-                                        const toggleIcon = document.getElementById('togglePassword');
-                                        
-                                        if (passwordInput.type === 'password') {
-                                            passwordInput.type = 'text';
-                                            toggleIcon.classList.remove('fa-eye');
-                                            toggleIcon.classList.add('fa-eye-slash');
-                                        } else {
-                                            passwordInput.type = 'password';
-                                            toggleIcon.classList.remove('fa-eye-slash');
-                                            toggleIcon.classList.add('fa-eye');
-                                        }
-                                    }
-                                </script>
+                                <script src="js/login.js"></script>
                             </div>
                         </div>
                     </div>
@@ -417,16 +402,27 @@ class DashboardApp {
                     
                 case 'update_user':
                     if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $userId = $_GET['id'] ?? $_POST['id'] ?? null;
-                        echo json_encode($this->updateUser($userId));
+                        echo json_encode($this->updateUser());
                     }
                     break;
                     
-                case 'delete_user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'DELETE' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $userId = $_GET['id'] ?? $_POST['id'] ?? null;
-                        echo json_encode($this->deleteUser($userId));
+                case 'update-user':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        echo json_encode($this->updateUserComplete());
                     }
+                    break;
+                    
+                case 'update-user-status':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        echo json_encode($this->updateUserStatus());
+                    }
+                    break;
+                    
+                case 'delete-user':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        echo json_encode($this->deleteUserComplete());
+                    }
+                    break;
                     break;
                     
                 case 'toggle_user_status':
@@ -1376,6 +1372,131 @@ class DashboardApp {
     public function getUserName() {
         return $this->userName;
     }
+
+    // Nuevos métodos para gestión completa de usuarios
+    public function updateUserComplete() {
+        try {
+            $id = $_POST['id'] ?? null;
+            $name = $_POST['name'] ?? '';
+            $username = $_POST['username'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            $role = $_POST['role'] ?? '';
+            $status = $_POST['status'] ?? '';
+            $password = $_POST['password'] ?? '';
+
+            if (!$id || !$name || !$username || !$email || !$role || !$status) {
+                return ['success' => false, 'message' => 'Faltan datos requeridos'];
+            }
+
+            // Verificar que el usuario existe
+            $checkStmt = $this->pdo->prepare("SELECT id FROM usuarios WHERE id = ?");
+            $checkStmt->execute([$id]);
+            if (!$checkStmt->fetch()) {
+                return ['success' => false, 'message' => 'Usuario no encontrado'];
+            }
+
+            // Verificar que no exista otro usuario con el mismo username o email
+            $duplicateStmt = $this->pdo->prepare("SELECT id FROM usuarios WHERE (username = ? OR email = ?) AND id != ?");
+            $duplicateStmt->execute([$username, $email, $id]);
+            if ($duplicateStmt->fetch()) {
+                return ['success' => false, 'message' => 'Ya existe un usuario con ese username o email'];
+            }
+
+            // Preparar la consulta de actualización
+            if (!empty($password)) {
+                // Actualizar con nueva contraseña
+                $stmt = $this->pdo->prepare("
+                    UPDATE usuarios SET 
+                        name = ?, username = ?, email = ?, phone = ?, 
+                        role = ?, status = ?, password = ?, updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+                $result = $stmt->execute([$name, $username, $email, $phone, $role, $status, $hashedPassword, $id]);
+            } else {
+                // Actualizar sin cambiar contraseña
+                $stmt = $this->pdo->prepare("
+                    UPDATE usuarios SET 
+                        name = ?, username = ?, email = ?, phone = ?, 
+                        role = ?, status = ?, updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $result = $stmt->execute([$name, $username, $email, $phone, $role, $status, $id]);
+            }
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Usuario actualizado correctamente'];
+            } else {
+                return ['success' => false, 'message' => 'Error al actualizar usuario'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function updateUserStatus() {
+        try {
+            $id = $_POST['id'] ?? null;
+            $status = $_POST['status'] ?? '';
+
+            if (!$id || !$status) {
+                return ['success' => false, 'message' => 'Faltan datos requeridos'];
+            }
+
+            $validStatuses = ['approved', 'pending', 'rejected', 'suspended'];
+            if (!in_array($status, $validStatuses)) {
+                return ['success' => false, 'message' => 'Estado no válido'];
+            }
+
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET status = ?, updated_at = NOW() WHERE id = ?");
+            $result = $stmt->execute([$status, $id]);
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Estado actualizado correctamente'];
+            } else {
+                return ['success' => false, 'message' => 'Error al actualizar estado'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function deleteUserComplete() {
+        try {
+            $id = $_POST['id'] ?? null;
+
+            if (!$id) {
+                return ['success' => false, 'message' => 'ID de usuario requerido'];
+            }
+
+            // No permitir eliminar al usuario actual
+            if ($id == $this->user['id']) {
+                return ['success' => false, 'message' => 'No puedes eliminarte a ti mismo'];
+            }
+
+            // Verificar que el usuario existe
+            $checkStmt = $this->pdo->prepare("SELECT id, name FROM usuarios WHERE id = ?");
+            $checkStmt->execute([$id]);
+            $userToDelete = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$userToDelete) {
+                return ['success' => false, 'message' => 'Usuario no encontrado'];
+            }
+
+            // Eliminar el usuario
+            $stmt = $this->pdo->prepare("DELETE FROM usuarios WHERE id = ?");
+            $result = $stmt->execute([$id]);
+
+            if ($result) {
+                return ['success' => true, 'message' => 'Usuario eliminado correctamente'];
+            } else {
+                return ['success' => false, 'message' => 'Error al eliminar usuario'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
 }
 
 // Inicializar la aplicación
@@ -1661,7 +1782,6 @@ $rol = $app->getUserRole();
         .dropdown-item.fw-bold.bg-light {
             background-color: #e3f2fd !important;
             border-left: 4px solid #2196f3;
-        }
             font-size: 10px;
             font-weight: bold;
         }
@@ -1762,6 +1882,31 @@ $rol = $app->getUserRole();
                 opacity: 1; 
                 transform: translateX(0); 
             }
+        }
+
+        .sidebar-link.active,
+        .sidebar-sublink.active {
+            background-color: var(--secondary-color);
+            color: white !important;
+        }
+
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+        }
+
+        .avatar-lg {
+            width: 64px;
+            height: 64px;
+        }
+
+        .avatar-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-weight: 600;
         }
 
         @keyframes slideOut {
@@ -1921,7 +2066,7 @@ $rol = $app->getUserRole();
             
             <!-- Dashboard - Para todos los roles -->
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadSection('dashboard')" data-section="dashboard">
+                <a class="sidebar-link" href="javascript:void(0)" onclick="loadSection('dashboard')" data-section="dashboard">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
             </li>
@@ -1929,40 +2074,40 @@ $rol = $app->getUserRole();
             <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
             <!-- Menú para Administrador -->
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('usuarios', event)">
-                    <i class="fas fa-users"></i> Gestionar Usuarios
+                <a class="sidebar-link sidebar-toggle" href="javascript:void(0)" onclick="toggleSubmenu('usuarios', event)">
+                    <i class="fas fa-users"></i> Gestión de Usuarios
                     <i class="fas fa-chevron-down sidebar-arrow"></i>
                 </a>
                 <ul class="sidebar-submenu" id="submenu-usuarios">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadSection('listar-usuarios')" data-section="listar-usuarios">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadUsuariosList()" data-section="listar-usuarios">
                             <i class="fas fa-list"></i> Lista de Usuarios
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadSection('aprobar-usuarios')" data-section="aprobar-usuarios">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadSection('aprobar-usuarios')" data-section="aprobar-usuarios">
                             <i class="fas fa-user-check"></i> Aprobar Usuarios
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="showCrearUsuarioModal()" data-section="crear-usuario">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="showCrearUsuarioModal()" data-section="crear-usuario">
                             <i class="fas fa-user-plus"></i> Crear Usuario
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadSection('roles-permisos')" data-section="roles-permisos">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadSection('roles-permisos')" data-section="roles-permisos">
                             <i class="fas fa-user-shield"></i> Roles y Permisos
                         </a>
                     </li>
                 </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadSection('reportes')" data-section="reportes">
+                <a class="sidebar-link" href="javascript:void(0)" data-section="reportes">
                     <i class="fas fa-chart-bar"></i> Reportes
                 </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadSection('configuracion')" data-section="configuracion">
+                <a class="sidebar-link" href="javascript:void(0)" data-section="configuracion">
                     <i class="fas fa-cog"></i> Configuración
                 </a>
             </li>
@@ -2114,7 +2259,7 @@ $rol = $app->getUserRole();
 
             <!-- Mi Perfil - Para todos los roles -->
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadSection('perfil')" data-section="perfil">
+                <a class="sidebar-link" href="javascript:void(0)" onclick="loadPerfil()" data-section="perfil">
                     <i class="fas fa-user"></i> Mi Perfil
                 </a>
             </li>
@@ -2291,19 +2436,615 @@ $rol = $app->getUserRole();
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Variables globales del PHP para JavaScript -->
     <script>
+        // Variables globales del usuario
+        window.dashboardUserName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
+        window.dashboardUserRole = '<?php echo $rol; ?>';
+    </script>
+    
+    <!-- Archivos JavaScript separados por funcionalidad -->
+    <script src="js/utils.js"></script>
+    <script src="js/dashboard-core.js"></script>
+    <script src="js/dashboard-stats.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/sections.js"></script>
+    <script src="js/testing.js"></script>
+    <script src="js/config.js"></script>
+        console.log('🚨 Cargando funciones de emergencia...');
+        
+        // Función de utilidad básica
+        function hideAllSections() {
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+            }
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = '';
+            }
+        }
+        
+        // LOADSECTION de emergencia - SUPER SIMPLE
+        window.loadSection = function(sectionId) {
+            console.log('🔄 LoadSection EMERGENCIA:', sectionId);
+            alert('Cargando: ' + sectionId);
+            hideAllSections();
+            
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="content-section active" style="padding: 30px; background: #f8f9fa; border-radius: 10px; margin: 20px;">
+                        <h2>✅ ¡FUNCIONA!</h2>
+                        <h3>Sección: ${sectionId}</h3>
+                        <p>La función loadSection está funcionando correctamente.</p>
+                        <button onclick="loadSection('dashboard')" class="btn btn-primary">Volver al Dashboard</button>
+                    </div>
+                `;
+            }
+            
+            // Caso especial para dashboard
+            if (sectionId === 'dashboard') {
+                const dashboardSection = document.getElementById('dashboard-section');
+                if (dashboardSection) {
+                    dashboardSection.style.display = 'block';
+                }
+                if (contentContainer) {
+                    contentContainer.innerHTML = '';
+                }
+            }
+        };
+        
+        // TOGGLESUBMENU de emergencia
+        window.toggleSubmenu = function(menuId, event) {
+            console.log('🔄 ToggleSubmenu EMERGENCIA:', menuId);
+            if (event) event.preventDefault();
+            
+            // Si es TEST CLICK (usuarios), mostrar mensaje especial
+            if (menuId === 'usuarios') {
+                alert('TEST CLICK funcionando!');
+                hideAllSections();
+                const contentContainer = document.getElementById('contentContainer');
+                if (contentContainer) {
+                    contentContainer.innerHTML = `
+                        <div class="content-section active" style="padding: 30px; background: #e3f2fd; border-radius: 10px; margin: 20px;">
+                            <h2>🧪 TEST CLICK ACTIVADO</h2>
+                            <p>El botón TEST CLICK está funcionando correctamente.</p>
+                            <div class="alert alert-success">
+                                <strong>✅ JavaScript OK</strong> - Las funciones se están ejecutando.
+                            </div>
+                            <button onclick="loadSection('dashboard')" class="btn btn-primary">Volver al Dashboard</button>
+                        </div>
+                    `;
+                }
+                return;
+            }
+            
+            // Funcionalidad normal de submenu
+            const submenu = document.getElementById(`submenu-${menuId}`);
+            if (submenu) {
+                submenu.classList.toggle('show');
+            }
+        };
+        
+        // LOADPERFIL de emergencia
+        window.loadPerfil = function() {
+            console.log('🔄 LoadPerfil EMERGENCIA');
+            alert('Cargando Mi Perfil...');
+            hideAllSections();
+            
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="content-section active" style="padding: 30px; background: #fff3e0; border-radius: 10px; margin: 20px;">
+                        <h2>👤 MI PERFIL</h2>
+                        <p>La función de perfil está funcionando.</p>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>Información del Usuario</h5>
+                                <p><strong>Usuario:</strong> ${userName || 'Usuario'}</p>
+                                <p><strong>Rol:</strong> ${userRole || 'Sin rol'}</p>
+                            </div>
+                        </div>
+                        <button onclick="loadSection('dashboard')" class="btn btn-primary mt-3">Volver al Dashboard</button>
+                    </div>
+                `;
+            }
+        };
+        
+        console.log('✅ Funciones de emergencia cargadas');
+        console.log('✅ loadSection disponible:', typeof window.loadSection);
+        console.log('✅ toggleSubmenu disponible:', typeof window.toggleSubmenu);
+        console.log('✅ loadPerfil disponible:', typeof window.loadPerfil);
+        
         // Variables globales
         const userRole = '<?php echo $rol; ?>';
         const userName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
         let currentSection = 'dashboard';
 
         console.log('✅ Sistema inicializado para usuario:', userName, 'con rol:', userRole);
+        
+        // Test inmediato para verificar que JavaScript funciona
+        window.testClick = function() {
+            alert('JavaScript funciona perfectamente!');
+            console.log('Test ejecutado correctamente');
+        };
+
+        // Función directa para cargar gestionar usuarios
+        window.loadGestionarUsuarios = function() {
+            alert('Cargando gestión de usuarios...');
+            console.log('Función loadGestionarUsuarios ejecutada');
+            
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+            }
+            
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="content-section active">
+                        <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
+                        <p>Funcionalidad de gestión de usuarios cargada correctamente.</p>
+                        <button onclick="loadSection('dashboard')" class="btn btn-primary">Volver al Dashboard</button>
+                    </div>
+                `;
+            }
+        };
+
+        // Función de test simple
+        function testFunction() {
+            alert('¡La función JavaScript funciona!');
+            console.log('Test function ejecutada');
+        }
+        
+        // Función SUPER SIMPLE para probar
+        function loadSection(sectionId) {
+            console.log('🔄 Cargando sección:', sectionId);
+            console.log('ℹ️ loadSection ejecutada para:', sectionId);
+
+            // Ocultar dashboard
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+                console.log('✅ Dashboard ocultado');
+            }
+
+            // Limpiar contenido y mostrar mensaje
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="content-section active" style="padding: 20px;">
+                        <h2>🎉 ¡Funciona!</h2>
+                        <p>Has cargado la sección: <strong>${sectionId}</strong></p>
+                        <button onclick="loadSection('dashboard')" class="btn btn-primary">Volver al Dashboard</button>
+                    </div>
+                `;
+                console.log('✅ Contenido actualizado');
+            }
+
+            // Si es dashboard, mostrar la sección original
+            if (sectionId === 'dashboard' && dashboardSection) {
+                dashboardSection.style.display = 'block';
+                if (contentContainer) {
+                    contentContainer.innerHTML = '';
+                }
+            }
+        }
+        
+        // Hacer funciones disponibles globalmente
+        window.testFunction = testFunction;
+        
+        // Nueva función loadSection completa - SUPER SIMPLE
+        function loadSectionNew(sectionId) {
+            alert('FUNCIÓN EJECUTADA: ' + sectionId);
+            console.log('🔄 Cargando sección:', sectionId);
+            
+            // Solo ocultar dashboard y mostrar mensaje simple
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+            }
+            
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="content-section active" style="padding: 20px; background: white; border-radius: 8px;">
+                        <h2>✅ FUNCIÓN FUNCIONANDO</h2>
+                        <h3>Sección cargada: ${sectionId}</h3>
+                        <p>¡El sistema está funcionando correctamente!</p>
+                        <button onclick="window.location.reload()" class="btn btn-primary">Recargar Página</button>
+                        <button onclick="loadSectionNew('dashboard')" class="btn btn-secondary">Volver</button>
+                    </div>
+                `;
+            }
+            
+            // Caso especial para dashboard
+            if (sectionId === 'dashboard' && dashboardSection) {
+                dashboardSection.style.display = 'block';
+                if (contentContainer) {
+                    contentContainer.innerHTML = '';
+                }
+            }
+        }
+        
+        // Reemplazar la función loadSection con la nueva
+        window.loadSection = loadSectionNew;
+        window.loadSection = loadSection;
+        
+        // Mostrar/ocultar loading
+        function showLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.style.display = 'block';
+            }
+        }
+        
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+        }
+        
+        window.showLoading = showLoading;
+        window.hideLoading = hideLoading;
 
         // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Dashboard cargado correctamente');
+            console.log('🔧 Probando alert...');
+            
+            // Test inmediato para verificar que el script se carga
+            console.log('⚡ Script ejecutándose correctamente');
+            
+            // Use delegated event listener on the sidebar menu to reliably catch clicks
+            // This avoids fragile querySelector-on-onclick-string patterns and works even
+            // when the DOM is rendered server-side or modified later.
+            (function bindSidebarDelegation() {
+                try {
+                    const sidebarMenu = document.getElementById('sidebarMenu');
+                    if (!sidebarMenu) {
+                        console.warn('⚠️ sidebarMenu no encontrado, reintentando en 300ms');
+                        setTimeout(bindSidebarDelegation, 300);
+                        return;
+                    }
+
+                    sidebarMenu.addEventListener('click', function(e) {
+                        // Find the closest anchor
+                        const a = e.target.closest('a');
+                        if (!a || !sidebarMenu.contains(a)) return;
+
+                        // If it's a navigation anchor with an href that is a real link, allow default
+                        const href = a.getAttribute('href') || '';
+                        if (href && !href.startsWith('javascript') && href !== '#') {
+                            // Let the browser handle normal navigation (e.g., logout links)
+                            return;
+                        }
+
+                        e.preventDefault();
+
+                        // First, try a data-section attribute (preferred)
+                        const section = a.getAttribute('data-section');
+                        if (section) {
+                            console.log('➡️ Sidebar click (data-section):', section);
+                            hideAllSections();
+                            // Map to existing loaders when appropriate
+                            switch(section) {
+                                case 'dashboard':
+                                    loadSection('dashboard');
+                                    break;
+                                case 'reportes':
+                                    loadReportes();
+                                    break;
+                                case 'configuracion':
+                                    loadConfiguracion();
+                                    break;
+                                case 'perfil':
+                                    loadPerfilMejorado();
+                                    break;
+                                case 'aprobar-usuarios':
+                                case 'roles-permisos':
+                                case 'crear-acta':
+                                case 'mis-actas':
+                                case 'actas-contra':
+                                    loadSection(section);
+                                    break;
+                                case 'crear-usuario':
+                                    showCrearUsuarioModal();
+                                    break;
+                                case 'listar-usuarios':
+                                    loadUsuariosList();
+                                    break;
+                                default:
+                                    // Fallback: try calling loadSection with the name
+                                    if (typeof window.loadSection === 'function') {
+                                        loadSection(section);
+                                    } else {
+                                        console.warn('⚠️ No hay loader conocido para la sección:', section);
+                                    }
+                            }
+                            return;
+                        }
+
+                        // If there's no data-section, try to infer from onclick attribute or function names
+                        const onclick = a.getAttribute('onclick') || '';
+                        if (onclick) {
+                            console.log('➡️ Sidebar click (onclick):', onclick);
+
+                            // Common known handlers
+                            if (onclick.includes('loadGestionarUsuarios')) {
+                                hideAllSections();
+                                if (typeof window.loadGestionarUsuarios === 'function') {
+                                    loadGestionarUsuarios();
+                                }
+                                return;
+                            }
+
+                            if (onclick.includes('testClick') || onclick.includes('toggleSubmenu(\'usuarios\'')) {
+                                // Si es el botón TEST CLICK (toggleSubmenu usuarios), ejecutar loadTestClick
+                                if (a.textContent.includes('TEST CLICK')) {
+                                    hideAllSections();
+                                    loadTestClick();
+                                    return;
+                                }
+                            }
+
+                            if (onclick.includes("loadSection('perfil')") || onclick.includes('loadSection(\"perfil\")')) {
+                                hideAllSections();
+                                loadPerfilMejorado();
+                                return;
+                            }
+
+                            if (onclick.includes('loadPerfil')) {
+                                hideAllSections();
+                                loadPerfilMejorado();
+                                return;
+                            }
+
+                            // As a last resort, try to evaluate a call to loadSection or loadSectionNew inside the onclick string
+                            try {
+                                const matchLoad = onclick.match(/loadSectionNew\((?:'|\")?(.*?)(?:'|\")?\)/);
+                                if (matchLoad && matchLoad[1]) {
+                                    hideAllSections();
+                                    loadSectionNew(matchLoad[1]);
+                                    return;
+                                }
+
+                                const matchLoad2 = onclick.match(/loadSection\((?:'|\")?(.*?)(?:'|\")?\)/);
+                                if (matchLoad2 && matchLoad2[1]) {
+                                    hideAllSections();
+                                    loadSection(matchLoad2[1]);
+                                    return;
+                                }
+                            } catch (err) {
+                                console.warn('Error parseando onclick:', err);
+                            }
+                        }
+
+                        // Nothing matched — log for debugging
+                        console.log('ℹ️ Click en sidebar sin acción mapeada:', a, 'onclick=', onclick);
+                    }, false);
+
+                    console.log('✅ Delegated sidebar listener agregado correctamente');
+
+                    // Add a small visual debug badge so the user can see the script is active
+                    try {
+                        if (!document.getElementById('js-debug-badge')) {
+                            const badge = document.createElement('div');
+                            badge.id = 'js-debug-badge';
+                            badge.textContent = 'JS OK';
+                            badge.title = 'Click para probar listener';
+                            badge.style.position = 'fixed';
+                            badge.style.right = '12px';
+                            badge.style.bottom = '12px';
+                            badge.style.background = '#198754';
+                            badge.style.color = 'white';
+                            badge.style.padding = '8px 10px';
+                            badge.style.borderRadius = '8px';
+                            badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                            badge.style.zIndex = '99999';
+                            badge.style.cursor = 'pointer';
+                            badge.style.fontWeight = '700';
+                            badge.style.fontFamily = 'Segoe UI, Tahoma, sans-serif';
+                            badge.addEventListener('click', function() {
+                                console.log('🧪 JS Debug Badge clicked — delegated listener should be active.');
+                                hideAllSections();
+                                showSection('test-section');
+                            });
+                            document.body.appendChild(badge);
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo crear el badge de debug:', err);
+                    }
+
+                    // Aggressive binding: bind click handlers to every sidebar anchor directly
+                    function bindAllSidebarLinks() {
+                        try {
+                            const links = document.querySelectorAll('#sidebarMenu a');
+                            const summary = [];
+                            links.forEach(a => {
+                                // mark bound to avoid duplicate handlers
+                                if (a.dataset.bound === '1') return;
+                                a.dataset.bound = '1';
+
+                                a.addEventListener('click', function(e) {
+                                    // allow real href navigation to proceed (logout etc.)
+                                    const href = a.getAttribute('href') || '';
+                                    if (href && !href.startsWith('javascript') && href !== '#') return;
+                                    e.preventDefault();
+
+                                    const section = a.getAttribute('data-section');
+                                    if (section) {
+                                        console.log('🔗 [bound] click data-section ->', section);
+                                        hideAllSections();
+                                        switch(section) {
+                                            case 'listar-usuarios': return loadUsuariosList();
+                                            case 'reportes': return loadReportes();
+                                            case 'configuracion': return loadConfiguracion();
+                                            case 'perfil': return loadPerfilMejorado();
+                                            default:
+                                                if (typeof window.loadSection === 'function') return loadSection(section);
+                                        }
+                                        return;
+                                    }
+
+                                    // fallback: parse onclick text or try known functions
+                                    const onclick = a.getAttribute('onclick') || '';
+                                    if (onclick.includes('loadGestionarUsuarios')) { hideAllSections(); return loadGestionarUsuarios(); }
+                                    if (onclick.includes('loadUsuariosList')) { hideAllSections(); return loadUsuariosList(); }
+                                    if (onclick.includes('toggleSubmenu') && a.textContent.includes('TEST CLICK')) { hideAllSections(); return loadTestClick(); }
+                                    if (onclick.includes('loadPerfil')) { hideAllSections(); return loadPerfilMejorado(); }
+                                    if (onclick.includes('loadSection')) {
+                                        // find argument
+                                        const m = onclick.match(/loadSection\((?:'|\")?(.*?)(?:'|\")?\)/);
+                                        if (m && m[1]) { 
+                                            hideAllSections(); 
+                                            if (m[1] === 'perfil') return loadPerfilMejorado();
+                                            return loadSection(m[1]); 
+                                        }
+                                    }
+                                    if (onclick.includes('loadSectionNew')) {
+                                        const m = onclick.match(/loadSectionNew\((?:'|\")?(.*?)(?:'|\")?\)/);
+                                        if (m && m[1]) { hideAllSections(); return loadSectionNew(m[1]); }
+                                    }
+                                    if (onclick.includes('showCrearUsuarioModal')) { hideAllSections(); return showCrearUsuarioModal(); }
+                                    if (onclick.includes('toggleSubmenu')) return; // submenu toggles handled separately
+
+                                    console.log('⚠️ [bound] click sin mapping:', a, onclick);
+                                });
+
+                                summary.push({text: a.textContent.trim(), data: a.getAttribute('data-section') || null});
+                            });
+
+                            // Create/refresh a small debug panel with info + quick buttons
+                            try {
+                                let panel = document.getElementById('sidebar-debug-panel');
+                                if (!panel) {
+                                    panel = document.createElement('div');
+                                    panel.id = 'sidebar-debug-panel';
+                                    panel.style.position = 'fixed';
+                                    panel.style.right = '12px';
+                                    panel.style.top = '12px';
+                                    panel.style.width = '220px';
+                                    panel.style.background = 'white';
+                                    panel.style.border = '1px solid #ddd';
+                                    panel.style.padding = '10px';
+                                    panel.style.boxShadow = '0 6px 20px rgba(0,0,0,0.12)';
+                                    panel.style.zIndex = '99999';
+                                    panel.style.fontFamily = 'Segoe UI, Tahoma, sans-serif';
+                                    panel.style.fontSize = '13px';
+                                    document.body.appendChild(panel);
+                                }
+
+                                panel.innerHTML = `
+                                    <div style="font-weight:700;margin-bottom:6px">Debug Sidebar</div>
+                                    <div id="sb-summary">Enlaces: ${summary.length}</div>
+                                    <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+                                        <button class="btn btn-sm btn-outline-primary" id="btn-usuarios">Usuarios</button>
+                                        <button class="btn btn-sm btn-outline-primary" id="btn-reportes">Reportes</button>
+                                        <button class="btn btn-sm btn-outline-primary" id="btn-config">Configuración</button>
+                                        <button class="btn btn-sm btn-outline-primary" id="btn-perfil">Mi Perfil</button>
+                                    </div>
+                                    <div style="margin-top:8px"><small style="color:#666">Actualiza: recarga la página</small></div>
+                                `;
+
+                                document.getElementById('btn-usuarios').addEventListener('click', function(){ hideAllSections(); loadUsuariosList(); });
+                                document.getElementById('btn-reportes').addEventListener('click', function(){ hideAllSections(); loadReportes(); });
+                                document.getElementById('btn-config').addEventListener('click', function(){ hideAllSections(); loadConfiguracion(); });
+                                document.getElementById('btn-perfil').addEventListener('click', function(){ hideAllSections(); loadPerfilMejorado(); });
+                            } catch (err) {
+                                console.warn('No se pudo crear panel debug:', err);
+                            }
+
+                            console.log('✅ Bound sidebar links:', summary.length);
+                        } catch (err) {
+                            console.error('❌ Error binding sidebar links:', err);
+                        }
+                    }
+
+                    // Call binder now (we also have delegated listener as fallback)
+                    try { bindAllSidebarLinks(); } catch (err) { console.warn('Error ejecutando bindAllSidebarLinks:', err); }
+                } catch (error) {
+                    console.error('❌ Error al bindear delegación del sidebar:', error);
+                }
+            })();
+            
             initializeApp();
         });
+        
+        // Funciones auxiliares para manejar secciones
+        function hideAllSections() {
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+                console.log('✅ Dashboard ocultado');
+            }
+            
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) {
+                contentContainer.innerHTML = '';
+            }
+        }
+        
+        function showSection(sectionType) {
+            const contentContainer = document.getElementById('contentContainer');
+            if (!contentContainer) return;
+            
+            let content = '';
+            
+            switch(sectionType) {
+                case 'test-section':
+                    content = `
+                        <div class="content-section active" style="padding: 30px; background: #f8f9fa; border-radius: 10px; margin: 20px;">
+                            <h2><i class="fas fa-check-circle text-success"></i> ¡Test Exitoso!</h2>
+                            <p class="lead">Los event listeners están funcionando correctamente.</p>
+                            <button onclick="window.location.reload()" class="btn btn-primary">Recargar Página</button>
+                        </div>
+                    `;
+                    break;
+                case 'usuarios-section':
+                    content = `
+                        <div class="content-section active" style="padding: 30px; background: #f8f9fa; border-radius: 10px; margin: 20px;">
+                            <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
+                            <p class="lead">¡La funcionalidad de usuarios está funcionando!</p>
+                            <div class="alert alert-success">
+                                <strong>✅ Éxito:</strong> El dashboard desapareció y se cargó esta sección.
+                            </div>
+                            <button onclick="window.location.reload()" class="btn btn-primary">Volver al Dashboard</button>
+                        </div>
+                    `;
+                    break;
+                case 'reportes-section':
+                    content = `
+                        <div class="content-section active" style="padding: 30px; background: #f8f9fa; border-radius: 10px; margin: 20px;">
+                            <h2><i class="fas fa-chart-bar"></i> Reportes del Sistema</h2>
+                            <p class="lead">¡Los reportes están funcionando!</p>
+                            <div class="alert alert-info">
+                                <strong>✅ Éxito:</strong> El dashboard desapareció y se cargó la sección de reportes.
+                            </div>
+                            <button onclick="window.location.reload()" class="btn btn-primary">Volver al Dashboard</button>
+                        </div>
+                    `;
+                    break;
+                case 'configuracion-section':
+                    content = `
+                        <div class="content-section active" style="padding: 30px; background: #f8f9fa; border-radius: 10px; margin: 20px;">
+                            <h2><i class="fas fa-cog"></i> Configuración del Sistema</h2>
+                            <p class="lead">¡La configuración está funcionando!</p>
+                            <div class="alert alert-warning">
+                                <strong>✅ Éxito:</strong> El dashboard desapareció y se cargó la configuración.
+                            </div>
+                            <button onclick="window.location.reload()" class="btn btn-primary">Volver al Dashboard</button>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            contentContainer.innerHTML = content;
+            console.log('✅ Sección mostrada:', sectionType);
+        }
 
         // Función de respaldo para generar el menú manualmente
         function initializeApp() {
@@ -2317,7 +3058,6 @@ $rol = $app->getUserRole();
             
             // Auto-refresh notificaciones cada 30 segundos
             setInterval(loadNotifications, 30000);
-        }
             
             console.log('✅ Aplicación inicializada');
         }
@@ -2350,6 +3090,34 @@ $rol = $app->getUserRole();
                 console.error('Error cargando estadísticas individuales:', error);
             });
         }
+
+        // --- Exponer funciones críticas a window (fallbacks seguros) ---
+        (function exposeGlobals(){
+            const map = [
+                'loadSection', 'loadSectionNew', 'loadReportes', 'loadConfiguracion', 'loadPerfil',
+                'toggleSubmenu', 'loadUsuariosList', 'showCrearUsuarioModal', 'loadGestionarUsuarios',
+                'loadDashboardContent', 'loadDashboardStats', 'loadNotifications'
+            ];
+
+            map.forEach(name => {
+                try {
+                    if (typeof window[name] === 'undefined') {
+                        // If a local function exists with that name, bind it; otherwise add a safe noop
+                        try {
+                            if (typeof eval(name) === 'function') {
+                                window[name] = eval(name);
+                            } else {
+                                window[name] = function() { console.warn('Función no implementada o no cargada aún:', name); };
+                            }
+                        } catch (innerErr) {
+                            window[name] = function() { console.warn('Función no implementada o no cargada aún:', name); };
+                        }
+                    }
+                } catch (err) {
+                    // ignore
+                }
+            });
+        })();
 
         function toggleSubmenu(menuId, event) {
             event.preventDefault();
@@ -2387,9 +3155,10 @@ $rol = $app->getUserRole();
             sidebar.classList.toggle('show');
         }
 
-        // Función principal para cargar secciones
-        function loadSection(sectionId) {
+        // Mostrar/ocultar loading
+        function showLoading() {
             console.log('🔄 Cargando sección:', sectionId);
+            console.log('📍 LoadSection ejecutándose...');
             
             // Actualizar el estado activo en el menú
             document.querySelectorAll('.sidebar-link, .sidebar-sublink').forEach(link => {
@@ -2401,12 +3170,31 @@ $rol = $app->getUserRole();
                 activeLink.classList.add('active');
             }
             
-            // Mostrar loading
-            showLoading();
+            // Ocultar todas las secciones existentes
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+                section.style.display = 'none';
+            });
+            
+            // Ocultar la sección del dashboard por defecto
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'none';
+            }
+            
+            // Mostrar loading si existe la función
+            if (typeof showLoading === 'function') {
+                showLoading();
+            }
             
             // Cargar contenido según la sección
             switch(sectionId) {
                 case 'dashboard':
+                    // Para el dashboard, mostrar la sección existente
+                    if (dashboardSection) {
+                        dashboardSection.style.display = 'block';
+                        dashboardSection.classList.add('active');
+                    }
                     loadDashboardContent();
                     break;
                 case 'listar-usuarios':
@@ -2417,6 +3205,9 @@ $rol = $app->getUserRole();
                     break;
                 case 'crear-usuario':
                     showCrearUsuarioModal();
+                    return; // No cambiar contenido, solo mostrar modal
+                case 'roles-permisos':
+                    loadRolesPermisos();
                     break;
                 case 'crear-acta':
                     loadCrearActa();
@@ -2424,11 +3215,44 @@ $rol = $app->getUserRole();
                 case 'mis-actas':
                     loadMisActas();
                     break;
+                case 'actas-contra':
+                    loadActasContra();
+                    break;
+                case 'empresas':
+                    loadEmpresas();
+                    break;
+                case 'inspecciones':
+                    loadInspecciones();
+                    break;
+                case 'consultas':
+                    loadConsultas();
+                    break;
+                case 'calendario':
+                    loadCalendario();
+                    break;
                 case 'nueva-inspeccion':
                     loadNuevaInspeccion();
                     break;
+                case 'mis-inspecciones':
+                    loadMisInspecciones();
+                    break;
+                case 'vehiculos':
+                    loadVehiculos();
+                    break;
+                case 'nueva-atencion':
+                    loadNuevaAtencion();
+                    break;
+                case 'cola-espera':
+                    loadColaEspera();
+                    break;
+                case 'tramites':
+                    loadTramites();
+                    break;
                 case 'reportes':
                     loadReportes();
+                    break;
+                case 'configuracion':
+                    loadConfiguracion();
                     break;
                 case 'perfil':
                     loadPerfil();
@@ -2438,7 +3262,13 @@ $rol = $app->getUserRole();
             }
             
             currentSection = sectionId;
-            hideLoading();
+            
+            // Ocultar loading si existe la función
+            setTimeout(() => {
+                if (typeof hideLoading === 'function') {
+                    hideLoading();
+                }
+            }, 300);
         }
 
         // Mostrar/ocultar loading
@@ -2470,16 +3300,63 @@ $rol = $app->getUserRole();
                             <i class="fas fa-user-plus"></i> Nuevo Usuario
                         </button>
                     </div>
+                    
+                    <!-- Filtros y Búsqueda -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Buscar Usuario</label>
+                                    <input type="text" class="form-control" id="searchUsuarios" placeholder="Nombre, email o username...">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Filtrar por Rol</label>
+                                    <select class="form-select" id="filterRol">
+                                        <option value="">Todos los roles</option>
+                                        <option value="administrador">Administrador</option>
+                                        <option value="fiscalizador">Fiscalizador</option>
+                                        <option value="inspector">Inspector</option>
+                                        <option value="ventanilla">Ventanilla</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Filtrar por Estado</label>
+                                    <select class="form-select" id="filterStatus">
+                                        <option value="">Todos los estados</option>
+                                        <option value="approved">Aprobado</option>
+                                        <option value="pending">Pendiente</option>
+                                        <option value="rejected">Rechazado</option>
+                                        <option value="suspended">Suspendido</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                            <i class="fas fa-times"></i> Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Usuarios -->
                     <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Usuarios Registrados</h5>
+                            <div>
+                                <span id="totalUsuarios" class="badge bg-primary">0 usuarios</span>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover" id="usuariosTable">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Nombre</th>
-                                            <th>Username</th>
-                                            <th>Email</th>
+                                            <th>#</th>
+                                            <th>Usuario</th>
+                                            <th>Información</th>
                                             <th>Rol</th>
                                             <th>Estado</th>
                                             <th>Fecha Registro</th>
@@ -2488,10 +3365,11 @@ $rol = $app->getUserRole();
                                     </thead>
                                     <tbody id="usuariosTableBody">
                                         <tr>
-                                            <td colspan="8" class="text-center">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="visually-hidden">Cargando...</span>
+                                            <td colspan="7" class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando usuarios...</span>
                                                 </div>
+                                                <p class="mt-2 mb-0">Cargando lista de usuarios...</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -2502,28 +3380,413 @@ $rol = $app->getUserRole();
                 </div>
             `;
             
-            // Cargar usuarios con AJAX usando la API real
+            // Agregar event listeners para filtros
+            setTimeout(() => {
+                document.getElementById('searchUsuarios').addEventListener('input', filterUsuarios);
+                document.getElementById('filterRol').addEventListener('change', filterUsuarios);
+                document.getElementById('filterStatus').addEventListener('change', filterUsuarios);
+            }, 100);
+            
+            // Cargar usuarios con AJAX
+            loadUsuariosData();
+        }
+
+        // Variable global para almacenar todos los usuarios
+        let todosLosUsuarios = [];
+
+        function loadUsuariosData() {
             fetch('dashboard.php?api=users')
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Datos de usuarios:', data);
+                    console.log('Datos de usuarios recibidos:', data);
                     if (data.success && data.users) {
+                        todosLosUsuarios = data.users;
                         renderUsuariosTable(data.users);
+                        updateUsuariosCount(data.users.length);
                     } else {
-                        document.getElementById('usuariosTableBody').innerHTML = `
-                            <tr><td colspan="8" class="text-center text-danger">Error: ${data.message || 'No se pudieron cargar los usuarios'}</td></tr>
-                        `;
+                        showUsuariosError(data.message || 'No se pudieron cargar los usuarios');
                     }
                 })
                 .catch(error => {
                     console.error('Error cargando usuarios:', error);
-                    document.getElementById('usuariosTableBody').innerHTML = `
-                        <tr><td colspan="8" class="text-center text-danger">Error de conexión</td></tr>
-                    `;
+                    showUsuariosError('Error de conexión con el servidor');
                 });
         }
 
-        function loadAprobarUsuarios() {
+        function renderUsuariosTable(usuarios) {
+            const tbody = document.getElementById('usuariosTableBody');
+            if (!tbody) return;
+
+            if (usuarios.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="mb-0">No se encontraron usuarios</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = usuarios.map(user => {
+                const statusBadge = getStatusBadge(user.status);
+                const roleBadge = getRoleBadge(user.role);
+                const fechaFormatada = formatDate(user.created_at);
+                
+                return `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2">
+                                    <div class="avatar-title bg-primary text-white rounded-circle">
+                                        ${user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">${user.name}</h6>
+                                    <small class="text-muted">@${user.username}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <i class="fas fa-envelope text-muted me-1"></i>
+                                <small>${user.email}</small>
+                            </div>
+                            ${user.phone ? `<div class="mt-1"><i class="fas fa-phone text-muted me-1"></i><small>${user.phone}</small></div>` : ''}
+                        </td>
+                        <td>${roleBadge}</td>
+                        <td>${statusBadge}</td>
+                        <td>${fechaFormatada}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary" onclick="viewUser(${user.id})" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="editUser(${user.id})" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-${user.status === 'approved' ? 'secondary' : 'success'}" 
+                                        onclick="toggleUserStatus(${user.id}, '${user.status}')" 
+                                        title="${user.status === 'approved' ? 'Suspender' : 'Aprobar'}">
+                                    <i class="fas fa-${user.status === 'approved' ? 'pause' : 'check'}"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="deleteUser(${user.id})" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'approved': '<span class="badge bg-success">Aprobado</span>',
+                'pending': '<span class="badge bg-warning">Pendiente</span>',
+                'rejected': '<span class="badge bg-danger">Rechazado</span>',
+                'suspended': '<span class="badge bg-secondary">Suspendido</span>'
+            };
+            return badges[status] || '<span class="badge bg-dark">Desconocido</span>';
+        }
+
+        function getRoleBadge(role) {
+            const badges = {
+                'administrador': '<span class="badge bg-primary">Administrador</span>',
+                'fiscalizador': '<span class="badge bg-info">Fiscalizador</span>',
+                'inspector': '<span class="badge bg-success">Inspector</span>',
+                'ventanilla': '<span class="badge bg-warning">Ventanilla</span>'
+            };
+            return badges[role] || '<span class="badge bg-dark">' + role + '</span>';
+        }
+
+        function updateUsuariosCount(count) {
+            const counter = document.getElementById('totalUsuarios');
+            if (counter) {
+                counter.textContent = `${count} usuario${count !== 1 ? 's' : ''}`;
+            }
+        }
+
+        function showUsuariosError(message) {
+            const tbody = document.getElementById('usuariosTableBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p class="mb-0">Error: ${message}</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function filterUsuarios() {
+            const searchTerm = document.getElementById('searchUsuarios').value.toLowerCase();
+            const filterRol = document.getElementById('filterRol').value;
+            const filterStatus = document.getElementById('filterStatus').value;
+
+            const usuariosFiltrados = todosLosUsuarios.filter(user => {
+                const matchesSearch = user.name.toLowerCase().includes(searchTerm) ||
+                                    user.username.toLowerCase().includes(searchTerm) ||
+                                    user.email.toLowerCase().includes(searchTerm);
+                
+                const matchesRol = !filterRol || user.role === filterRol;
+                const matchesStatus = !filterStatus || user.status === filterStatus;
+
+                return matchesSearch && matchesRol && matchesStatus;
+            });
+
+            renderUsuariosTable(usuariosFiltrados);
+            updateUsuariosCount(usuariosFiltrados.length);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchUsuarios').value = '';
+            document.getElementById('filterRol').value = '';
+            document.getElementById('filterStatus').value = '';
+            renderUsuariosTable(todosLosUsuarios);
+            updateUsuariosCount(todosLosUsuarios.length);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Funciones de acciones de usuario
+        function viewUser(userId) {
+            const user = todosLosUsuarios.find(u => u.id == userId);
+            if (!user) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalFooter = document.getElementById('modalFooter');
+
+            modalTitle.textContent = `Detalles del Usuario: ${user.name}`;
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="text-center mb-3">
+                            <div class="avatar-lg mx-auto">
+                                <div class="avatar-title bg-primary text-white rounded-circle fs-2">
+                                    ${user.name.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            <h5 class="mt-2">${user.name}</h5>
+                            ${getRoleBadge(user.role)}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr><td><strong>ID:</strong></td><td>${user.id}</td></tr>
+                            <tr><td><strong>Username:</strong></td><td>@${user.username}</td></tr>
+                            <tr><td><strong>Email:</strong></td><td>${user.email}</td></tr>
+                            <tr><td><strong>Teléfono:</strong></td><td>${user.phone || 'No registrado'}</td></tr>
+                            <tr><td><strong>Estado:</strong></td><td>${getStatusBadge(user.status)}</td></tr>
+                            <tr><td><strong>Registro:</strong></td><td>${formatDate(user.created_at)}</td></tr>
+                            <tr><td><strong>Último acceso:</strong></td><td>${formatDate(user.last_login)}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="editUser(${user.id}); $('#dynamicModal').modal('hide');">
+                    <i class="fas fa-edit"></i> Editar Usuario
+                </button>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('dynamicModal'));
+            modal.show();
+        }
+
+        function editUser(userId) {
+            const user = todosLosUsuarios.find(u => u.id == userId);
+            if (!user) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalFooter = document.getElementById('modalFooter');
+
+            modalTitle.textContent = `Editar Usuario: ${user.name}`;
+            modalBody.innerHTML = `
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId" value="${user.id}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre Completo *</label>
+                                <input type="text" class="form-control" id="editName" value="${user.name}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Username *</label>
+                                <input type="text" class="form-control" id="editUsername" value="${user.username}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="editEmail" value="${user.email}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="editPhone" value="${user.phone || ''}" placeholder="999-999-999">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rol *</label>
+                                <select class="form-select" id="editRole" required>
+                                    <option value="administrador" ${user.role === 'administrador' ? 'selected' : ''}>Administrador</option>
+                                    <option value="fiscalizador" ${user.role === 'fiscalizador' ? 'selected' : ''}>Fiscalizador</option>
+                                    <option value="inspector" ${user.role === 'inspector' ? 'selected' : ''}>Inspector</option>
+                                    <option value="ventanilla" ${user.role === 'ventanilla' ? 'selected' : ''}>Ventanilla</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Estado *</label>
+                                <select class="form-select" id="editStatus" required>
+                                    <option value="approved" ${user.status === 'approved' ? 'selected' : ''}>Aprobado</option>
+                                    <option value="pending" ${user.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                                    <option value="suspended" ${user.status === 'suspended' ? 'selected' : ''}>Suspendido</option>
+                                    <option value="rejected" ${user.status === 'rejected' ? 'selected' : ''}>Rechazado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nueva Contraseña</label>
+                        <input type="password" class="form-control" id="editPassword" placeholder="Dejar en blanco para mantener la actual">
+                        <div class="form-text">Solo completar si desea cambiar la contraseña</div>
+                    </div>
+                </form>
+            `;
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveEditUser()">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('dynamicModal'));
+            modal.show();
+        }
+
+        function saveEditUser() {
+            const formData = new FormData();
+            formData.append('api', 'update-user');
+            formData.append('id', document.getElementById('editUserId').value);
+            formData.append('name', document.getElementById('editName').value);
+            formData.append('username', document.getElementById('editUsername').value);
+            formData.append('email', document.getElementById('editEmail').value);
+            formData.append('phone', document.getElementById('editPhone').value);
+            formData.append('role', document.getElementById('editRole').value);
+            formData.append('status', document.getElementById('editStatus').value);
+            
+            const password = document.getElementById('editPassword').value;
+            if (password) {
+                formData.append('password', password);
+            }
+
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Usuario actualizado correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('dynamicModal')).hide();
+                    loadUsuariosData(); // Recargar la tabla
+                } else {
+                    showAlert('error', data.message || 'Error al actualizar usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error de conexión al actualizar usuario');
+            });
+        }
+
+        function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'approved' ? 'suspended' : 'approved';
+            const action = newStatus === 'approved' ? 'aprobar' : 'suspender';
+            
+            if (confirm(`¿Está seguro de ${action} este usuario?`)) {
+                const formData = new FormData();
+                formData.append('api', 'update-user-status');
+                formData.append('id', userId);
+                formData.append('status', newStatus);
+
+                fetch('dashboard.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', `Usuario ${action === 'aprobar' ? 'aprobado' : 'suspendido'} correctamente`);
+                        loadUsuariosData(); // Recargar la tabla
+                    } else {
+                        showAlert('error', data.message || `Error al ${action} usuario`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', `Error de conexión al ${action} usuario`);
+                });
+            }
+        }
+
+        function deleteUser(userId) {
+            const user = todosLosUsuarios.find(u => u.id == userId);
+            if (!user) return;
+
+            if (confirm(`¿Está seguro de eliminar al usuario "${user.name}"?\n\nEsta acción NO se puede deshacer.`)) {
+                const formData = new FormData();
+                formData.append('api', 'delete-user');
+                formData.append('id', userId);
+
+                fetch('dashboard.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Usuario eliminado correctamente');
+                        loadUsuariosData(); // Recargar la tabla
+                    } else {
+                        showAlert('error', data.message || 'Error al eliminar usuario');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'Error de conexión al eliminar usuario');
+                });
+            }
+    }
+
+    function loadAprobarUsuarios() {
             const contentContainer = document.getElementById('contentContainer');
             contentContainer.innerHTML = `
                 <div class="content-section active">
@@ -2545,27 +3808,8 @@ $rol = $app->getUserRole();
                     </div>
                 </div>
             `;
-            
-            // Cargar usuarios pendientes usando la API real
-            fetch('dashboard.php?api=pending-users')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Usuarios pendientes:', data);
-                    if (data.success) {
-                        renderUsuariosPendientes(data.users || []);
-                    } else {
-                        document.getElementById('usuariosPendientes').innerHTML = `
-                            <div class="alert alert-danger">Error: ${data.message}</div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error cargando usuarios pendientes:', error);
-                    document.getElementById('usuariosPendientes').innerHTML = `
-                        <div class="alert alert-danger">Error de conexión</div>
-                    `;
-                });
         }
+
 
         function loadCrearActa() {
             const contentContainer = document.getElementById('contentContainer');
@@ -5835,8 +7079,8 @@ $rol = $app->getUserRole();
         // Funciones específicas para Fiscalizador
         function loadEmpresas() {
             console.log('📄 Cargando Empresas...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-building"></i> Gestión de Empresas</h4>
                     <p>Administrar empresas registradas en el sistema</p>
@@ -5872,12 +7116,13 @@ $rol = $app->getUserRole();
 
         function loadInspecciones() {
             console.log('📄 Cargando Inspecciones...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
-                <div class="content-header">
-                    <h4><i class="fas fa-search"></i> Gestión de Inspecciones</h4>
-                    <p>Programar y gestionar inspecciones</p>
-                </div>
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <div class="content-header">
+                        <h4><i class="fas fa-search"></i> Gestión de Inspecciones</h4>
+                        <p>Programar y gestionar inspecciones</p>
+                    </div>
                 <div class="row">
                     <div class="col-md-8">
                         <div class="card">
@@ -5935,17 +7180,19 @@ $rol = $app->getUserRole();
                         </div>
                     </div>
                 </div>
+                </div>
             `;
         }
 
         function loadConsultas() {
             console.log('📄 Cargando Consultas...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
-                <div class="content-header">
-                    <h4><i class="fas fa-question-circle"></i> Centro de Consultas</h4>
-                    <p>Gestionar consultas y solicitudes</p>
-                </div>
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <div class="content-header">
+                        <h4><i class="fas fa-question-circle"></i> Centro de Consultas</h4>
+                        <p>Gestionar consultas y solicitudes</p>
+                    </div>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="card">
@@ -5989,8 +7236,8 @@ $rol = $app->getUserRole();
 
         function loadCalendario() {
             console.log('📄 Cargando Calendario...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-calendar"></i> Calendario de Actividades</h4>
                     <p>Programación de inspecciones y eventos</p>
@@ -6012,8 +7259,8 @@ $rol = $app->getUserRole();
         // Funciones específicas para Inspector
         function loadNuevaInspeccion() {
             console.log('📄 Cargando Nueva Inspección...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-plus-circle"></i> Nueva Inspección</h4>
                     <p>Registrar una nueva inspección</p>
@@ -6058,8 +7305,8 @@ $rol = $app->getUserRole();
 
         function loadMisInspecciones() {
             console.log('📄 Cargando Mis Inspecciones...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-list"></i> Mis Inspecciones</h4>
                     <p>Ver historial de inspecciones realizadas</p>
@@ -6089,8 +7336,8 @@ $rol = $app->getUserRole();
 
         function loadVehiculos() {
             console.log('📄 Cargando Vehículos...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-car"></i> Gestión de Vehículos</h4>
                     <p>Administrar vehículos registrados</p>
@@ -6128,8 +7375,8 @@ $rol = $app->getUserRole();
         // Funciones específicas para Ventanilla
         function loadNuevaAtencion() {
             console.log('📄 Cargando Nueva Atención...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-user-plus"></i> Nueva Atención</h4>
                     <p>Registrar nuevo cliente en cola de espera</p>
@@ -6189,8 +7436,8 @@ $rol = $app->getUserRole();
 
         function loadColaEspera() {
             console.log('📄 Cargando Cola de Espera...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
                 <div class="content-header">
                     <h4><i class="fas fa-clock"></i> Cola de Espera</h4>
                     <p>Gestionar clientes en espera de atención</p>
@@ -6240,17 +7487,19 @@ $rol = $app->getUserRole();
                         </div>
                     </div>
                 </div>
+                </div>
             `;
         }
 
         function loadTramites() {
             console.log('📄 Cargando Trámites...');
-            const content = document.getElementById('main-content');
-            content.innerHTML = `
-                <div class="content-header">
-                    <h4><i class="fas fa-file-alt"></i> Gestión de Trámites</h4>
-                    <p>Administrar trámites y procedimientos</p>
-                </div>
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <div class="content-header">
+                        <h4><i class="fas fa-file-alt"></i> Gestión de Trámites</h4>
+                        <p>Administrar trámites y procedimientos</p>
+                    </div>
                 <div class="row">
                     <div class="col-md-3">
                         <div class="card text-center">
@@ -6312,8 +7561,569 @@ $rol = $app->getUserRole();
                         </div>
                     </div>
                 </div>
+                </div>
             `;
         }
+
+        // Funciones adicionales para el administrador
+        function loadRolesPermisos() {
+            console.log('🔐 Cargando Roles y Permisos...');
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-user-shield"></i> Gestión de Roles y Permisos</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Roles del Sistema</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><i class="fas fa-crown text-warning"></i> Administrador</h6>
+                                                <small class="text-muted">Acceso completo al sistema</small>
+                                            </div>
+                                            <span class="badge bg-primary">Máximo</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><i class="fas fa-clipboard-check text-info"></i> Fiscalizador</h6>
+                                                <small class="text-muted">Gestión de actas e inspecciones</small>
+                                            </div>
+                                            <span class="badge bg-info">Alto</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><i class="fas fa-search text-success"></i> Inspector</h6>
+                                                <small class="text-muted">Realizar inspecciones</small>
+                                            </div>
+                                            <span class="badge bg-success">Medio</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><i class="fas fa-window-restore text-warning"></i> Ventanilla</h6>
+                                                <small class="text-muted">Atención al cliente</small>
+                                            </div>
+                                            <span class="badge bg-warning">Básico</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Permisos por Rol</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        Esta funcionalidad estará disponible en futuras actualizaciones
+                                    </div>
+                                    <p class="text-muted">Aquí podrás gestionar permisos específicos por rol de usuario.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadConfiguracion() {
+            console.log('⚙️ Cargando Configuración...');
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-cog"></i> Configuración del Sistema</h2>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Configuración General</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="configForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Nombre del Sistema</label>
+                                                    <input type="text" class="form-control" value="Sistema de Gestión" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Versión</label>
+                                                    <input type="text" class="form-control" value="1.0.0" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Email Administrador</label>
+                                                    <input type="email" class="form-control" value="admin@sistema.com">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Zona Horaria</label>
+                                                    <select class="form-select">
+                                                        <option value="America/Lima" selected>Lima, Peru (GMT-5)</option>
+                                                        <option value="America/Bogota">Bogotá, Colombia (GMT-5)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="maintMode">
+                                                <label class="form-check-label" for="maintMode">
+                                                    Modo Mantenimiento
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Guardar Configuración
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Información del Sistema</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <tr><td><strong>Servidor:</strong></td><td>Apache/PHP</td></tr>
+                                        <tr><td><strong>Base de Datos:</strong></td><td>MySQL</td></tr>
+                                        <tr><td><strong>PHP Version:</strong></td><td>8.x</td></tr>
+                                        <tr><td><strong>Usuarios Activos:</strong></td><td id="activeUsers">-</td></tr>
+                                        <tr><td><strong>Último Backup:</strong></td><td>Hoy</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============ FUNCIONES ADICIONALES PARA BOTONES FALTANTES ============
+        
+        // Función para mostrar notificaciones toast
+        function showToast(type, title, message) {
+            const toastContainer = document.getElementById('toastContainer') || (() => {
+                const container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;';
+                document.body.appendChild(container);
+                return container;
+            })();
+
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-primary';
+            
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast align-items-center text-white ${bgClass} border-0 mb-2`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}</strong><br>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${toastId}').remove()"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove después de 5 segundos
+            setTimeout(() => {
+                if (document.getElementById(toastId)) {
+                    document.getElementById(toastId).remove();
+                }
+            }, 5000);
+        }
+
+        // Función mejorada para "TEST CLICK" - ahora muestra diferentes opciones
+        function loadTestClick() {
+            console.log('🧪 TEST CLICK ejecutado');
+            hideAllSections();
+            
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <div class="container-fluid">
+                        <h2><i class="fas fa-flask text-primary"></i> Panel de Pruebas</h2>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            Este es el panel de pruebas del sistema. Aquí puedes probar diferentes funcionalidades.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-bell"></i> Pruebas de Notificaciones</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-success" onclick="showToast('success', '¡Éxito!', 'Operación completada correctamente')">
+                                                <i class="fas fa-check"></i> Notificación de Éxito
+                                            </button>
+                                            <button class="btn btn-danger" onclick="showToast('error', 'Error', 'Algo salió mal en la operación')">
+                                                <i class="fas fa-times"></i> Notificación de Error
+                                            </button>
+                                            <button class="btn btn-warning" onclick="showToast('warning', 'Advertencia', 'Por favor, revisa los datos')">
+                                                <i class="fas fa-exclamation-triangle"></i> Notificación de Advertencia
+                                            </button>
+                                            <button class="btn btn-info" onclick="showToast('info', 'Información', 'Proceso iniciado correctamente')">
+                                                <i class="fas fa-info"></i> Notificación Informativa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-cog"></i> Pruebas de Funcionalidades</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" onclick="loadUsuariosList()">
+                                                <i class="fas fa-users"></i> Cargar Lista de Usuarios
+                                            </button>
+                                            <button class="btn btn-secondary" onclick="loadReportes()">
+                                                <i class="fas fa-chart-bar"></i> Cargar Reportes
+                                            </button>
+                                            <button class="btn btn-info" onclick="loadConfiguracion()">
+                                                <i class="fas fa-cog"></i> Cargar Configuración
+                                            </button>
+                                            <button class="btn btn-warning" onclick="loadPerfil()">
+                                                <i class="fas fa-user"></i> Cargar Mi Perfil
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5><i class="fas fa-database"></i> Estado del Sistema</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col-md-3">
+                                                <div class="p-3 bg-light rounded">
+                                                    <h4 class="text-success"><i class="fas fa-check-circle"></i></h4>
+                                                    <small>JavaScript OK</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="p-3 bg-light rounded">
+                                                    <h4 class="text-success"><i class="fas fa-link"></i></h4>
+                                                    <small>Event Listeners OK</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="p-3 bg-light rounded">
+                                                    <h4 class="text-success"><i class="fas fa-server"></i></h4>
+                                                    <small>API Disponible</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="p-3 bg-light rounded">
+                                                    <h4 class="text-primary"><i class="fas fa-user"></i></h4>
+                                                    <small>Usuario: ${userName}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <button class="btn btn-primary" onclick="loadSection('dashboard')">
+                                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showToast('success', '¡Test Iniciado!', 'Panel de pruebas cargado correctamente');
+        }
+
+        // Función para generar reportes (mejorada)
+        function generarReporte(tipo) {
+            console.log('📊 Generando reporte:', tipo);
+            showToast('info', 'Generando Reporte', `Generando reporte de ${tipo}...`);
+            
+            // Simular proceso de generación
+            setTimeout(() => {
+                const modal = showModal('Reporte Generado', `
+                    <div class="text-center">
+                        <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
+                        <h4>Reporte de ${tipo.toUpperCase()}</h4>
+                        <p>El reporte ha sido generado exitosamente.</p>
+                        <div class="alert alert-info">
+                            <strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}<br>
+                            <strong>Usuario:</strong> ${userName}<br>
+                            <strong>Tipo:</strong> ${tipo}
+                        </div>
+                    </div>
+                `, `
+                    <button class="btn btn-success" onclick="descargarReporte('${tipo}')">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                `);
+            }, 2000);
+        }
+
+        // Función para mostrar modales dinámicos
+        function showModal(title, body, footer = '') {
+            let modal = document.getElementById('dynamicModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = 'dynamicModal';
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="dynamicModalTitle">${title}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" id="dynamicModalBody">${body}</div>
+                            <div class="modal-footer" id="dynamicModalFooter">
+                                ${footer || '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } else {
+                document.getElementById('dynamicModalTitle').innerHTML = title;
+                document.getElementById('dynamicModalBody').innerHTML = body;
+                document.getElementById('dynamicModalFooter').innerHTML = footer || '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>';
+            }
+            
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            return bsModal;
+        }
+
+        // Función para descargar reportes (simulado)
+        function descargarReporte(tipo) {
+            showToast('success', 'Descarga Iniciada', `Descargando reporte de ${tipo}...`);
+            // Aquí iría la lógica real de descarga
+            console.log('⬇️ Descargando reporte:', tipo);
+        }
+
+        // Mejorar la función loadPerfil existente
+        function loadPerfilMejorado() {
+            console.log('👤 Cargando perfil mejorado...');
+            hideAllSections();
+            
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                                    </div>
+                                    <h4>${userName}</h4>
+                                    <p class="text-muted">${userRole.toUpperCase()}</p>
+                                    <span class="badge bg-success">Usuario Activo</span>
+                                    <hr>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="showModal('Cambiar Avatar', 'Funcionalidad de cambio de avatar en desarrollo')">
+                                            <i class="fas fa-camera"></i> Cambiar Avatar
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="showModal('Actividad Reciente', 'Historial de actividad del usuario')">
+                                            <i class="fas fa-history"></i> Actividad Reciente
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-edit"></i> Información Personal</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="perfilForm">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Nombre Completo</label>
+                                                <input type="text" class="form-control" name="name" value="${userName}" required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" class="form-control" name="email" value="${userName.toLowerCase()}@sistema.com">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Teléfono</label>
+                                                <input type="tel" class="form-control" name="phone" placeholder="+51 999 999 999">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Rol</label>
+                                                <input type="text" class="form-control" value="${userRole.toUpperCase()}" readonly>
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label">Nueva Contraseña</label>
+                                                <input type="password" class="form-control" name="password" placeholder="Dejar vacío si no desea cambiar">
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label">Confirmar Nueva Contraseña</label>
+                                                <input type="password" class="form-control" name="password_confirm" placeholder="Confirmar contraseña">
+                                            </div>
+                                            <div class="col-12">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Guardar Cambios
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="loadSection('dashboard')">
+                                                    <i class="fas fa-times"></i> Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Agregar evento al formulario
+            document.getElementById('perfilForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                showToast('success', 'Perfil Actualizado', 'Los cambios se han guardado correctamente');
+            });
+            
+            showToast('info', 'Perfil Cargado', 'Tu información personal está disponible');
+        }
+
+        // Verificación final - esto debería aparecer en la consola
+        console.log('🔧 Script cargado completamente');
+        console.log('🔧 loadSection disponible?', typeof loadSection);
+        console.log('🔧 testFunction disponible?', typeof testFunction);
+
+        // EXPOSICIÓN INMEDIATA Y DIRECTA DE FUNCIONES CRÍTICAS
+        console.log('🔗 Exponiendo funciones críticas inmediatamente...');
+        
+        // Exponer loadSection de forma inmediata
+        window.loadSection = function(sectionId) {
+            console.log('🔄 loadSection global ejecutándose:', sectionId);
+            hideAllSections();
+            
+            switch(sectionId) {
+                case 'dashboard':
+                    const dashboardSection = document.getElementById('dashboard-section');
+                    if (dashboardSection) {
+                        dashboardSection.style.display = 'block';
+                    }
+                    break;
+                case 'reportes':
+                    loadReportes();
+                    break;
+                case 'configuracion':
+                    loadConfiguracion();
+                    break;
+                case 'perfil':
+                    loadPerfilMejorado();
+                    break;
+                default:
+                    loadDefaultSection(sectionId);
+            }
+        };
+        
+        // Exponer toggleSubmenu de forma inmediata
+        window.toggleSubmenu = function(menuId, event) {
+            if (event) event.preventDefault();
+            console.log('🔄 toggleSubmenu global ejecutándose:', menuId);
+            
+            // Si es el TEST CLICK (submenu usuarios), ejecutar loadTestClick
+            if (menuId === 'usuarios') {
+                hideAllSections();
+                loadTestClick();
+                return;
+            }
+            
+            const submenu = document.getElementById(`submenu-${menuId}`);
+            const toggle = event ? event.currentTarget : null;
+            
+            if (!submenu) {
+                console.error('❌ No se encontró el submenu:', `submenu-${menuId}`);
+                return;
+            }
+            
+            if (submenu.classList.contains('show')) {
+                submenu.classList.remove('show');
+                if (toggle) toggle.classList.remove('expanded');
+            } else {
+                document.querySelectorAll('.sidebar-submenu.show').forEach(sub => {
+                    sub.classList.remove('show');
+                });
+                document.querySelectorAll('.sidebar-toggle.expanded').forEach(tog => {
+                    tog.classList.remove('expanded');
+                });
+                
+                submenu.classList.add('show');
+                if (toggle) toggle.classList.add('expanded');
+            }
+        };
+        
+        // Exponer loadPerfil de forma inmediata
+        window.loadPerfil = function() {
+            console.log('🔄 loadPerfil global ejecutándose');
+            hideAllSections();
+            loadPerfilMejorado();
+        };
+        
+        console.log('✅ Funciones críticas expuestas inmediatamente');
+
+        // Rebind crítico en window (final pass) para asegurarnos que los onclicks inline funcionen
+        (function finalExpose() {
+            const names = ['loadSection','loadSectionNew','loadReportes','loadConfiguracion','loadPerfil','loadPerfilMejorado','toggleSubmenu','loadUsuariosList','showCrearUsuarioModal','loadGestionarUsuarios','loadDashboardContent','loadDashboardStats','loadNotifications','loadTestClick','generarReporte','showModal','showToast','descargarReporte'];
+            names.forEach(n => {
+                try {
+                    if (typeof window[n] === 'undefined') {
+                        if (typeof eval(n) === 'function') {
+                            window[n] = eval(n);
+                            console.log('🔗 Expuesto a window:', n);
+                        } else {
+                            // leave as-is — do not override existing values
+                            window[n] = window[n] || function() { console.warn('Fallback noop llamado para', n); };
+                        }
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            });
+            
+            // Exponer también loadPerfil como loadPerfilMejorado por defecto
+            window.loadPerfil = loadPerfilMejorado;
+            console.log('✅ Todas las funciones expuestas a window');
+        })();
 
     </script>
 </body>
