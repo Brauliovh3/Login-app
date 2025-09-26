@@ -337,8 +337,18 @@ class DashboardApp {
                 case 'users':
                     echo json_encode($this->getUsers());
                     break;
-                case 'users-pending':
+                case 'pending-users':
                     echo json_encode($this->getPendingUsers());
+                    break;
+                case 'create-user':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        echo json_encode($this->createUser());
+                    }
+                    break;
+                case 'save-acta':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        echo json_encode($this->saveActa());
+                    }
                     break;
                 case 'consultar-documento':
                     echo json_encode($this->consultarDocumento($_GET['documento'] ?? ''));
@@ -1371,6 +1381,10 @@ class DashboardApp {
 // Inicializar la aplicación
 $app = new DashboardApp();
 $app->handleAPI();
+
+// Variables para la vista
+$usuario = $app->getUserName();
+$rol = $app->getUserRole();
 ?>
 
 <!DOCTYPE html>
@@ -1487,16 +1501,67 @@ $app->handleAPI();
             margin-right: 10px;
         }
 
+        .sidebar-toggle {
+            position: relative;
+        }
+
         .sidebar-submenu {
             list-style: none;
             padding: 0;
             margin: 0;
             background-color: #f8f9fa;
             display: none;
+            border-left: 3px solid var(--secondary-color);
         }
 
         .sidebar-submenu.show {
             display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 300px;
+            }
+        }
+
+        .sidebar-subitem {
+            list-style: none;
+        }
+
+        .sidebar-sublink {
+            display: block;
+            padding: 10px 20px 10px 45px;
+            color: #6c757d;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-sublink:hover {
+            background-color: #e9ecef;
+            color: var(--secondary-color);
+            padding-left: 50px;
+        }
+
+        .sidebar-sublink.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .sidebar-arrow {
+            float: right;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+
+        .sidebar-toggle.expanded .sidebar-arrow {
+            transform: rotate(180deg);
         }
 
         .sidebar-submenu .sidebar-link {
@@ -1852,7 +1917,207 @@ $app->handleAPI();
         </div>
         
         <ul class="sidebar-menu" id="sidebarMenu">
-            <!-- Se genera dinámicamente con JavaScript -->
+            <!-- Botones según el rol del usuario -->
+            
+            <!-- Dashboard - Para todos los roles -->
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('dashboard')" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+
+            <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
+            <!-- Menú para Administrador -->
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('usuarios', event)">
+                    <i class="fas fa-users"></i> Gestionar Usuarios
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-usuarios">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('listar-usuarios')" data-section="listar-usuarios">
+                            <i class="fas fa-list"></i> Lista de Usuarios
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('aprobar-usuarios')" data-section="aprobar-usuarios">
+                            <i class="fas fa-user-check"></i> Aprobar Usuarios
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="showCrearUsuarioModal()" data-section="crear-usuario">
+                            <i class="fas fa-user-plus"></i> Crear Usuario
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('roles-permisos')" data-section="roles-permisos">
+                            <i class="fas fa-user-shield"></i> Roles y Permisos
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('reportes')" data-section="reportes">
+                    <i class="fas fa-chart-bar"></i> Reportes
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('configuracion')" data-section="configuracion">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($rol === 'fiscalizador'): ?>
+            <!-- Menú para Fiscalizador -->
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('actas', event)">
+                    <i class="fas fa-clipboard-list"></i> Gestión de Actas
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-actas">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('crear-acta')" data-section="crear-acta">
+                            <i class="fas fa-plus-circle"></i> Crear Acta
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('actas-contra')" data-section="actas-contra">
+                            <i class="fas fa-file-invoice"></i> Actas Contra
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('mis-actas')" data-section="mis-actas">
+                            <i class="fas fa-user-edit"></i> Mis Actas
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadEmpresas()" data-section="empresas">
+                    <i class="fas fa-building"></i> Empresas
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadInspecciones()" data-section="inspecciones">
+                    <i class="fas fa-search"></i> Inspecciones
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadConsultas()" data-section="consultas">
+                    <i class="fas fa-question-circle"></i> Consultas
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('reportes')" data-section="reportes">
+                    <i class="fas fa-chart-bar"></i> Reportes
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadCalendario()" data-section="calendario">
+                    <i class="fas fa-calendar-alt"></i> Calendario
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($rol === 'inspector'): ?>
+            <!-- Menú para Inspector -->
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('inspecciones', event)">
+                    <i class="fas fa-clipboard-check"></i> Mis Inspecciones
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-inspecciones">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadNuevaInspeccion()" data-section="nueva-inspeccion">
+                            <i class="fas fa-plus"></i> Nueva Inspección
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadMisInspecciones()" data-section="mis-inspecciones">
+                            <i class="fas fa-list"></i> Mis Inspecciones
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('programar-inspeccion')" data-section="programar-inspeccion">
+                            <i class="fas fa-calendar-plus"></i> Programar
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadVehiculos()" data-section="vehiculos">
+                    <i class="fas fa-car"></i> Vehículos
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('reportes')" data-section="reportes">
+                    <i class="fas fa-chart-line"></i> Mis Reportes
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if ($rol === 'ventanilla'): ?>
+            <!-- Menú para Ventanilla -->
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('atencion', event)">
+                    <i class="fas fa-user-tie"></i> Atención al Cliente
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-atencion">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadNuevaAtencion()" data-section="nueva-atencion">
+                            <i class="fas fa-plus"></i> Nueva Atención
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadColaEspera()" data-section="cola-espera">
+                            <i class="fas fa-hourglass-half"></i> Cola de Espera
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('tramites', event)">
+                    <i class="fas fa-folder-open"></i> Trámites
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-tramites">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadTramites()" data-section="nuevo-tramite">
+                            <i class="fas fa-plus"></i> Nuevo Trámite
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('tramites-pendientes')" data-section="tramites-pendientes">
+                            <i class="fas fa-clock"></i> Pendientes
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadSection('historial-tramites')" data-section="historial-tramites">
+                            <i class="fas fa-history"></i> Historial
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('consultas')" data-section="consultas">
+                    <i class="fas fa-search"></i> Consultas
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('actas-contra')" data-section="actas-contra">
+                    <i class="fas fa-clipboard-list"></i> Actas
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <!-- Mi Perfil - Para todos los roles -->
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="#" onclick="loadSection('perfil')" data-section="perfil">
+                    <i class="fas fa-user"></i> Mi Perfil
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -1865,10 +2130,24 @@ $app->handleAPI();
 
             <!-- Content Sections -->
             <div id="contentContainer">
+                <!-- Loading Spinner -->
+                <div id="loading" class="text-center p-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando contenido...</p>
+                </div>
+                
             <!-- Dashboard Principal -->
             <div id="dashboard-section" class="content-section active">
                 <h2><i class="fas fa-tachometer-alt"></i> Dashboard Principal</h2>
                 <p class="text-muted">Bienvenido al sistema de gestión. Utiliza la barra lateral para navegar.</p>
+                
+                <!-- Panel de información del usuario (solo para debug) -->
+                <div class="alert alert-success mb-3">
+                    <h6><i class="fas fa-user-check"></i> Usuario Logueado:</h6>
+                    <strong><?php echo htmlspecialchars($usuario); ?></strong> | Rol: <strong><?php echo htmlspecialchars($rol); ?></strong>
+                </div>
                 
                 <div class="row mt-4" id="dashboardContent">
                     <!-- Dashboard stats cards -->
@@ -2014,134 +2293,31 @@ $app->handleAPI();
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Variables globales
-        const userRole = '<?php echo $app->getUserRole(); ?>';
+        const userRole = '<?php echo $rol; ?>';
         const userName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
         let currentSection = 'dashboard';
 
-        // Configuración de menús por rol con submenús
-        const menuConfig = {
-            superadmin: [
-                { id: 'dashboard', title: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-                { 
-                    id: 'sistema', 
-                    title: 'Sistema', 
-                    icon: 'fas fa-server',
-                    submenu: [
-                        { id: 'sistema-info', title: 'Información del Sistema', icon: 'fas fa-info-circle' },
-                        { id: 'sistema-logs', title: 'Logs del Sistema', icon: 'fas fa-file-alt' },
-                        { id: 'sistema-cache', title: 'Gestión de Cache', icon: 'fas fa-memory' }
-                    ]
-                },
-                { 
-                    id: 'usuarios', 
-                    title: 'Usuarios', 
-                    icon: 'fas fa-users',
-                    submenu: [
-                        { id: 'gestionar-usuarios', title: 'Gestionar Usuarios', icon: 'fas fa-users-cog' },
-                        { id: 'aprobar-usuarios', title: 'Aprobar Usuarios', icon: 'fas fa-user-check' },
-                        { id: 'roles-permisos', title: 'Roles y Permisos', icon: 'fas fa-user-shield' }
-                    ]
-                },
-                { 
-                    id: 'actas', 
-                    title: 'Actas', 
-                    icon: 'fas fa-file-alt',
-                    submenu: [
-                        { id: 'todas-actas', title: 'Todas las Actas', icon: 'fas fa-list' },
-                        { id: 'actas-eliminadas', title: 'Actas Eliminadas', icon: 'fas fa-trash' },
-                        { id: 'backup-actas', title: 'Backup de Actas', icon: 'fas fa-database' }
-                    ]
-                },
-                { id: 'configuracion-sistema', title: 'Configuración', icon: 'fas fa-cogs' }
-            ],
-            administrador: [
-                { id: 'dashboard', title: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-                { 
-                    id: 'usuarios', 
-                    title: 'Gestión de Usuarios', 
-                    icon: 'fas fa-users',
-                    submenu: [
-                        { id: 'gestionar-usuarios', title: 'Gestionar Usuarios', icon: 'fas fa-users-cog' },
-                        { id: 'aprobar-usuarios', title: 'Aprobar Usuarios', icon: 'fas fa-user-check' }
-                    ]
-                },
-                { id: 'infracciones', title: 'Infracciones', icon: 'fas fa-exclamation-triangle' },
-                { id: 'conductores', title: 'Conductores', icon: 'fas fa-id-card' },
-                { id: 'vehiculos', title: 'Vehículos', icon: 'fas fa-car' },
-                { id: 'reportes', title: 'Reportes', icon: 'fas fa-chart-line' }
-            ],
-            fiscalizador: [
-                { id: 'dashboard', title: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-                { 
-                    id: 'actas', 
-                    title: 'Gestión de Actas', 
-                    icon: 'fas fa-file-invoice',
-                    submenu: [
-                        { id: 'crear-acta', title: 'Crear Acta', icon: 'fas fa-plus-circle' },
-                        { id: 'actas-contra', title: 'Actas Contra', icon: 'fas fa-file-invoice' },
-                        { id: 'mis-actas', title: 'Mis Actas', icon: 'fas fa-user-edit' }
-                    ]
-                },
-                { id: 'consultas', title: 'Consultas', icon: 'fas fa-search' },
-                { id: 'calendario', title: 'Calendario', icon: 'fas fa-calendar-alt' },
-                { id: 'inspecciones', title: 'Inspecciones', icon: 'fas fa-clipboard-check' },
-                { id: 'reportes', title: 'Reportes', icon: 'fas fa-chart-bar' }
-            ],
-            inspector: [
-                { id: 'dashboard', title: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-                { 
-                    id: 'inspecciones', 
-                    title: 'Inspecciones', 
-                    icon: 'fas fa-clipboard-check',
-                    submenu: [
-                        { id: 'generar-acta', title: 'Generar Acta', icon: 'fas fa-file-plus' },
-                        { id: 'mis-inspecciones', title: 'Mis Inspecciones', icon: 'fas fa-clipboard-list' },
-                        { id: 'programar-inspeccion', title: 'Programar Inspección', icon: 'fas fa-calendar-plus' }
-                    ]
-                },
-                { id: 'vehiculos', title: 'Vehículos', icon: 'fas fa-car' },
-                { id: 'consultas', title: 'Consultas', icon: 'fas fa-search' },
-                { id: 'reportes', title: 'Mis Reportes', icon: 'fas fa-chart-line' }
-            ],
-            ventanilla: [
-                { id: 'dashboard', title: 'Dashboard', icon: 'fas fa-tachometer-alt' },
-                { 
-                    id: 'atencion', 
-                    title: 'Atención al Cliente', 
-                    icon: 'fas fa-user-tie',
-                    submenu: [
-                        { id: 'nueva-atencion', title: 'Nueva Atención', icon: 'fas fa-plus' },
-                        { id: 'cola-espera', title: 'Cola de Espera', icon: 'fas fa-hourglass-half' }
-                    ]
-                },
-                { id: 'tramites', title: 'Trámites', icon: 'fas fa-folder-open' },
-                { id: 'consultar', title: 'Consultar', icon: 'fas fa-search' },
-                { id: 'pagos', title: 'Gestión de Pagos', icon: 'fas fa-money-bill-wave' }
-            ]
-        };
+        console.log('✅ Sistema inicializado para usuario:', userName, 'con rol:', userRole);
 
         // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard cargado correctamente');
             initializeApp();
         });
 
+        // Función de respaldo para generar el menú manualmente
         function initializeApp() {
             console.log('🚀 Inicializando aplicación...');
             console.log('👤 Usuario logueado:', userRole);
             
-            generateSidebarMenu();
-            
-            // Asegurar que las estadísticas se carguen después de un pequeño delay
-            setTimeout(() => {
-                console.log('⏰ Cargando estadísticas después del delay...');
-                loadDashboardStats();
-            }, 500);
-            
+            // Cargar contenido inicial
             loadDashboardContent();
+            loadDashboardStats();
             loadNotifications();
             
             // Auto-refresh notificaciones cada 30 segundos
             setInterval(loadNotifications, 30000);
+        }
             
             console.log('✅ Aplicación inicializada');
         }
@@ -2175,53 +2351,22 @@ $app->handleAPI();
             });
         }
 
-        function generateSidebarMenu() {
-            const sidebarMenu = document.getElementById('sidebarMenu');
-            const menuItems = menuConfig[userRole] || [];
-
-            sidebarMenu.innerHTML = '';
-            
-            menuItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'sidebar-item';
-                
-                if (item.submenu) {
-                    // Crear elemento con submenú
-                    li.innerHTML = `
-                        <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('${item.id}', event)">
-                            <i class="${item.icon}"></i> ${item.title}
-                        </a>
-                        <ul class="sidebar-submenu" id="submenu-${item.id}">
-                            ${item.submenu.map(subitem => `
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" href="#" onclick="loadSection('${subitem.id}')" data-section="${subitem.id}">
-                                        <i class="${subitem.icon}"></i> ${subitem.title}
-                                    </a>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    `;
-                } else {
-                    // Elemento simple
-                    li.innerHTML = `
-                        <a class="sidebar-link" href="#" onclick="loadSection('${item.id}')" data-section="${item.id}">
-                            <i class="${item.icon}"></i> ${item.title}
-                        </a>
-                    `;
-                }
-                
-                sidebarMenu.appendChild(li);
-            });
-        }
-
         function toggleSubmenu(menuId, event) {
             event.preventDefault();
+            console.log('🔄 Toggling submenu:', menuId);
+            
             const submenu = document.getElementById(`submenu-${menuId}`);
-            const toggle = event.target;
+            const toggle = event.currentTarget;
+            
+            if (!submenu) {
+                console.error('❌ No se encontró el submenu:', `submenu-${menuId}`);
+                return;
+            }
             
             if (submenu.classList.contains('show')) {
                 submenu.classList.remove('show');
                 toggle.classList.remove('expanded');
+                console.log('➖ Cerrando submenu:', menuId);
             } else {
                 // Cerrar otros submenús
                 document.querySelectorAll('.sidebar-submenu.show').forEach(sub => {
@@ -2233,6 +2378,7 @@ $app->handleAPI();
                 
                 submenu.classList.add('show');
                 toggle.classList.add('expanded');
+                console.log('➕ Abriendo submenu:', menuId);
             }
         }
 
@@ -2241,7 +2387,457 @@ $app->handleAPI();
             sidebar.classList.toggle('show');
         }
 
-        // Cargar notificaciones
+        // Función principal para cargar secciones
+        function loadSection(sectionId) {
+            console.log('🔄 Cargando sección:', sectionId);
+            
+            // Actualizar el estado activo en el menú
+            document.querySelectorAll('.sidebar-link, .sidebar-sublink').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            const activeLink = document.querySelector(`[data-section="${sectionId}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // Mostrar loading
+            showLoading();
+            
+            // Cargar contenido según la sección
+            switch(sectionId) {
+                case 'dashboard':
+                    loadDashboardContent();
+                    break;
+                case 'listar-usuarios':
+                    loadUsuariosList();
+                    break;
+                case 'aprobar-usuarios':
+                    loadAprobarUsuarios();
+                    break;
+                case 'crear-usuario':
+                    showCrearUsuarioModal();
+                    break;
+                case 'crear-acta':
+                    loadCrearActa();
+                    break;
+                case 'mis-actas':
+                    loadMisActas();
+                    break;
+                case 'nueva-inspeccion':
+                    loadNuevaInspeccion();
+                    break;
+                case 'reportes':
+                    loadReportes();
+                    break;
+                case 'perfil':
+                    loadPerfil();
+                    break;
+                default:
+                    loadDefaultSection(sectionId);
+            }
+            
+            currentSection = sectionId;
+            hideLoading();
+        }
+
+        // Mostrar/ocultar loading
+        function showLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.style.display = 'block';
+            }
+        }
+
+        function hideLoading() {
+            setTimeout(() => {
+                const loading = document.getElementById('loading');
+                if (loading) {
+                    loading.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        // Funciones específicas para cada sección
+
+        function loadUsuariosList() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-users"></i> Lista de Usuarios</h2>
+                        <button class="btn btn-primary" onclick="showCrearUsuarioModal()">
+                            <i class="fas fa-user-plus"></i> Nuevo Usuario
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="usuariosTable">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Username</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th>Fecha Registro</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usuariosTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center">
+                                                <div class="spinner-border" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar usuarios con AJAX usando la API real
+            fetch('dashboard.php?api=users')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Datos de usuarios:', data);
+                    if (data.success && data.users) {
+                        renderUsuariosTable(data.users);
+                    } else {
+                        document.getElementById('usuariosTableBody').innerHTML = `
+                            <tr><td colspan="8" class="text-center text-danger">Error: ${data.message || 'No se pudieron cargar los usuarios'}</td></tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando usuarios:', error);
+                    document.getElementById('usuariosTableBody').innerHTML = `
+                        <tr><td colspan="8" class="text-center text-danger">Error de conexión</td></tr>
+                    `;
+                });
+        }
+
+        function loadAprobarUsuarios() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-user-check"></i> Aprobar Usuarios</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Aquí se muestran los usuarios pendientes de aprobación
+                            </div>
+                            <div id="usuariosPendientes">
+                                <div class="text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar usuarios pendientes usando la API real
+            fetch('dashboard.php?api=pending-users')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Usuarios pendientes:', data);
+                    if (data.success) {
+                        renderUsuariosPendientes(data.users || []);
+                    } else {
+                        document.getElementById('usuariosPendientes').innerHTML = `
+                            <div class="alert alert-danger">Error: ${data.message}</div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando usuarios pendientes:', error);
+                    document.getElementById('usuariosPendientes').innerHTML = `
+                        <div class="alert alert-danger">Error de conexión</div>
+                    `;
+                });
+        }
+
+        function loadCrearActa() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-plus-circle"></i> Crear Nueva Acta</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="crearActaForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Número de Placa</label>
+                                        <input type="text" class="form-control" name="placa" required 
+                                               placeholder="ABC-123">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">DNI/RUC Conductor</label>
+                                        <input type="text" class="form-control" name="ruc_dni" required
+                                               placeholder="12345678">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Nombre del Conductor</label>
+                                        <input type="text" class="form-control" name="nombre_conductor" required
+                                               placeholder="Juan Pérez">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Licencia Conductor</label>
+                                        <input type="text" class="form-control" name="licencia_conductor" required
+                                               placeholder="A-123456789">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Fecha Intervención</label>
+                                        <input type="date" class="form-control" name="fecha_intervencion" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Hora Intervención</label>
+                                        <input type="time" class="form-control" name="hora_intervencion" required>
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Lugar de Intervención</label>
+                                        <input type="text" class="form-control" name="lugar_intervencion" required
+                                               placeholder="Av. Principal cuadra 5">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Tipo de Agente</label>
+                                        <select class="form-control" name="tipo_agente" required>
+                                            <option value="">Seleccionar</option>
+                                            <option value="PNP">Policía Nacional</option>
+                                            <option value="SUTRAN">SUTRAN</option>
+                                            <option value="MTC">MTC</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Monto Multa (S/)</label>
+                                        <input type="number" class="form-control" name="monto_multa" 
+                                               placeholder="0.00" step="0.01">
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea class="form-control" name="observaciones" rows="4"
+                                                  placeholder="Detalles de la infracción..."></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Crear Acta
+                                        </button>
+                                        <button type="button" class="btn btn-secondary ms-2" onclick="loadSection('dashboard')">
+                                            <i class="fas fa-times"></i> Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Configurar fecha actual por defecto
+            document.querySelector('input[name="fecha_intervencion"]').value = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="hora_intervencion"]').value = new Date().toTimeString().split(' ')[0].substring(0,5);
+            
+            // Agregar event listener para el formulario
+            document.getElementById('crearActaForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                guardarActa(this);
+            });
+        }
+
+        function loadMisActas() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-file-alt"></i> Mis Actas</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>N° Acta</th>
+                                            <th>Placa</th>
+                                            <th>Conductor</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Monto</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="actasTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar actas del usuario
+            fetch('dashboard.php?api=actas')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Actas del usuario:', data);
+                    if (data.success && data.actas) {
+                        renderActasTable(data.actas);
+                    } else {
+                        document.getElementById('actasTableBody').innerHTML = `
+                            <tr><td colspan="7" class="text-center">No tienes actas registradas</td></tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando actas:', error);
+                    document.getElementById('actasTableBody').innerHTML = `
+                        <tr><td colspan="7" class="text-center text-danger">Error de conexión</td></tr>
+                    `;
+                });
+        }
+
+        function loadReportes() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-chart-bar"></i> Reportes</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Estadísticas Generales</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="statsGenerales">
+                                        <div class="text-center">
+                                            <div class="spinner-border" role="status"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Reportes Disponibles</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary" onclick="generarReporte('usuarios')">
+                                            <i class="fas fa-users"></i> Reporte de Usuarios
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="generarReporte('actas')">
+                                            <i class="fas fa-file-alt"></i> Reporte de Actas
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="generarReporte('infracciones')">
+                                            <i class="fas fa-exclamation-triangle"></i> Reporte de Infracciones
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar estadísticas
+            fetch('dashboard.php?api=dashboard-stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.stats) {
+                        renderStatsGenerales(data.stats);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando estadísticas:', error);
+                });
+        }
+
+        function loadPerfil() {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <form id="perfilForm">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Nombre Completo</label>
+                                                <input type="text" class="form-control" name="name" value="${userName}" required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Rol</label>
+                                                <input type="text" class="form-control" value="${userRole.toUpperCase()}" readonly>
+                                            </div>
+                                            <div class="col-12 mb-3">
+                                                <label class="form-label">Nueva Contraseña</label>
+                                                <input type="password" class="form-control" name="password" placeholder="Dejar vacío si no desea cambiar">
+                                            </div>
+                                            <div class="col-12">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Guardar Cambios
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-circle fa-5x text-secondary"></i>
+                                    </div>
+                                    <h5>${userName}</h5>
+                                    <p class="text-muted">${userRole.toUpperCase()}</p>
+                                    <hr>
+                                    <small class="text-muted">Usuario desde: Hoy</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadDefaultSection(sectionId) {
+            const contentContainer = document.getElementById('contentContainer');
+            contentContainer.innerHTML = `
+                <div class="content-section active">
+                    <h2><i class="fas fa-cog"></i> ${sectionId.replace('-', ' ').toUpperCase()}</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Esta sección está en desarrollo. Contenido para: <strong>${sectionId}</strong>
+                            </div>
+                            <button class="btn btn-primary" onclick="loadSection('dashboard')">
+                                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
         function loadNotifications() {
             fetch('dashboard.php?api=notifications')
                 .then(response => response.json())
@@ -2341,73 +2937,6 @@ $app->handleAPI();
             if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
             if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
             return Math.floor(diff / 86400000) + 'd';
-        }
-
-        function loadSection(sectionId) {
-            // Actualizar navegación activa
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.querySelectorAll(`[data-section="${sectionId}"]`).forEach(link => {
-                link.classList.add('active');
-            });
-
-            // Ocultar todas las secciones
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            currentSection = sectionId;
-
-            // Mostrar/ocultar estadísticas solo en dashboard
-            const statsContainer = document.getElementById('dashboardStats');
-            if (sectionId === 'dashboard') {
-                statsContainer.style.display = 'block';
-                loadDashboardStats(); // Cargar estadísticas solo en dashboard
-            } else {
-                statsContainer.style.display = 'none';
-            }
-
-            // Mostrar sección específica o crear contenido dinámico
-            let targetSection = document.getElementById(`${sectionId}-section`);
-            
-            if (!targetSection) {
-                // Crear sección dinámicamente
-                targetSection = createDynamicSection(sectionId);
-            }
-            
-            if (targetSection) {
-                targetSection.classList.add('active');
-                
-                // Cargar contenido específico de la sección
-                loadSectionContent(sectionId);
-            }
-        }
-
-        function createDynamicSection(sectionId) {
-            const container = document.getElementById('contentContainer');
-            const section = document.createElement('div');
-            section.id = `${sectionId}-section`;
-            section.className = 'content-section';
-            
-            // Configuración básica de la sección
-            const sectionConfig = getSectionConfig(sectionId);
-            section.innerHTML = `
-                <h2><i class="${sectionConfig.icon}"></i> ${sectionConfig.title}</h2>
-                <div class="loading">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p>Cargando contenido...</p>
-                </div>
-            `;
-            
-            container.appendChild(section);
-            return section;
-        }
-
-        function getSectionConfig(sectionId) {
-            const menuItems = menuConfig[userRole] || [];
-            const item = menuItems.find(menu => menu.id === sectionId);
-            return item || { title: 'Contenido', icon: 'fas fa-file' };
         }
 
         function loadSectionContent(sectionId) {
@@ -4962,6 +5491,828 @@ $app->handleAPI();
             .catch(error => {
                 showAlert('Error al guardar tema', 'danger');
             });
+        }
+
+        // Funciones de utilidad para gestión de usuarios
+
+        function renderUsuariosTable(usuarios) {
+            const tbody = document.getElementById('usuariosTableBody');
+            if (usuarios.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center">No hay usuarios registrados</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = usuarios.map(usuario => `
+                <tr>
+                    <td>${usuario.id}</td>
+                    <td>${usuario.name}</td>
+                    <td>${usuario.username}</td>
+                    <td>${usuario.email}</td>
+                    <td>
+                        <span class="badge bg-secondary">${usuario.role}</span>
+                    </td>
+                    <td>
+                        <span class="badge ${usuario.status === 'approved' ? 'bg-success' : 'bg-warning'}">
+                            ${usuario.status === 'approved' ? 'Aprobado' : 'Pendiente'}
+                        </span>
+                    </td>
+                    <td>${formatDate(usuario.created_at)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-1" onclick="editarUsuario(${usuario.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${usuario.id})" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUsuariosPendientes(usuarios) {
+            const container = document.getElementById('usuariosPendientes');
+            if (usuarios.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> 
+                        No hay usuarios pendientes de aprobación
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = usuarios.map(usuario => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="card-title mb-1">${usuario.name}</h5>
+                                <p class="card-text">
+                                    <strong>Username:</strong> ${usuario.username}<br>
+                                    <strong>Email:</strong> ${usuario.email}<br>
+                                    <strong>Rol:</strong> <span class="badge bg-info">${usuario.role}</span><br>
+                                    <strong>Registro:</strong> ${formatDate(usuario.created_at)}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button class="btn btn-success me-2" onclick="aprobarUsuario(${usuario.id})">
+                                    <i class="fas fa-check"></i> Aprobar
+                                </button>
+                                <button class="btn btn-danger" onclick="rechazarUsuario(${usuario.id})">
+                                    <i class="fas fa-times"></i> Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderActasTable(actas) {
+            const tbody = document.getElementById('actasTableBody');
+            if (actas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">No hay actas registradas</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = actas.map(acta => `
+                <tr>
+                    <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
+                    <td>${acta.placa}</td>
+                    <td>${acta.nombre_conductor}</td>
+                    <td>${formatDate(acta.fecha_intervencion)}</td>
+                    <td>
+                        <span class="badge ${acta.estado == 1 ? 'bg-success' : 'bg-warning'}">
+                            ${acta.estado == 1 ? 'Procesada' : 'Pendiente'}
+                        </span>
+                    </td>
+                    <td>S/ ${acta.monto_multa || '0.00'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info me-1" onclick="verActa(${acta.id})" title="Ver Detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="editarActa(${acta.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderStatsGenerales(stats) {
+            const container = document.getElementById('statsGenerales');
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Usuarios:</span>
+                            <strong>${stats.total_usuarios || 0}</strong>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Usuarios Activos:</span>
+                            <strong>${stats.usuarios_activos || 0}</strong>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Usuarios Pendientes:</span>
+                            <strong>${stats.usuarios_pendientes || 0}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Infracciones:</span>
+                            <strong>${stats.total_infracciones || 0}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function guardarNuevoUsuario() {
+            const form = document.getElementById('crearUsuarioForm');
+            const formData = new FormData(form);
+            
+            // Convertir FormData a JSON
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            fetch('dashboard.php?api=create-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cerrar modal
+                    bootstrap.Modal.getInstance(document.getElementById('dynamicModal')).hide();
+                    
+                    // Mostrar éxito
+                    showAlert('success', 'Usuario creado exitosamente');
+                    
+                    // Recargar lista si estamos en la sección de usuarios
+                    if (currentSection === 'listar-usuarios') {
+                        loadUsuariosList();
+                    }
+                } else {
+                    showAlert('error', data.message || 'Error al crear usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error de conexión al crear usuario');
+            });
+        }
+
+        function aprobarUsuario(userId) {
+            if (confirm('¿Estás seguro de aprobar este usuario?')) {
+                fetch('dashboard.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `api=approve-user&user_id=${userId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Usuario aprobado exitosamente');
+                        loadAprobarUsuarios(); // Recargar lista
+                    } else {
+                        showAlert('error', data.message || 'Error al aprobar usuario');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'Error de conexión al aprobar usuario');
+                });
+            }
+        }
+
+        function guardarActa(form) {
+            const formData = new FormData(form);
+            
+            // Convertir FormData a JSON
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            console.log('Guardando acta:', data);
+            
+            fetch('dashboard.php?api=save-acta', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Acta creada exitosamente');
+                    form.reset();
+                    
+                    // Si el usuario quiere ver sus actas después de crear una
+                    setTimeout(() => {
+                        if (confirm('¿Desea ver la lista de sus actas?')) {
+                            loadMisActas();
+                        }
+                    }, 1000);
+                } else {
+                    showAlert('error', data.message || 'Error al crear acta');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error de conexión al crear acta');
+            });
+        }
+
+        function generarReporte(tipo) {
+            showAlert('info', `Generando reporte de ${tipo}...`);
+            
+            // Abrir el reporte en una nueva ventana
+            const reportUrl = `dashboard.php?api=reporte&tipo=${tipo}`;
+            window.open(reportUrl, '_blank');
+        }
+
+        function verActa(actaId) {
+            fetch(`dashboard.php?api=acta-details&id=${actaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.acta) {
+                        mostrarDetalleActa(data.acta);
+                    } else {
+                        showAlert('error', 'No se pudo cargar el detalle del acta');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'Error de conexión');
+                });
+        }
+
+        function mostrarDetalleActa(acta) {
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>N° Acta:</strong> ${acta.numero_acta}</p>
+                        <p><strong>Placa:</strong> ${acta.placa}</p>
+                        <p><strong>Conductor:</strong> ${acta.nombre_conductor}</p>
+                        <p><strong>DNI/RUC:</strong> ${acta.ruc_dni}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Fecha:</strong> ${formatDate(acta.fecha_intervencion)}</p>
+                        <p><strong>Hora:</strong> ${acta.hora_intervencion}</p>
+                        <p><strong>Lugar:</strong> ${acta.lugar_intervencion}</p>
+                        <p><strong>Monto:</strong> S/ ${acta.monto_multa}</p>
+                    </div>
+                    ${acta.observaciones ? `<div class="col-12"><hr><p><strong>Observaciones:</strong> ${acta.observaciones}</p></div>` : ''}
+                </div>
+            `;
+            
+            document.getElementById('modalTitle').textContent = `Detalle del Acta ${acta.numero_acta}`;
+            const modalFooter = document.getElementById('modalFooter');
+            modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('dynamicModal'));
+            modal.show();
+        }
+
+        function showAlert(type, message) {
+            const alertClass = type === 'success' ? 'alert-success' : 
+                             type === 'error' ? 'alert-danger' : 
+                             type === 'info' ? 'alert-info' : 'alert-warning';
+            const icon = type === 'success' ? 'fas fa-check-circle' : 
+                        type === 'error' ? 'fas fa-exclamation-circle' : 
+                        type === 'info' ? 'fas fa-info-circle' : 'fas fa-exclamation-triangle';
+            
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="${icon}"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const container = document.querySelector('.main-content');
+            if (container) {
+                // Remover alertas anteriores
+                const existingAlerts = container.querySelectorAll('.alert');
+                existingAlerts.forEach(alert => alert.remove());
+                
+                container.insertAdjacentHTML('afterbegin', alertHtml);
+                
+                // Auto-remove después de 5 segundos
+                setTimeout(() => {
+                    const alert = container.querySelector('.alert');
+                    if (alert) {
+                        alert.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Funciones específicas para Fiscalizador
+        function loadEmpresas() {
+            console.log('📄 Cargando Empresas...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-building"></i> Gestión de Empresas</h4>
+                    <p>Administrar empresas registradas en el sistema</p>
+                </div>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Lista de Empresas</h5>
+                        <button class="btn btn-primary" onclick="showNuevaEmpresaModal()">
+                            <i class="fas fa-plus"></i> Nueva Empresa
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>RUC</th>
+                                        <th>Razón Social</th>
+                                        <th>Representante</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="empresas-table-body">
+                                    <tr><td colspan="5" class="text-center">Cargando empresas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadInspecciones() {
+            console.log('📄 Cargando Inspecciones...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-search"></i> Gestión de Inspecciones</h4>
+                    <p>Programar y gestionar inspecciones</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Inspecciones Programadas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Empresa</th>
+                                                <th>Inspector</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="inspecciones-table-body">
+                                            <tr><td colspan="5" class="text-center">Cargando inspecciones...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Nueva Inspección</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="nueva-inspeccion-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Empresa</label>
+                                        <select class="form-select" required>
+                                            <option value="">Seleccionar...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Inspector</label>
+                                        <select class="form-select" required>
+                                            <option value="">Seleccionar...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha</label>
+                                        <input type="date" class="form-control" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Programar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadConsultas() {
+            console.log('📄 Cargando Consultas...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-question-circle"></i> Centro de Consultas</h4>
+                    <p>Gestionar consultas y solicitudes</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-file-alt text-primary"></i></h5>
+                                <h6>Consulta de Actas</h6>
+                                <p class="small text-muted">Buscar actas por número o placa</p>
+                                <button class="btn btn-primary btn-sm" onclick="loadSection('actas-contra')">
+                                    Consultar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-building text-info"></i></h5>
+                                <h6>Consulta de Empresas</h6>
+                                <p class="small text-muted">Buscar empresas por RUC</p>
+                                <button class="btn btn-info btn-sm" onclick="loadSection('empresas')">
+                                    Consultar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-search text-success"></i></h5>
+                                <h6>Consulta de Inspecciones</h6>
+                                <p class="small text-muted">Ver estado de inspecciones</p>
+                                <button class="btn btn-success btn-sm" onclick="loadSection('inspecciones')">
+                                    Consultar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadCalendario() {
+            console.log('📄 Cargando Calendario...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-calendar"></i> Calendario de Actividades</h4>
+                    <p>Programación de inspecciones y eventos</p>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="calendar-container" style="min-height: 500px;">
+                            <div class="text-center p-5">
+                                <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                                <h5>Calendario en desarrollo</h5>
+                                <p class="text-muted">Esta funcionalidad estará disponible próximamente</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funciones específicas para Inspector
+        function loadNuevaInspeccion() {
+            console.log('📄 Cargando Nueva Inspección...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-plus-circle"></i> Nueva Inspección</h4>
+                    <p>Registrar una nueva inspección</p>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="nueva-inspeccion-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Empresa</label>
+                                        <select class="form-select" required>
+                                            <option value="">Seleccionar empresa...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha de Inspección</label>
+                                        <input type="date" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Observaciones</label>
+                                        <textarea class="form-control" rows="4" placeholder="Detalles de la inspección..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Registrar Inspección
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadMisInspecciones() {
+            console.log('📄 Cargando Mis Inspecciones...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-list"></i> Mis Inspecciones</h4>
+                    <p>Ver historial de inspecciones realizadas</p>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Empresa</th>
+                                        <th>Estado</th>
+                                        <th>Observaciones</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mis-inspecciones-table">
+                                    <tr><td colspan="5" class="text-center">Cargando inspecciones...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadVehiculos() {
+            console.log('📄 Cargando Vehículos...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-car"></i> Gestión de Vehículos</h4>
+                    <p>Administrar vehículos registrados</p>
+                </div>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Lista de Vehículos</h5>
+                        <button class="btn btn-primary" onclick="showNuevoVehiculoModal()">
+                            <i class="fas fa-plus"></i> Nuevo Vehículo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Placa</th>
+                                        <th>Marca</th>
+                                        <th>Modelo</th>
+                                        <th>Propietario</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vehiculos-table-body">
+                                    <tr><td colspan="6" class="text-center">Cargando vehículos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funciones específicas para Ventanilla
+        function loadNuevaAtencion() {
+            console.log('📄 Cargando Nueva Atención...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-user-plus"></i> Nueva Atención</h4>
+                    <p>Registrar nuevo cliente en cola de espera</p>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="nueva-atencion-form">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre del Cliente</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">DNI/RUC</label>
+                                        <input type="text" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo de Trámite</label>
+                                        <select class="form-select" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="consulta">Consulta</option>
+                                            <option value="pago">Pago de Multa</option>
+                                            <option value="reclamo">Reclamo</option>
+                                            <option value="otros">Otros</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Prioridad</label>
+                                        <select class="form-select" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="normal">Normal</option>
+                                            <option value="alta">Alta</option>
+                                            <option value="urgente">Urgente</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Registrar Cliente
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadColaEspera() {
+            console.log('📄 Cargando Cola de Espera...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-clock"></i> Cola de Espera</h4>
+                    <p>Gestionar clientes en espera de atención</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Clientes en Espera</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>N°</th>
+                                                <th>Cliente</th>
+                                                <th>DNI/RUC</th>
+                                                <th>Trámite</th>
+                                                <th>Hora Llegada</th>
+                                                <th>Prioridad</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cola-espera-table">
+                                            <tr><td colspan="7" class="text-center">No hay clientes en espera</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Estadísticas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center">
+                                    <h3 id="total-espera" class="text-primary">0</h3>
+                                    <p>Clientes en Espera</p>
+                                    <hr>
+                                    <h3 id="tiempo-promedio" class="text-info">0 min</h3>
+                                    <p>Tiempo Promedio</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadTramites() {
+            console.log('📄 Cargando Trámites...');
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="content-header">
+                    <h4><i class="fas fa-file-alt"></i> Gestión de Trámites</h4>
+                    <p>Administrar trámites y procedimientos</p>
+                </div>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                                <h6>Pagos</h6>
+                                <button class="btn btn-success btn-sm">Gestionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                                <h6>Reclamos</h6>
+                                <button class="btn btn-warning btn-sm">Gestionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-question-circle fa-2x text-info mb-2"></i>
+                                <h6>Consultas</h6>
+                                <button class="btn btn-info btn-sm">Gestionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-file-invoice fa-2x text-primary mb-2"></i>
+                                <h6>Certificados</h6>
+                                <button class="btn btn-primary btn-sm">Gestionar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Historial de Trámites</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tramites-table">
+                                    <tr><td colspan="5" class="text-center">Cargando trámites...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
     </script>
