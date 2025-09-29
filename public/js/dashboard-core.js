@@ -32,7 +32,19 @@ function initializeApp() {
     
     // Cargar contenido inicial del dashboard
     loadDashboardContent();
-    loadDashboardStats(); // Cargar estadísticas por defecto en el dashboard principal
+    
+    // Cargar estadísticas específicas según el rol
+    if (userRole === 'administrador' || userRole === 'admin') {
+        // Las estadísticas se cargan desde administrador.js
+        console.log('📊 Estadísticas de administrador serán cargadas por módulo específico');
+    } else if (userRole === 'fiscalizador') {
+        // Las estadísticas se cargan desde fiscalizador.js
+        console.log('📊 Estadísticas de fiscalizador serán cargadas por módulo específico');
+    } else {
+        // Cargar estadísticas genéricas para otros roles
+        loadDashboardStats();
+    }
+    
     loadNotifications();
     
     // Auto-refresh notificaciones cada 30 segundos
@@ -197,25 +209,208 @@ function bindSidebarEvents() {
 }
 
 function toggleSubmenu(menuId, event) {
-    if (event) event.preventDefault();
+    console.log('🔄 [DEBUG] toggleSubmenu llamado con menuId:', menuId);
+    
+    if (event) {
+        event.preventDefault();
+        console.log('✅ [DEBUG] preventDefault ejecutado');
+    }
     
     const submenu = document.getElementById('submenu-' + menuId);
+    console.log('🔍 [DEBUG] Buscando elemento:', 'submenu-' + menuId);
+    console.log('📍 [DEBUG] Elemento encontrado:', !!submenu);
     
     if (!submenu) {
+        console.error('❌ [DEBUG] Submenu no encontrado:', 'submenu-' + menuId);
         return;
     }
     
     // Obtener el estado actual
-    const isHidden = submenu.style.display === 'none' || submenu.style.display === '';
+    const currentDisplay = submenu.style.display;
+    const isHidden = currentDisplay === 'none' || currentDisplay === '';
+    
+    console.log('📊 [DEBUG] Estado actual - display:', currentDisplay, 'isHidden:', isHidden);
     
     if (isHidden) {
+        // Mostrar - forzar con !important
+        submenu.style.setProperty('display', 'block', 'important');
+        submenu.classList.add('show');
+        console.log('✅ [DEBUG] Submenu mostrado con !important');
+    } else {
+        // Ocultar - forzar con !important
+        submenu.style.setProperty('display', 'none', 'important');
+        submenu.classList.remove('show');
+        console.log('✅ [DEBUG] Submenu ocultado con !important');
+    }
+    
+    console.log('🏁 [DEBUG] toggleSubmenu completado');
+}
+
+// Función alternativa para toggle submenu con método más directo
+function toggleSubmenuAlt(menuId, event) {
+    console.log('🔄 [ALT] toggleSubmenuAlt llamado con menuId:', menuId);
+    
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const submenu = document.getElementById('submenu-' + menuId);
+    console.log('🔍 [ALT] Elemento encontrado:', !!submenu);
+    
+    if (!submenu) {
+        console.error('❌ [ALT] Submenu no encontrado');
+        return;
+    }
+    
+    // Método más directo - alternar visibilidad
+    if (submenu.style.visibility === 'hidden' || submenu.style.display === 'none' || !submenu.style.display) {
         // Mostrar
         submenu.style.display = 'block';
+        submenu.style.visibility = 'visible';
+        submenu.style.opacity = '1';
+        submenu.style.height = 'auto';
+        console.log('✅ [ALT] Submenu mostrado');
     } else {
         // Ocultar
         submenu.style.display = 'none';
+        submenu.style.visibility = 'hidden';
+        submenu.style.opacity = '0';
+        console.log('✅ [ALT] Submenu ocultado');
     }
 }
+
+// Función de emergencia - forzar mostrar submenu
+function forceShowSubmenu(menuId) {
+    console.log('💪 [FORCE] Forzando mostrar submenu:', menuId);
+    
+    const submenu = document.getElementById('submenu-' + menuId);
+    if (!submenu) {
+        console.error('❌ [FORCE] Submenu no encontrado');
+        return;
+    }
+    
+    console.log('🔍 [FORCE] Estado inicial:');
+    console.log('- innerHTML:', submenu.innerHTML.substring(0, 100) + '...');
+    console.log('- style.display:', submenu.style.display);
+    console.log('- computed display:', window.getComputedStyle(submenu).display);
+    console.log('- classList:', submenu.classList.toString());
+    console.log('- offsetHeight:', submenu.offsetHeight);
+    console.log('- clientHeight:', submenu.clientHeight);
+    
+    // Remover todos los estilos que podrían ocultarlo
+    submenu.removeAttribute('style');
+    submenu.className = 'sidebar-submenu show';
+    
+    // Agregar estilos inline forzados
+    submenu.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; height: auto !important; max-height: none !important; overflow: visible !important;';
+    
+    console.log('🔍 [FORCE] Estado después del forzado:');
+    console.log('- style.display:', submenu.style.display);
+    console.log('- computed display:', window.getComputedStyle(submenu).display);
+    console.log('- classList:', submenu.classList.toString());
+    console.log('- offsetHeight:', submenu.offsetHeight);
+    console.log('- clientHeight:', submenu.clientHeight);
+    
+    // Verificar si el padre también está visible
+    const parent = submenu.parentElement;
+    if (parent) {
+        console.log('🔍 [FORCE] Estado del padre:');
+        console.log('- parent tagName:', parent.tagName);
+        console.log('- parent computed display:', window.getComputedStyle(parent).display);
+        console.log('- parent offsetHeight:', parent.offsetHeight);
+    }
+    
+    console.log('✅ [FORCE] Submenu forzado a mostrar');
+}
+
+// Función de diagnóstico CSS completo
+window.diagnosticarSubmenu = function(menuId) {
+    console.log('🔬 [DIAGNÓSTICO] Análisis completo del submenu:', menuId);
+    
+    const submenu = document.getElementById('submenu-' + menuId);
+    if (!submenu) {
+        console.error('❌ [DIAGNÓSTICO] Submenu no encontrado');
+        return;
+    }
+    
+    const computed = window.getComputedStyle(submenu);
+    const rect = submenu.getBoundingClientRect();
+    
+    console.log('📋 [DIAGNÓSTICO] Propiedades del elemento:');
+    console.log('- ID:', submenu.id);
+    console.log('- Tag:', submenu.tagName);
+    console.log('- Classes:', submenu.className);
+    console.log('- Style attribute:', submenu.getAttribute('style'));
+    
+    console.log('📏 [DIAGNÓSTICO] Dimensiones y posición:');
+    console.log('- offsetWidth:', submenu.offsetWidth);
+    console.log('- offsetHeight:', submenu.offsetHeight);
+    console.log('- clientWidth:', submenu.clientWidth);
+    console.log('- clientHeight:', submenu.clientHeight);
+    console.log('- scrollWidth:', submenu.scrollWidth);
+    console.log('- scrollHeight:', submenu.scrollHeight);
+    console.log('- getBoundingClientRect:', rect);
+    
+    console.log('🎨 [DIAGNÓSTICO] Estilos computados relevantes:');
+    console.log('- display:', computed.display);
+    console.log('- visibility:', computed.visibility);
+    console.log('- opacity:', computed.opacity);
+    console.log('- height:', computed.height);
+    console.log('- max-height:', computed.maxHeight);
+    console.log('- overflow:', computed.overflow);
+    console.log('- position:', computed.position);
+    console.log('- z-index:', computed.zIndex);
+    console.log('- transform:', computed.transform);
+    
+    console.log('👨‍👩‍👧‍👦 [DIAGNÓSTICO] Jerarquía de padres:');
+    let parent = submenu.parentElement;
+    let level = 1;
+    while (parent && level <= 5) {
+        const parentComputed = window.getComputedStyle(parent);
+        console.log(`- Nivel ${level} (${parent.tagName}):`, {
+            id: parent.id,
+            classes: parent.className,
+            display: parentComputed.display,
+            visibility: parentComputed.visibility,
+            overflow: parentComputed.overflow,
+            height: parentComputed.height
+        });
+        parent = parent.parentElement;
+        level++;
+    }
+    
+    console.log('📜 [DIAGNÓSTICO] Reglas CSS aplicadas:');
+    try {
+        const sheets = document.styleSheets;
+        const matchingRules = [];
+        
+        for (let sheet of sheets) {
+            try {
+                for (let rule of sheet.cssRules || sheet.rules || []) {
+                    if (rule.selectorText && submenu.matches(rule.selectorText)) {
+                        matchingRules.push({
+                            selector: rule.selectorText,
+                            cssText: rule.cssText,
+                            href: sheet.href
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('- No se pudo acceder a reglas de:', sheet.href || 'inline');
+            }
+        }
+        
+        console.log('- Reglas que coinciden:', matchingRules.length);
+        matchingRules.forEach((rule, index) => {
+            console.log(`  ${index + 1}.`, rule.selector, '→', rule.cssText.substring(0, 100) + '...');
+        });
+    } catch (e) {
+        console.log('- Error al analizar reglas CSS:', e.message);
+    }
+    
+    console.log('🔬 [DIAGNÓSTICO] Análisis completado');
+};
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -377,46 +572,15 @@ function updateNotificationBadge(count) {
     }
 }
 
-function loadAprobarUsuarios() {
-    console.log('👥 Cargando usuarios para aprobar...');
-    
-    const contentContainer = document.getElementById('contentContainer');
-    if (contentContainer) {
-        contentContainer.innerHTML = `
-            <div class="content-section active">
-                <h2><i class="fas fa-user-check"></i> Aprobar Usuarios</h2>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
-                    Aquí se muestran los usuarios pendientes de aprobación
-                </div>
-                <div id="usuariosPendientes">
-                    <div class="text-center">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Cargar usuarios pendientes
-        fetch('dashboard.php?api=pending-users')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('usuariosPendientes');
-                if (data.success && data.users) {
-                    container.innerHTML = renderPendingUsers(data.users);
-                } else {
-                    container.innerHTML = '<p class="text-muted">No hay usuarios pendientes</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('usuariosPendientes').innerHTML = 
-                    '<p class="text-danger">Error al cargar usuarios pendientes</p>';
-            });
-    }
-}
+// NOTA: Esta función fue movida al módulo administrador.js para evitar conflictos
+// function loadAprobarUsuarios() {
+//     console.log('👥 Función movida a administrador.js');
+//     if (window.loadAprobarUsuarios && typeof window.loadAprobarUsuarios === 'function') {
+//         window.loadAprobarUsuarios();
+//     } else {
+//         console.warn('⚠️ Función loadAprobarUsuarios no disponible en módulo específico');
+//     }
+// }
 
 function loadRolesPermisos() {
     console.log('🔐 Cargando roles y permisos...');
@@ -882,7 +1046,7 @@ function loadDefaultSection(sectionId) {
 window.loadSection = loadSection;
 window.loadDashboardContent = loadDashboardContent;
 window.loadNotifications = loadNotifications;
-window.loadAprobarUsuarios = loadAprobarUsuarios;
+// window.loadAprobarUsuarios = loadAprobarUsuarios; // Movido a administrador.js
 window.loadRolesPermisos = loadRolesPermisos;
 window.loadCrearActa = loadCrearActa;
 window.loadMisActas = loadMisActas;
@@ -892,6 +1056,8 @@ window.loadConfiguracion = loadConfiguracion;
 window.loadPerfilMejorado = loadPerfilMejorado;
 window.hideAllSections = hideAllSections;
 window.toggleSubmenu = toggleSubmenu;
+window.toggleSubmenuAlt = toggleSubmenuAlt;
+window.forceShowSubmenu = forceShowSubmenu;
 window.toggleSidebar = toggleSidebar;
 window.showLoading = showLoading;
 window.hideLoading = hideLoading;
@@ -914,50 +1080,22 @@ function loadActas() {
     console.log('📋 Cargando sección de Actas...');
     hideAllSections();
     
-    const contentContainer = document.getElementById('contentContainer');
-    contentContainer.innerHTML = `
-        <div class="content-section active">
-            <div class="content-header d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h4><i class="fas fa-file-alt"></i> Gestión de Actas</h4>
-                    <p class="text-muted mb-0">Administrar actas de infracciones</p>
-                </div>
-                <button class="btn btn-primary" onclick="showCrearActaModal()">
-                    <i class="fas fa-plus"></i> Nueva Acta
-                </button>
-            </div>
-            
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>N° Acta</th>
-                                            <th>Fecha</th>
-                                            <th>Placa</th>
-                                            <th>Conductor</th>
-                                            <th>Monto</th>
-                                            <th>Estado</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="actas-table-body">
-                                        <tr><td colspan="7" class="text-center">Cargando actas...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+    // Usar la nueva función de gestión de actas
+    if (typeof loadGestionActas === 'function') {
+        loadGestionActas();
+    } else {
+        // Fallback si no está cargado el archivo fiscalizador-actas.js
+        const contentContainer = document.getElementById('contentContainer');
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Módulo no disponible:</strong> No se pudo cargar el módulo de gestión de actas.
+                    <br>Asegúrate de que el archivo <code>fiscalizador-actas.js</code> esté cargado.
                 </div>
             </div>
-        </div>
-    `;
-    
-    // Cargar datos de actas
-    loadActasData();
+        `;
+    }
 }
 
 // Función para cargar conductores

@@ -1506,6 +1506,9 @@ $app->handleAPI();
 // Variables para la vista
 $usuario = $app->getUserName();
 $rol = $app->getUserRole();
+
+// Debug temporal - remover después
+echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
 ?>
 
 <!DOCTYPE html>
@@ -1513,6 +1516,7 @@ $rol = $app->getUserRole();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo bin2hex(random_bytes(32)); ?>">
     <title>Dashboard - Sistema de Gestión</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -2081,11 +2085,11 @@ $rol = $app->getUserRole();
             <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
             <!-- Menú para Administrador -->
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="testToggle(); return false;">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('usuarios', event); return false;">
                     <i class="fas fa-users"></i> Gestión de Usuarios
                     <i class="fas fa-chevron-down sidebar-arrow"></i>
                 </a>
-                <ul class="sidebar-submenu" id="submenu-usuarios" style="display: none;">
+                <ul class="sidebar-submenu" id="submenu-usuarios" style="display: none !important;">
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadUsuariosList()" data-section="listar-usuarios">
                             <i class="fas fa-list"></i> Lista de Usuarios
@@ -2116,19 +2120,19 @@ $rol = $app->getUserRole();
                 <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('actas', event)">
                     <i class="fas fa-clipboard-list"></i> Gestión de Actas
                 </a>
-                <ul class="sidebar-submenu" id="submenu-actas">
+                <ul class="sidebar-submenu" id="submenu-actas" style="display: none;">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadActas()" data-section="crear-acta">
+                        <a class="sidebar-sublink" href="#" onclick="loadActas(event)" data-section="crear-acta">
                             <i class="fas fa-plus-circle"></i> Crear Acta
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadActas()" data-section="actas-contra">
+                        <a class="sidebar-sublink" href="#" onclick="loadActas(event)" data-section="actas-contra">
                             <i class="fas fa-file-invoice"></i> Gestionar Actas
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadActas()" data-section="mis-actas">
+                        <a class="sidebar-sublink" href="#" onclick="loadActas(event)" data-section="mis-actas">
                             <i class="fas fa-user-edit"></i> Mis Actas
                         </a>
                     </li>
@@ -2314,6 +2318,31 @@ $rol = $app->getUserRole();
                 <div class="alert alert-success mb-3">
                     <h6><i class="fas fa-user-check"></i> Usuario Logueado:</h6>
                     <strong><?php echo htmlspecialchars($usuario); ?></strong> | Rol: <strong><?php echo htmlspecialchars($rol); ?></strong>
+                    
+                    <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
+                    <div class="mt-3 p-3 bg-light border rounded">
+                        <h6><strong>🔧 Panel de Administrador</strong></h6>
+                        <button class="btn btn-primary me-2" onclick="loadUsuariosList()" style="display: block !important;">
+                            <i class="fas fa-users"></i> Lista de Usuarios
+                        </button>
+                        <button class="btn btn-success mt-2" onclick="loadAprobarUsuarios()" style="display: block !important;">
+                            <i class="fas fa-user-check"></i> Aprobar Usuarios
+                        </button>
+                        <button class="btn btn-warning mt-2 me-2" onclick="toggleSubmenu('usuarios', null)" style="display: inline-block !important;">
+                            <i class="fas fa-toggle-on"></i> Test Toggle Normal
+                        </button>
+                        <button class="btn btn-info mt-2" onclick="toggleSubmenuAlt('usuarios', null)" style="display: inline-block !important;">
+                            <i class="fas fa-toggle-off"></i> Test Toggle Alt
+                        </button>
+                        <button class="btn btn-danger mt-2" onclick="forceShowSubmenu('usuarios')" style="display: inline-block !important;">
+                            <i class="fas fa-eye"></i> Force Show
+                        </button>
+                        <button class="btn btn-warning mt-2" onclick="diagnosticarSubmenu('usuarios')" style="display: inline-block !important;">
+                            <i class="fas fa-search"></i> Diagnóstico CSS
+                        </button>
+                        <p class="small text-muted mt-2">Si estos botones funcionan, el problema es solo visual en el sidebar.</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="row mt-4" id="dashboardContent">
@@ -2470,35 +2499,49 @@ $rol = $app->getUserRole();
     <script src="js/utils.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="js/dashboard-stats.js"></script>
-    <script src="js/usuarios.js"></script>
+    <script src="js/usuarios-utils.js"></script>
+    
+    <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
+    <!-- JavaScript específico para administrador -->
+    <script src="js/administrador.js"></script>
+    <?php endif; ?>
+    
+    <?php if ($rol === 'fiscalizador'): ?>
+    <!-- JavaScript específico para fiscalizador -->
+    <script src="js/fiscalizador.js"></script>
+    <script src="js/actas-simple.js"></script>
+    <?php endif; ?>
+    
+    <?php if ($rol === 'ventanilla'): ?>
+    <!-- JavaScript específico para ventanilla -->
+    <script src="js/ventanilla.js"></script>
+    <?php endif; ?>
+    
+    <?php if ($rol === 'inspector'): ?>
+    <!-- JavaScript específico para inspector -->
+    <script src="js/inspector.js"></script>
+    <?php endif; ?>
     <script>
         // Variables globales para los archivos JS
         window.dashboardUserRole = '<?php echo $rol; ?>';
         window.dashboardUserName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
         
-        // Función de test directa
-        function testToggle() {
-            console.log('🧪 Test function ejecutada');
-            const submenu = document.getElementById('submenu-usuarios');
-            console.log('📍 Submenu encontrado:', submenu);
-            
-            if (submenu) {
-                if (submenu.style.display === 'none' || submenu.style.display === '') {
-                    submenu.style.display = 'block';
-                    submenu.classList.add('show');
-                    console.log('✅ Submenú mostrado');
-                } else {
-                    submenu.style.display = 'none';
-                    submenu.classList.remove('show');
-                    console.log('❌ Submenú ocultado');
-                }
-            } else {
-                console.error('❌ No se encontró el submenú');
-            }
-        }
-        
         console.log('✅ Archivos JS cargados correctamente');
         console.log('Dashboard cargado para:', window.dashboardUserName, 'Rol:', window.dashboardUserRole);
+        
+        // Debug: Verificar elementos del DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Verificando elementos del sidebar...');
+            const submenuUsuarios = document.getElementById('submenu-usuarios');
+            console.log('Submenu usuarios encontrado:', !!submenuUsuarios);
+            
+            const botonesGestionUsuarios = document.querySelectorAll('[onclick*="loadUsuariosList"], [onclick*="loadAprobarUsuarios"]');
+            console.log('Botones de gestión de usuarios encontrados:', botonesGestionUsuarios.length);
+            
+            // Verificar si las funciones están disponibles
+            console.log('Función loadUsuariosList disponible:', typeof window.loadUsuariosList);
+            console.log('Función loadAprobarUsuarios disponible:', typeof window.loadAprobarUsuarios);
+        });
     </script>
 </body>
 </html>
