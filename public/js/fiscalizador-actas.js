@@ -9,6 +9,80 @@
 let todasLasActas = [];
 
 // ================================
+// FUNCIONES HELPER - CONEXIÓN
+// ================================
+
+// Función helper para fetch con timeout automático
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('La conexión tardó demasiado tiempo. Verifique su conexión a internet.');
+        }
+        throw error;
+    }
+}
+
+// ================================
+// FUNCIONES HELPER - MODALES
+// ================================
+
+// Función para limpiar y cerrar todos los modales
+function limpiarTodosLosModales() {
+    console.log('🧹 Limpiando todos los modales...');
+    
+    // Lista de IDs de modales utilizados
+    const modalIds = ['generalModal', 'verActaModal', 'editarActaModal'];
+    
+    modalIds.forEach(modalId => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            // Obtener instancia del modal si existe
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            
+            // Remover clases y atributos que puedan quedar
+            modalElement.classList.remove('show');
+            modalElement.style.display = 'none';
+            modalElement.removeAttribute('aria-modal');
+            modalElement.setAttribute('aria-hidden', 'true');
+        }
+    });
+    
+    // Remover backdrops que puedan haber quedado
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // Restablecer el body
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+    
+    console.log('✅ Modales limpiados correctamente');
+}
+
+// Función específica para cancelar acciones
+function cancelarAccion() {
+    console.log('❌ Cancelando acción...');
+    limpiarTodosLosModales();
+    
+    // Mostrar mensaje de cancelación
+    mostrarInfoActas('Acción cancelada por el usuario');
+}
+
+// ================================
 // FUNCIONES PRINCIPALES - ACTAS
 // ================================
 
@@ -159,11 +233,10 @@ function loadGestionActas() {
 
 async function cargarActasDesdeAPI() {
     try {
-        const response = await fetch('/api/actas', {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             }
         });
@@ -194,11 +267,10 @@ async function cargarActasDesdeAPI() {
 // Función para cargar solo las actas del usuario actual
 async function cargarMisActasDesdeAPI() {
     try {
-        const response = await fetch('/api/actas', {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             }
         });
@@ -461,7 +533,7 @@ function showCrearActaModal() {
     
     // Configurar botones del modal
     modalFooter.innerHTML = `
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary" onclick="cancelarAccion()">
             <i class="fas fa-times"></i> Cancelar
         </button>
         <button type="button" class="btn btn-primary" onclick="guardarNuevaActa()">
@@ -496,11 +568,10 @@ async function guardarNuevaActa() {
     }
     
     try {
-        const response = await fetch('/api/actas', {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
             method: 'POST',
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             },
             body: formData
@@ -517,9 +588,8 @@ async function guardarNuevaActa() {
         if (data.success) {
             mostrarExitoActas(`Acta ${data.numero_acta || 'nueva'} creada exitosamente`);
             
-            // Cerrar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('generalModal'));
-            modal.hide();
+            // Cerrar modal usando la función de limpieza
+            limpiarTodosLosModales();
             
             // Recargar la lista de actas
             cargarActasDesdeAPI();
@@ -542,10 +612,9 @@ async function guardarNuevaActa() {
 
 async function verActa(actaId) {
     try {
-        const response = await fetch(`/api/actas/${actaId}`, {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             }
         });
@@ -570,7 +639,7 @@ async function verActa(actaId) {
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Ver Acta - ${acta.numero_acta || 'N/A'}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" onclick="cancelarAccion()"></button>
                         </div>
                         <div class="modal-body">
                             <div class="card p-3">
@@ -596,11 +665,11 @@ async function verActa(actaId) {
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelarAccion()">Cerrar</button>
                             <button type="button" class="btn btn-info" onclick="imprimirActa(${acta.id})">
                                 <i class="fas fa-print"></i> Imprimir
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="editarActa(${acta.id}); bootstrap.Modal.getInstance(document.getElementById('verActaModal')).hide();">
+                            <button type="button" class="btn btn-primary" onclick="editarActa(${acta.id}); limpiarTodosLosModales();">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
                         </div>
@@ -628,10 +697,9 @@ async function verActa(actaId) {
 
 async function editarActa(actaId) {
     try {
-        const response = await fetch(`/api/actas/${actaId}`, {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             }
         });
@@ -656,7 +724,7 @@ async function editarActa(actaId) {
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Editar Acta - ${acta.numero_acta || 'N/A'}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" onclick="cancelarAccion()"></button>
                         </div>
                         <div class="modal-body">
                             <form id="formEditarActa">
@@ -702,7 +770,7 @@ async function editarActa(actaId) {
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelarAccion()">Cancelar</button>
                             <button type="button" class="btn btn-primary" onclick="guardarEdicionActa()">Guardar Cambios</button>
                         </div>
                     </div>
@@ -739,21 +807,20 @@ async function guardarEdicionActa() {
     };
 
     try {
-        const response = await fetch(`/api/actas/${actaId}`, {
-            method: 'PUT',
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=update-acta`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify({...formData, acta_id: actaId})
         });
 
         const data = await response.json();
 
         if (data.success) {
             mostrarExitoActas('Acta actualizada correctamente');
-            bootstrap.Modal.getInstance(document.getElementById('editarActaModal')).hide();
+            limpiarTodosLosModales();
             cargarActasDesdeAPI(); // Recargar la lista
         } else {
             mostrarErrorActas('Error al actualizar acta: ' + (data.message || 'Error desconocido'));
@@ -765,10 +832,9 @@ async function guardarEdicionActa() {
 
 async function imprimirActa(actaId) {
     try {
-        const response = await fetch(`/api/actas/${actaId}`, {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
             credentials: 'same-origin',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'Accept': 'application/json'
             }
         });
@@ -877,12 +943,13 @@ async function eliminarActa(actaId, numeroActa) {
     }
 
     try {
-        const response = await fetch(`/api/actas/${actaId}`, {
-            method: 'DELETE',
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=delete-acta`, {
+            method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify({acta_id: actaId})
         });
 
         const data = await response.json();
@@ -974,6 +1041,10 @@ function mostrarErrorActas(mensaje) {
     mostrarNotificacion(mensaje, 'error');
 }
 
+function mostrarInfoActas(mensaje) {
+    mostrarNotificacion(mensaje, 'info');
+}
+
 function mostrarNotificacion(mensaje, tipo = 'info') {
     // Crear contenedor de notificaciones si no existe
     let container = document.getElementById('notificaciones-container');
@@ -1055,5 +1126,7 @@ window.eliminarActa = eliminarActa;
 window.imprimirActa = imprimirActa;
 window.filtrarActas = filtrarActas;
 window.limpiarFiltros = limpiarFiltros;
+window.limpiarTodosLosModales = limpiarTodosLosModales;
+window.cancelarAccion = cancelarAccion;
 
 console.log('✅ Fiscalizador Actas JS cargado correctamente');

@@ -2117,7 +2117,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             <?php if ($rol === 'fiscalizador'): ?>
             <!-- Menú para Fiscalizador -->
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('actas', event)">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('actas', event)">
                     <i class="fas fa-clipboard-list"></i> Gestión de Actas
                 </a>
                 <ul class="sidebar-submenu" id="submenu-actas" style="display: none;">
@@ -2147,6 +2147,20 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                         </a>
                     </li>
                 </ul>
+                
+                <!-- Botones de debugging para actas (solo visible durante testing) -->
+                <div class="mt-2" style="padding-left: 20px;">
+                    <small class="text-muted">Debug Actas:</small><br>
+                    <button class="btn btn-info btn-sm mt-1" onclick="toggleSubmenuAlt('actas', null)" style="display: inline-block !important;">
+                        <i class="fas fa-toggle-off"></i> Test Toggle
+                    </button>
+                    <button class="btn btn-danger btn-sm mt-1" onclick="forceShowSubmenu('actas')" style="display: inline-block !important;">
+                        <i class="fas fa-eye"></i> Force Show
+                    </button>
+                    <button class="btn btn-warning btn-sm mt-1" onclick="diagnosticarSubmenu('actas')" style="display: inline-block !important;">
+                        <i class="fas fa-search"></i> Diagnóstico
+                    </button>
+                </div>
             </li>
             <li class="sidebar-item">
                 <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('inspecciones', event)">
@@ -2509,7 +2523,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <?php if ($rol === 'fiscalizador'): ?>
     <!-- JavaScript específico para fiscalizador -->
     <script src="js/fiscalizador.js"></script>
-    <script src="js/actas-simple.js"></script>
+    <script src="js/fiscalizador-actas.js"></script>
     <?php endif; ?>
     
     <?php if ($rol === 'ventanilla'): ?>
