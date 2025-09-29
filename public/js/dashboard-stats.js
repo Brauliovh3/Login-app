@@ -1,160 +1,170 @@
 /**
- * Funciones para manejo de estadísticas del dashboard
- * Archivo: dashboard-stats.js
+ * ================================
+ * DASHBOARD STATS & CONTENT
+ * Sistema de Gestión - JavaScript
+ * ================================
  */
 
-/**
- * Cargar estadísticas del dashboard
- */
+// ================================
+// FUNCIONES DE ESTADÍSTICAS
+// ================================
+
 function loadDashboardStats() {
-    console.log('📊 Cargando estadísticas...');
+    console.log('📊 Cargando estadísticas del dashboard...');
     
     fetch('dashboard.php?api=dashboard-stats')
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                updateStatsDisplay(data.stats);
-                console.log('✅ Estadísticas cargadas');
+            console.log('Estadísticas recibidas:', data);
+            if (data.success && data.stats) {
+                renderDashboardStats(data.stats);
             } else {
-                console.error('❌ Error al cargar estadísticas:', data.message);
+                console.error('Error al cargar estadísticas:', data.message);
+                showStatsError();
             }
         })
         .catch(error => {
-            console.error('❌ Error de conexión:', error);
+            console.error('Error cargando estadísticas:', error);
+            showStatsError();
         });
 }
 
-/**
- * Actualizar display de estadísticas
- */
-function updateStatsDisplay(stats) {
-    // Mapear estadísticas según el rol del usuario
-    const statsMapping = {
-        'total_usuarios': { selector: '#totalUsuarios', icon: 'fas fa-users' },
-        'usuarios_activos': { selector: '#usuariosActivos', icon: 'fas fa-user-check' },
-        'usuarios_pendientes': { selector: '#usuariosPendientes', icon: 'fas fa-user-clock' },
-        'total_conductores': { selector: '#totalConductores', icon: 'fas fa-id-card' },
-        'total_vehiculos': { selector: '#totalVehiculos', icon: 'fas fa-car' },
-        'total_infracciones': { selector: '#totalInfracciones', icon: 'fas fa-file-alt' },
-        'infracciones_procesadas': { selector: '#infraccionesProcesadas', icon: 'fas fa-check-circle' },
-        'infracciones_pendientes': { selector: '#infraccionesPendientes', icon: 'fas fa-clock' },
-        'total_multas': { selector: '#totalMultas', icon: 'fas fa-dollar-sign' },
-        'atenciones_hoy': { selector: '#atencionesHoy', icon: 'fas fa-calendar-day' },
-        'cola_espera': { selector: '#colaEspera', icon: 'fas fa-users-clock' },
-        'tramites_completados': { selector: '#tramitesCompletados', icon: 'fas fa-check-double' },
-        'tiempo_promedio': { selector: '#tiempoPromedio', icon: 'fas fa-stopwatch' }
-    };
+function renderDashboardStats(stats) {
+    const statsContainer = document.getElementById('dashboardStats');
+    if (!statsContainer) return;
     
-    // Actualizar cada estadística
-    Object.keys(stats).forEach(key => {
-        const mapping = statsMapping[key];
-        if (mapping) {
-            const element = document.querySelector(mapping.selector);
-            if (element) {
-                const numberElement = element.querySelector('.stats-number');
-                if (numberElement) {
-                    const value = key === 'total_multas' ? `S/ ${formatMoney(stats[key])}` :
-                                key === 'tiempo_promedio' ? `${stats[key]} min` :
-                                formatNumber(stats[key]);
-                    numberElement.textContent = value;
-                }
-            }
-        }
+    // Limpiar contenido existente
+    statsContainer.innerHTML = '';
+    
+    // Generar cards según el rol del usuario
+    const cards = generateStatsCards(stats);
+    
+    cards.forEach(card => {
+        const cardElement = createStatsCard(card);
+        statsContainer.appendChild(cardElement);
     });
+    
+    console.log('✅ Estadísticas renderizadas');
 }
 
-/**
- * Cargar contenido principal del dashboard
- */
-function loadDashboardContent() {
-    console.log('📊 Cargando contenido del dashboard...');
+function generateStatsCards(stats) {
+    const cards = [];
     
-    const contentContainer = document.getElementById('contentContainer');
-    if (!contentContainer) return;
-    
-    // Mostrar las estadísticas del dashboard
-    const dashboardSection = document.getElementById('dashboard-section');
-    if (dashboardSection) {
-        dashboardSection.style.display = 'block';
-        dashboardSection.classList.add('active');
+    // Cards específicos según el rol
+    if (userRole === 'administrador' || userRole === 'superadmin') {
+        cards.push(
+            { title: 'Total Usuarios', value: stats.total_usuarios || 0, icon: 'fas fa-users', color: 'primary', trend: '+12%' },
+            { title: 'Usuarios Activos', value: stats.usuarios_activos || 0, icon: 'fas fa-user-check', color: 'success', trend: '+8%' },
+            { title: 'Usuarios Pendientes', value: stats.usuarios_pendientes || 0, icon: 'fas fa-user-clock', color: 'warning', trend: '-2%' },
+            { title: 'Total Conductores', value: stats.total_conductores || 0, icon: 'fas fa-id-card', color: 'info', trend: '+5%' }
+        );
+    } else if (userRole === 'fiscalizador' || userRole === 'inspector') {
+        cards.push(
+            { title: 'Total Infracciones', value: stats.total_infracciones || 0, icon: 'fas fa-file-alt', color: 'primary', trend: '+15%' },
+            { title: 'Infracciones Procesadas', value: stats.infracciones_procesadas || 0, icon: 'fas fa-check-circle', color: 'success', trend: '+20%' },
+            { title: 'Infracciones Pendientes', value: stats.infracciones_pendientes || 0, icon: 'fas fa-clock', color: 'warning', trend: '-5%' },
+            { title: 'Total Multas (S/)', value: formatCurrency(stats.total_multas || 0), icon: 'fas fa-money-bill', color: 'info', trend: '+18%' }
+        );
+    } else if (userRole === 'ventanilla') {
+        cards.push(
+            { title: 'Atenciones Hoy', value: stats.atenciones_hoy || 0, icon: 'fas fa-users', color: 'primary', trend: '+10%' },
+            { title: 'Cola de Espera', value: stats.cola_espera || 0, icon: 'fas fa-hourglass-half', color: 'warning', trend: 'Real time' },
+            { title: 'Trámites Completados', value: stats.tramites_completados || 0, icon: 'fas fa-check-circle', color: 'success', trend: '+25%' },
+            { title: 'Tiempo Promedio (min)', value: stats.tiempo_promedio || 0, icon: 'fas fa-clock', color: 'info', trend: '-3 min' }
+        );
+    } else {
+        // Cards genéricos para otros roles
+        cards.push(
+            { title: 'Notificaciones', value: stats.notificaciones || 0, icon: 'fas fa-bell', color: 'primary', trend: 'Nuevas' },
+            { title: 'Tareas Pendientes', value: stats.tareas_pendientes || 0, icon: 'fas fa-tasks', color: 'warning', trend: 'Hoy' },
+            { title: 'Documentos', value: stats.documentos || 0, icon: 'fas fa-file', color: 'info', trend: 'Totales' },
+            { title: 'Estado Sistema', value: 'Activo', icon: 'fas fa-server', color: 'success', trend: '99.9%' }
+        );
     }
     
-    // Limpiar el contenedor y mostrar mensaje de bienvenida
-    contentContainer.innerHTML = `
-        <div class="dashboard-welcome">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h3><i class="fas fa-tachometer-alt text-primary"></i> Bienvenido, ${userName}!</h3>
-                    <p class="text-muted mb-0">Panel de control del sistema - Rol: <strong>${userRole.toUpperCase()}</strong></p>
-                    <small class="text-muted">Último acceso: ${new Date().toLocaleDateString('es-ES')}</small>
-                </div>
-                <div class="col-md-4 text-end">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <button class="btn btn-outline-primary btn-sm" onclick="loadDashboardStats()">
-                            <i class="fas fa-refresh"></i> Actualizar
-                        </button>
-                        <button class="btn btn-outline-info btn-sm" onclick="loadNotifications()">
-                            <i class="fas fa-bell"></i> Notificaciones
-                        </button>
+    return cards;
+}
+
+function createStatsCard(card) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'col-lg-3 col-md-6 mb-4';
+    
+    cardDiv.innerHTML = `
+        <div class="card border-left-${card.color} shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-${card.color} text-uppercase mb-1">
+                            ${card.title}
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            ${card.value}
+                        </div>
+                        ${card.trend ? `<div class="text-xs text-muted">${card.trend}</div>` : ''}
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-12">
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <strong>Sistema Operativo</strong> - Todos los servicios están funcionando correctamente.
+                    <div class="col-auto">
+                        <i class="${card.icon} fa-2x text-gray-300"></i>
+                    </div>
                 </div>
             </div>
         </div>
     `;
     
-    // Recargar las estadísticas
-    loadDashboardStats();
+    return cardDiv;
 }
 
-/**
- * Formatear números
- */
-function formatNumber(num) {
-    return new Intl.NumberFormat('es-PE').format(num);
+function showStatsError() {
+    const statsContainer = document.getElementById('dashboardStats');
+    if (!statsContainer) return;
+    
+    statsContainer.innerHTML = `
+        <div class="col-12">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                No se pudieron cargar las estadísticas en este momento.
+                <button class="btn btn-sm btn-outline-warning ml-2" onclick="loadDashboardStats()">
+                    <i class="fas fa-sync-alt"></i> Reintentar
+                </button>
+            </div>
+        </div>
+    `;
 }
 
-/**
- * Formatear moneda
- */
-function formatMoney(amount) {
+// ================================
+// FUNCIONES AUXILIARES
+// ================================
+
+function formatCurrency(amount) {
     return new Intl.NumberFormat('es-PE', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        style: 'currency',
+        currency: 'PEN',
+        minimumFractionDigits: 2
     }).format(amount);
 }
 
-/**
- * Formatear fechas
- */
 function formatDate(dateString) {
-    if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
+    return date.toLocaleDateString('es-PE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
-/**
- * Formatear fecha y hora
- */
-function formatDateTime(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES');
+function showLoading(message = 'Cargando...') {
+    return `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">${message}</span>
+            </div>
+            <p class="mt-2 text-muted">${message}</p>
+        </div>
+    `;
 }
 
 // Exponer funciones globalmente
 window.loadDashboardStats = loadDashboardStats;
-window.loadDashboardContent = loadDashboardContent;
-window.updateStatsDisplay = updateStatsDisplay;
-window.formatNumber = formatNumber;
-window.formatMoney = formatMoney;
-window.formatDate = formatDate;
-window.formatDateTime = formatDateTime;
+
+console.log('📊 Dashboard Stats JS cargado correctamente');

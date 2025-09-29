@@ -1,6 +1,9 @@
-/* Dashboard CSS - Sistema de Gestión */
+/* ================================
+   DASHBOARD STYLES
+   Sistema de Gestión - CSS Principal
+   ================================ */
 
-/* Variables CSS */
+/* Variables CSS Globales */
 :root {
     --primary-color: #2c3e50;
     --secondary-color: #3498db;
@@ -11,7 +14,10 @@
     --light-color: #ecf0f1;
 }
 
-/* Estilos generales del body */
+/* ================================
+   ESTILOS GENERALES
+   ================================ */
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
@@ -20,7 +26,10 @@ body {
     padding-top: 70px;
 }
 
-/* Navbar */
+/* ================================
+   NAVBAR STYLES
+   ================================ */
+
 .navbar {
     background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -41,11 +50,38 @@ body {
     margin: 0 5px;
     border-radius: 5px;
     padding: 8px 15px !important;
+    position: relative;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 .nav-link:hover {
     background-color: rgba(255,255,255,0.1);
     transform: translateY(-2px);
+    color: #f8f9fa !important;
+}
+
+/* ================================
+   NOTIFICATION BADGE
+   ================================ */
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    min-width: 18px;
+    height: 18px;
+    line-height: 14px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+    z-index: 1000;
 }
 
 /* Sidebar Styles */

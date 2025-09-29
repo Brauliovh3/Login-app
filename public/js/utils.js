@@ -272,6 +272,69 @@ async function copyToClipboard(text) {
     }
 }
 
+/**
+ * Formatear fecha para mostrar en español
+ */
+function formatDate(dateString) {
+    if (!dateString) return 'No disponible';
+    
+    const date = new Date(dateString);
+    const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    
+    return date.toLocaleDateString('es-ES', options);
+}
+
+/**
+ * Generar badge de rol con colores
+ */
+function getRoleBadge(role) {
+    const roleMap = {
+        'superadmin': { text: 'Super Admin', color: 'danger' },
+        'administrador': { text: 'Administrador', color: 'primary' },
+        'fiscalizador': { text: 'Fiscalizador', color: 'success' },
+        'inspector': { text: 'Inspector', color: 'info' },
+        'ventanilla': { text: 'Ventanilla', color: 'warning' },
+        'usuario': { text: 'Usuario', color: 'secondary' }
+    };
+    
+    const roleInfo = roleMap[role] || { text: role, color: 'secondary' };
+    return `<span class="badge bg-${roleInfo.color}">${roleInfo.text}</span>`;
+}
+
+/**
+ * Generar badge de estado
+ */
+function getStatusBadge(status) {
+    const statusMap = {
+        'approved': { text: 'Aprobado', color: 'success' },
+        'active': { text: 'Activo', color: 'success' },
+        'pending': { text: 'Pendiente', color: 'warning' },
+        'rejected': { text: 'Rechazado', color: 'danger' },
+        'suspended': { text: 'Suspendido', color: 'danger' },
+        'inactive': { text: 'Inactivo', color: 'secondary' }
+    };
+    
+    const statusInfo = statusMap[status] || { text: status, color: 'secondary' };
+    return `<span class="badge bg-${statusInfo.color}">${statusInfo.text}</span>`;
+}
+
+/**
+ * Formatear moneda en soles
+ */
+function formatCurrency(amount) {
+    if (!amount && amount !== 0) return 'S/ 0.00';
+    return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: 'PEN'
+    }).format(amount);
+}
+
 // Exponer funciones globalmente
 window.showAlert = showAlert;
 window.showToast = showToast;
@@ -288,3 +351,7 @@ window.capitalize = capitalize;
 window.truncateText = truncateText;
 window.escapeHtml = escapeHtml;
 window.copyToClipboard = copyToClipboard;
+window.formatDate = formatDate;
+window.getRoleBadge = getRoleBadge;
+window.getStatusBadge = getStatusBadge;
+window.formatCurrency = formatCurrency;
