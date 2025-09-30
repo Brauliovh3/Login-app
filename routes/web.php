@@ -201,17 +201,24 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
 
 // Rutas para administradores y fiscalizadores (infracciones)
 Route::middleware(['auth', 'user.approved', 'multirole:administrador,fiscalizador'])->group(function () {
-            // Ruta simple para ver infracciones (controlador no presente en este branch)
-            Route::get('/infracciones', function () {
-                $infracciones = \DB::table('infracciones')
-                    ->select('id', 'codigo_infraccion as codigo', 'descripcion', 'multa_soles', 'tipo_infraccion')
-                    ->get();
+    // CRUD completo de infracciones
+    Route::resource('infracciones', App\Http\Controllers\InfraccionController::class);
+    
+    // Rutas adicionales para infracciones
+    Route::get('/infracciones-datatables', [App\Http\Controllers\InfraccionController::class, 'datatables'])
+        ->name('infracciones.datatables');
+    
+    // Ruta simple para ver infracciones (mantenemos compatibilidad)
+    Route::get('/infracciones-simple', function () {
+        $infracciones = \DB::table('infracciones')
+            ->select('id', 'codigo', 'aplica_sobre', 'sancion', 'gravedad')
+            ->get();
 
-                return view('infracciones.index', compact('infracciones'));
-            })->name('infracciones.index');
+        return view('infracciones.simple', compact('infracciones'));
+    })->name('infracciones.simple');
 
-            // CRUD de carga y pasajero
-            Route::resource('carga-pasajero', CargaPasajeroController::class);
+    // CRUD de carga y pasajero
+    Route::resource('carga-pasajero', CargaPasajeroController::class);
 });
 
 

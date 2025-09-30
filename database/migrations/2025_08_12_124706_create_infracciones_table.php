@@ -18,11 +18,11 @@ return new class extends Migration
             $table->text('reglamento')->nullable();
             $table->string('norma_modificatoria')->nullable();
             $table->string('clase_pago')->nullable();
-            $table->decimal('sancion', 10, 2)->nullable();
-            $table->boolean('tipo')->default(false);
-            $table->boolean('medida_preventiva')->default(false);
+            $table->string('sancion')->nullable();
+            $table->string('tipo')->nullable();
+            $table->text('medida_preventiva')->nullable();
             $table->string('gravedad')->nullable();
-            $table->string('otros_responsables__otros_beneficios')->nullable();
+            $table->text('otros_responsables__otros_beneficios')->nullable();
             $table->timestamps();
         });
     }

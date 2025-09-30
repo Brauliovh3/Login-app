@@ -2185,7 +2185,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadInfracciones()" data-section="infracciones">
+                <a class="sidebar-link" href="/infracciones" data-section="infracciones">
                     <i class="fas fa-exclamation-triangle"></i> Infracciones
                 </a>
             </li>

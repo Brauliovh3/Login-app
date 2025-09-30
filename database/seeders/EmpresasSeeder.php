@@ -112,6 +112,11 @@ class EmpresasSeeder extends Seeder
             ],
         ];
 
-        DB::table('empresas')->insert($empresas);
+        foreach ($empresas as $empresa) {
+            DB::table('empresas')->updateOrInsert(
+                ['ruc' => $empresa['ruc']], // Buscar por RUC
+                $empresa // Datos a insertar/actualizar
+            );
+        }
     }
 }
