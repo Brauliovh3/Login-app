@@ -316,6 +316,16 @@ class DashboardApp {
                         echo json_encode($this->getActas());
                     }
                     break;
+                case 'obtener_actas_fiscalizador':
+                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        $fiscalizador_id = $input['fiscalizador_id'] ?? null;
+                        echo json_encode($this->getActasFiscalizador($fiscalizador_id));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
                 case 'acta-details':
                     echo json_encode($this->getActaDetails($_GET['id'] ?? 0));
                     break;
@@ -620,6 +630,11 @@ class DashboardApp {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
             
+            // Si no se envió JSON, intentar obtener de $_POST
+            if (!$data) {
+                $data = $_POST;
+            }
+            
             // Generar número de acta automático si no se proporciona
             if (empty($data['numero_acta'])) {
                 $stmt = $this->pdo->query("SELECT MAX(CAST(SUBSTRING(numero_acta, 4) AS UNSIGNED)) as last_num FROM actas WHERE numero_acta LIKE 'ACT%'");
@@ -627,30 +642,32 @@ class DashboardApp {
                 $data['numero_acta'] = 'ACT' . str_pad($lastNum + 1, 6, '0', STR_PAD_LEFT);
             }
             
+            // Preparar la consulta SQL con todos los campos correctos de la base de datos
             $sql = "INSERT INTO actas (
                 numero_acta, lugar_intervencion, fecha_intervencion, hora_intervencion, 
                 inspector_responsable, tipo_servicio, tipo_agente, placa, placa_vehiculo,
-                razon_social, ruc_dni, licencia_conductor, nombre_conductor, clase_licencia,
-                monto_multa, estado, user_id, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())";
+                razon_social, ruc_dni, nombre_conductor, licencia_conductor,
+                descripcion_hechos, monto_multa, estado, user_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute([
                 $data['numero_acta'],
                 $data['lugar_intervencion'] ?? null,
-                $data['fecha_intervencion'],
-                $data['hora_intervencion'],
+                $data['fecha_intervencion'] ?? date('Y-m-d'),
+                $data['hora_intervencion'] ?? date('H:i:s'),
                 $data['inspector_responsable'] ?? $this->userName,
                 $data['tipo_servicio'] ?? null,
-                $data['tipo_agente'],
-                $data['placa'],
-                $data['placa_vehiculo'] ?? $data['placa'],
-                $data['razon_social'],
-                $data['ruc_dni'],
-                $data['licencia_conductor'] ?? null,
+                $data['tipo_agente'] ?? 'Conductor', // Valor por defecto si no se especifica
+                $data['placa'] ?? null,
+                $data['placa_vehiculo'] ?? $data['placa'] ?? null, // Usar la misma placa si no se especifica placa_vehiculo
+                $data['razon_social'] ?? null,
+                $data['ruc_dni'] ?? null,
                 $data['nombre_conductor'] ?? null,
-                $data['clase_licencia'] ?? null,
+                $data['licencia_conductor'] ?? null,
+                $data['descripcion_hechos'] ?? null,
                 $data['monto_multa'] ?? null,
+                $data['estado'] ?? 'pendiente',
                 $this->user['id']
             ]);
             
@@ -664,12 +681,18 @@ class DashboardApp {
                     'administrador,superadmin'
                 );
                 
-                return ['success' => true, 'message' => 'Acta guardada correctamente', 'acta_id' => $actaId];
+                return [
+                    'success' => true, 
+                    'message' => 'Acta guardada correctamente', 
+                    'acta_id' => $actaId,
+                    'numero_acta' => $data['numero_acta']
+                ];
             } else {
-                return ['success' => false, 'message' => 'Error al guardar acta'];
+                return ['success' => false, 'message' => 'Error al guardar acta en la base de datos'];
             }
         } catch (Exception $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
+            error_log("Error en saveActa(): " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()];
         }
     }
     
@@ -1497,6 +1520,39 @@ class DashboardApp {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
+
+    private function getActasFiscalizador($fiscalizadorId) {
+        try {
+            if (!$fiscalizadorId) {
+                return ['success' => false, 'message' => 'ID de fiscalizador requerido'];
+            }
+
+            // Verificar que el usuario actual puede ver las actas (debe ser el mismo fiscalizador o un administrador)
+            if ($this->userRole !== 'admin' && $this->userRole !== 'superadmin' && $this->user['id'] != $fiscalizadorId) {
+                return ['success' => false, 'message' => 'No tienes permisos para ver estas actas'];
+            }
+
+            $stmt = $this->pdo->prepare("
+                SELECT a.*, u.name as fiscalizador_nombre 
+                FROM actas a 
+                LEFT JOIN usuarios u ON a.user_id = u.id 
+                WHERE a.user_id = ? 
+                ORDER BY a.created_at DESC
+            ");
+            
+            $stmt->execute([$fiscalizadorId]);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true, 
+                'actas' => $actas,
+                'total' => count($actas),
+                'fiscalizador_id' => $fiscalizadorId
+            ];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error al obtener actas del fiscalizador: ' . $e->getMessage()];
+        }
+    }
 }
 
 // Inicializar la aplicación
@@ -2147,20 +2203,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                         </a>
                     </li>
                 </ul>
-                
-                <!-- Botones de debugging para actas (solo visible durante testing) -->
-                <div class="mt-2" style="padding-left: 20px;">
-                    <small class="text-muted">Debug Actas:</small><br>
-                    <button class="btn btn-info btn-sm mt-1" onclick="toggleSubmenuAlt('actas', null)" style="display: inline-block !important;">
-                        <i class="fas fa-toggle-off"></i> Test Toggle
-                    </button>
-                    <button class="btn btn-danger btn-sm mt-1" onclick="forceShowSubmenu('actas')" style="display: inline-block !important;">
-                        <i class="fas fa-eye"></i> Force Show
-                    </button>
-                    <button class="btn btn-warning btn-sm mt-1" onclick="diagnosticarSubmenu('actas')" style="display: inline-block !important;">
-                        <i class="fas fa-search"></i> Diagnóstico
-                    </button>
-                </div>
             </li>
             <li class="sidebar-item">
                 <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('inspecciones', event)">
