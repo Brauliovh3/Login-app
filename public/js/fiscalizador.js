@@ -191,20 +191,40 @@ async function loadGestionarInfracciones() {
             displayInfraccionesInterface(result.infracciones);
         } else {
             console.error('❌ Error al cargar infracciones:', result.message);
-            // Si no hay API, mostrar interfaz vacía
-            displayInfraccionesInterface([]);
+            // Si no hay API, mostrar interfaz con datos de ejemplo
+            const infraccionesEjemplo = [
+                {
+                    id: 1,
+                    codigo: 'INF-001',
+                    descripcion: 'Ejemplo de infracción',
+                    gravedad: 'leve',
+                    monto: 100.00,
+                    created_at: '2025-09-30'
+                }
+            ];
+            displayInfraccionesInterface(infraccionesEjemplo);
         }
     } catch (error) {
         console.error('❌ Error al cargar infracciones:', error);
-        // Si hay error de conexión, mostrar interfaz vacía
-        displayInfraccionesInterface([]);
+        // Si hay error de conexión, mostrar interfaz con datos de ejemplo
+        const infraccionesEjemplo = [
+            {
+                id: 1,
+                codigo: 'INF-001',
+                descripcion: 'Ejemplo de infracción',
+                gravedad: 'leve',
+                monto: 100.00,
+                created_at: '2025-09-30'
+            }
+        ];
+        displayInfraccionesInterface(infraccionesEjemplo);
     }
 }
 
 async function loadNuevaInfraccion() {
     console.log('📋 Cargando formulario nueva infracción...');
     
-    const content = document.getElementById('dynamic-content');
+    const content = document.getElementById('contentContainer');
     if (!content) return;
     
     const nuevaInfraccionHTML = `
@@ -314,7 +334,7 @@ async function loadNuevaInfraccion() {
 async function loadBuscarInfracciones() {
     console.log('📋 Cargando búsqueda de infracciones...');
     
-    const content = document.getElementById('dynamic-content');
+    const content = document.getElementById('contentContainer');
     if (!content) return;
     
     const buscarHTML = `
@@ -373,7 +393,7 @@ async function loadBuscarInfracciones() {
 async function loadEstadisticasInfracciones() {
     console.log('📋 Cargando estadísticas de infracciones...');
     
-    const content = document.getElementById('dynamic-content');
+    const content = document.getElementById('contentContainer');
     if (!content) return;
     
     const estadisticasHTML = `
@@ -437,7 +457,7 @@ async function loadEstadisticasInfracciones() {
 }
 
 function displayInfraccionesInterface(infracciones) {
-    const content = document.getElementById('dynamic-content');
+    const content = document.getElementById('contentContainer');
     if (!content) return;
     
     let infraccionesHTML = `

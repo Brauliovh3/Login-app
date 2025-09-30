@@ -106,6 +106,18 @@ function loadSection(sectionId) {
         case 'perfil':
             loadPerfilMejorado();
             break;
+        case 'gestionar-infracciones':
+            loadGestionarInfracciones();
+            break;
+        case 'nueva-infraccion':
+            loadNuevaInfraccion();
+            break;
+        case 'buscar-infraccion':
+            loadBuscarInfracciones();
+            break;
+        case 'estadisticas-infracciones':
+            loadEstadisticasInfracciones();
+            break;
         default:
             loadDefaultSection(sectionId);
     }
