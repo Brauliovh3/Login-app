@@ -2227,9 +2227,31 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link" href="/infracciones" data-section="infracciones">
-                    <i class="fas fa-exclamation-triangle"></i> Infracciones
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('infracciones', event)">
+                    <i class="fas fa-exclamation-triangle"></i> Gestión de Infracciones
                 </a>
+                <ul class="sidebar-submenu" id="submenu-infracciones" style="display: none;">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="gestionar-infracciones">
+                            <i class="fas fa-list"></i> Gestionar Infracciones
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="nueva-infraccion">
+                            <i class="fas fa-plus-circle"></i> Nueva Infracción
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="buscar-infracciones">
+                            <i class="fas fa-search"></i> Buscar Infracciones
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="estadisticas-infracciones">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </a>
+                    </li>
+                </ul>
             </li>
             </li>
             <li class="sidebar-item">
