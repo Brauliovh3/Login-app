@@ -400,7 +400,7 @@ function loadUsuariosList() {
                         <table class="table table-striped table-hover" id="tablaUsuarios">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>ID</th>
+                                    <th>#</th>
                                     <th>Nombre</th>
                                     <th>Username</th>
                                     <th>Email</th>
@@ -486,9 +486,9 @@ function mostrarUsuariosEnTabla(usuarios) {
         return;
     }
     
-    tbody.innerHTML = usuarios.map(usuario => `
+    tbody.innerHTML = usuarios.map((usuario, index) => `
         <tr>
-            <td><strong>${usuario.id}</strong></td>
+            <td><strong>${index + 1}</strong></td>
             <td>${usuario.nombre || 'N/A'}</td>
             <td><code>${usuario.username || 'N/A'}</code></td>
             <td>${usuario.email || 'N/A'}</td>
