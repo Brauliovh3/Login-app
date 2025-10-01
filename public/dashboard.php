@@ -16,6 +16,13 @@ class DashboardApp {
     
     public function __construct() {
         $this->connectDatabase();
+        
+        // Manejar llamadas API antes de autenticación completa
+        if (isset($_GET['api'])) {
+            $this->handleApiRequest();
+            exit;
+        }
+        
         $this->authenticateUser();
     }
     
@@ -26,6 +33,170 @@ class DashboardApp {
         } catch(PDOException $e) {
             $this->showLoginForm("Error de conexión a la base de datos");
             exit;
+        }
+    }
+    
+    private function handleApiRequest() {
+        header('Content-Type: application/json');
+        
+        // Verificar que el usuario esté autenticado para APIs
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'No autenticado']);
+            return;
+        }
+        
+        $api = $_GET['api'];
+        $method = $_SERVER['REQUEST_METHOD'];
+        
+        try {
+            switch ($api) {
+                case 'users':
+                    if ($method === 'GET') {
+                        $this->apiGetUsers();
+                    } elseif ($method === 'POST') {
+                        $this->apiCreateUser();
+                    }
+                    break;
+                    
+                case 'user':
+                    if ($method === 'PUT') {
+                        $this->apiUpdateUser();
+                    } elseif ($method === 'DELETE') {
+                        $this->apiDeleteUser();
+                    }
+                    break;
+                    
+                default:
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'API endpoint no encontrado']);
+                    break;
+            }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
+        }
+    }
+    
+    private function apiGetUsers() {
+        $stmt = $this->pdo->prepare("SELECT id, name, username, email, role, status, created_at FROM usuarios ORDER BY created_at DESC");
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['success' => true, 'users' => $users]);
+    }
+    
+    private function apiCreateUser() {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // Si no hay JSON, intentar leer de POST
+        if (!$input) {
+            $input = $_POST;
+        }
+        
+        $nombre = $input['nombre'] ?? '';
+        $username = $input['username'] ?? '';
+        $email = $input['email'] ?? '';
+        $rol = $input['rol'] ?? '';
+        $password = $input['password'] ?? '';
+        $estado = $input['estado'] ?? 'activo';
+        
+        // Validaciones
+        if (empty($nombre) || empty($username) || empty($email) || empty($rol) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Todos los campos son obligatorios']);
+            return;
+        }
+        
+        // Verificar duplicados
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE username = ? OR email = ?");
+        $stmt->execute([$username, $email]);
+        if ($stmt->fetchColumn() > 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Username o email ya existe']);
+            return;
+        }
+        
+        // Crear usuario
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        $status = $estado === 'activo' ? 'approved' : 'pending';
+        
+        $stmt = $this->pdo->prepare("INSERT INTO usuarios (name, username, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([$nombre, $username, $email, $hashedPassword, $rol, $status]);
+        
+        $userId = $this->pdo->lastInsertId();
+        
+        echo json_encode(['success' => true, 'message' => 'Usuario creado exitosamente', 'user_id' => $userId]);
+    }
+    
+    private function apiUpdateUser() {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $userId = $input['id'] ?? '';
+        $nombre = $input['nombre'] ?? '';
+        $username = $input['username'] ?? '';
+        $email = $input['email'] ?? '';
+        $rol = $input['rol'] ?? '';
+        $estado = $input['estado'] ?? '';
+        $password = $input['password'] ?? '';
+        
+        // Validaciones
+        if (empty($userId) || empty($nombre) || empty($username) || empty($email) || empty($rol)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Campos obligatorios faltantes']);
+            return;
+        }
+        
+        // Verificar duplicados (excluyendo el usuario actual)
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE (username = ? OR email = ?) AND id != ?");
+        $stmt->execute([$username, $email, $userId]);
+        if ($stmt->fetchColumn() > 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Username o email ya existe']);
+            return;
+        }
+        
+        // Actualizar usuario
+        $status = $estado === 'activo' ? 'approved' : 'pending';
+        
+        if (!empty($password)) {
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET name = ?, username = ?, email = ?, password = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->execute([$nombre, $username, $email, $hashedPassword, $rol, $status, $userId]);
+        } else {
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET name = ?, username = ?, email = ?, role = ?, status = ? WHERE id = ?");
+            $stmt->execute([$nombre, $username, $email, $rol, $status, $userId]);
+        }
+        
+        echo json_encode(['success' => true, 'message' => 'Usuario actualizado exitosamente']);
+    }
+    
+    private function apiDeleteUser() {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $userId = $input['id'] ?? '';
+        
+        if (empty($userId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'ID de usuario requerido']);
+            return;
+        }
+        
+        // No permitir que el usuario se elimine a sí mismo
+        if ($userId == $_SESSION['user_id']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'No puedes eliminarte a ti mismo']);
+            return;
+        }
+        
+        $stmt = $this->pdo->prepare("DELETE FROM usuarios WHERE id = ?");
+        $stmt->execute([$userId]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['success' => true, 'message' => 'Usuario eliminado exitosamente']);
+        } else {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
         }
     }
     
@@ -2621,5 +2792,88 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             console.log('Función loadAprobarUsuarios disponible:', typeof window.loadAprobarUsuarios);
         });
     </script>
+
+    <!-- ==================== CONTENEDOR DE NOTIFICACIONES ==================== -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;" id="toastContainer">
+        <!-- Los toasts se agregarán dinámicamente aquí -->
+    </div>
+
+    <style>
+        /* Estilos personalizados para notificaciones */
+        .custom-toast {
+            min-width: 350px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .custom-toast.toast-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .custom-toast.toast-error {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+
+        .custom-toast.toast-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #212529;
+        }
+
+        .custom-toast.toast-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+            color: white;
+        }
+
+        .custom-toast .toast-body {
+            padding: 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .custom-toast .btn-close {
+            filter: brightness(0) invert(1);
+            margin: 0.5rem;
+        }
+
+        .custom-toast .toast-icon {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+        }
+
+        .fade-in {
+            animation: fadeInSlide 0.4s ease-out;
+        }
+
+        .fade-out {
+            animation: fadeOutSlide 0.3s ease-in;
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOutSlide {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
 </body>
 </html>
