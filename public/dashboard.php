@@ -46,6 +46,20 @@ class DashboardApp {
             return;
         }
         
+        // Obtener datos del usuario para las APIs
+        $stmt = $this->pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $this->user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$this->user || $this->user['status'] !== 'approved') {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'Usuario no válido']);
+            return;
+        }
+        
+        $this->userRole = $this->user['role'];
+        $this->userName = $this->user['name'];
+        
         $api = $_GET['api'];
         $method = $_SERVER['REQUEST_METHOD'];
         
@@ -64,6 +78,27 @@ class DashboardApp {
                         $this->apiUpdateUser();
                     } elseif ($method === 'DELETE') {
                         $this->apiDeleteUser();
+                    }
+                    break;
+                    
+                case 'approve-user':
+                    if ($method === 'POST') {
+                        $userId = $_POST['user_id'] ?? 0;
+                        echo json_encode($this->approveUser($userId));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'reject-user':
+                    if ($method === 'POST') {
+                        $userId = $_POST['user_id'] ?? 0;
+                        $reason = $_POST['reason'] ?? '';
+                        echo json_encode($this->rejectUser($userId, $reason));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
                     }
                     break;
                     

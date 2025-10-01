@@ -26,6 +26,20 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
+         User::updateOrCreate([
+            'username' => 'ADMINISTRADOR'
+        ], [
+            'name' => 'Administrador1',
+            'email' => 'admin3@example.com',
+            'password' => Hash::make('admin12345'),
+            'role' => 'administrador1',
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => 1,
+            'email_verified_at' => now(),
+        ]);
+
+
         // Usuario Fiscalizador
         User::updateOrCreate([
             'username' => 'FISCAL'
