@@ -19,6 +19,13 @@ class DashboardApp {
         
         // Manejar llamadas API antes de autenticación completa
         if (isset($_GET['api'])) {
+            // Allow public registration without authentication
+            $apiName = $_GET['api'] ?? '';
+            if ($apiName === 'register') {
+                $this->apiRegisterUser();
+                exit;
+            }
+
             $this->handleApiRequest();
             exit;
         }
@@ -162,6 +169,48 @@ class DashboardApp {
         $userId = $this->pdo->lastInsertId();
         
         echo json_encode(['success' => true, 'message' => 'Usuario creado exitosamente', 'user_id' => $userId]);
+    }
+
+    // Endpoint público para registro de usuarios (quedan en estado pending)
+    private function apiRegisterUser() {
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            $input = $_POST;
+        }
+
+        $nombre = trim($input['nombre'] ?? '');
+        $username = trim($input['username'] ?? '');
+        $email = trim($input['email'] ?? '');
+        $password = $input['password'] ?? '';
+        $rol = $input['rol'] ?? 'usuario';
+
+        if (empty($nombre) || empty($username) || empty($email) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Todos los campos son obligatorios']);
+            return;
+        }
+
+        // Verificar duplicados
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE username = ? OR email = ?");
+        $stmt->execute([$username, $email]);
+        if ($stmt->fetchColumn() > 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Username o email ya existe']);
+            return;
+        }
+
+        try {
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $this->pdo->prepare("INSERT INTO usuarios (name, username, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', NOW())");
+            $stmt->execute([$nombre, $username, $email, $hashedPassword, $rol]);
+
+            echo json_encode(['success' => true, 'message' => 'Registro recibido. Un administrador revisará su solicitud.']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Error al registrar usuario: ' . $e->getMessage()]);
+        }
     }
     
     private function apiUpdateUser() {
@@ -494,6 +543,97 @@ class DashboardApp {
                                     </div>
                                 </form>
                                 
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div></div>
+                                    <div>
+                                        <a href="#" id="showRegisterLink">¿No tienes cuenta? Registrarse</a>
+                                    </div>
+                                </div>
+
+                                <div id="registerSection" style="display:none;">
+                                    <h5 class="mt-3">Registro de Nuevo Usuario</h5>
+                                    <form id="registerForm" class="mb-3">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label">Nombre completo</label>
+                                            <input type="text" id="reg_nombre" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" id="reg_username" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" id="reg_email" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label class="form-label">Contraseña</label>
+                                            <input type="password" id="reg_password" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <button type="button" id="btnBackToLogin" class="btn btn-link">Volver al login</button>
+                                        <button type="button" id="btnRegister" class="btn btn-outline-success">Registrar (espera aprobación)</button>
+                                    </div>
+                                    </form>
+
+                                    <script>
+                                        function showRegister(show) {
+                                            document.getElementById('registerSection').style.display = show ? 'block' : 'none';
+                                            document.getElementById('loginForm')?.scrollIntoView({behavior: 'smooth'});
+                                        }
+
+                                        document.getElementById('showRegisterLink').addEventListener('click', function(e){
+                                            e.preventDefault();
+                                            showRegister(true);
+                                        });
+
+                                        document.getElementById('btnBackToLogin').addEventListener('click', function(e){
+                                            e.preventDefault();
+                                            showRegister(false);
+                                        });
+
+                                        document.getElementById('btnRegister').addEventListener('click', async function() {
+                                            const nombre = document.getElementById('reg_nombre').value.trim();
+                                            const username = document.getElementById('reg_username').value.trim();
+                                            const email = document.getElementById('reg_email').value.trim();
+                                            const password = document.getElementById('reg_password').value;
+
+                                            if (!nombre || !username || !email || !password) {
+                                                alert('Por favor complete todos los campos para registrarse');
+                                                return;
+                                            }
+
+                                            try {
+                                                const formData = new FormData();
+                                                formData.append('nombre', nombre);
+                                                formData.append('username', username);
+                                                formData.append('email', email);
+                                                formData.append('password', password);
+
+                                                const resp = await fetch(window.location.pathname + '?api=register', {
+                                                    method: 'POST',
+                                                    body: formData
+                                                });
+
+                                                const result = await resp.json();
+                                                if (result.success) {
+                                                    alert(result.message);
+                                                    document.getElementById('registerForm').reset();
+                                                    showRegister(false);
+                                                } else {
+                                                    alert('Error: ' + (result.message || 'Error desconocido'));
+                                                }
+                                            } catch (err) {
+                                                console.error('Error al registrar:', err);
+                                                alert('No se pudo registrar. Intenta más tarde.');
+                                            }
+                                        });
+                                    </script>
+                                </div>
+
                                 <script src="js/login.js"></script>
                             </div>
                         </div>
@@ -2306,13 +2446,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                         <i class="fas fa-user"></i> <?php echo htmlspecialchars($app->getUserName()); ?>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="#" onclick="loadSection('perfil')">
-                            <i class="fas fa-user-edit"></i> Mi Perfil
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadSection('configuracion')">
-                            <i class="fas fa-cog"></i> Configuración
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <!-- Enlaces de perfil y configuración removidos por petición del administrador -->
                         <li><a class="dropdown-item" href="dashboard.php?logout=1">
                             <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                         </a></li>
@@ -2369,11 +2503,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <i class="fas fa-chart-bar"></i> Reportes
                 </a>
             </li>
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="javascript:void(0)" data-section="configuracion">
-                    <i class="fas fa-cog"></i> Configuración
-                </a>
-            </li>
+            <!-- Configuración eliminada del menú del administrador por petición -->
             <?php endif; ?>
 
             <?php if ($rol === 'fiscalizador'): ?>

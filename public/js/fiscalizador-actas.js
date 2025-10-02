@@ -753,10 +753,12 @@ function showCrearActaModal() {
     
     if (!modalTitle || !modalBody || !modalFooter) return;
     
-    // Configurar título del modal con X alineada correctamente
+    // Configurar título del modal con botón X en el header
     modalTitle.innerHTML = `
         <div class="d-flex justify-content-between align-items-center w-100">
-            <span><i class="fas fa-plus-circle"></i> Crear Nueva Acta</span>
+            <div class="d-flex align-items-center">
+                <i class="fas fa-plus-circle me-2"></i> Crear Nueva Acta
+            </div>
             <button type="button" class="btn-close" onclick="cancelarAccion()" aria-label="Close"></button>
         </div>
     `;
@@ -889,18 +891,21 @@ function showCrearActaModal() {
         </form>
     `;
     
-    // Configurar botones del modal solo con botones de acción
+    // Configurar botones del modal solo con acciones (cerrar está en header)
     modalFooter.innerHTML = `
-        <div id="botonesAccion" style="display: none;">
-            <button type="button" class="btn btn-success me-2" onclick="exportarActaActual('excel')">
-                <i class="fas fa-file-excel"></i> Exportar Excel
-            </button>
-            <button type="button" class="btn btn-info me-2" onclick="exportarActaActual('pdf')">
-                <i class="fas fa-file-pdf"></i> Exportar PDF
-            </button>
-            <button type="button" class="btn btn-primary" onclick="guardarNuevaActa()">
-                <i class="fas fa-save"></i> Guardar Acta
-            </button>
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div id="botonesAccion" style="display: none;" class="d-flex gap-2">
+                <button type="button" class="btn btn-success" onclick="exportarActaActual('excel')">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button type="button" class="btn btn-info" onclick="exportarActaActual('pdf')">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button type="button" class="btn btn-primary" onclick="guardarNuevaActa()">
+                    <i class="fas fa-save"></i> Guardar Acta
+                </button>
+            </div>
+            <small id="estadoValidacion" class="text-muted">Complete todos los campos para ver las opciones</small>
         </div>
     `;
     
@@ -912,7 +917,24 @@ function showCrearActaModal() {
     setTimeout(() => {
         configurarTimestampAutomatico();
         configurarValidacionDinamica();
+        console.log('🎯 Modal de acta configurado completamente');
     }, 500);
+    
+    // Función helper para debug - permite verificar manualmente
+    window.debugValidarBotones = function() {
+        const form = document.getElementById('formCrearActa');
+        const botones = document.getElementById('botonesAccion');
+        console.log('🔍 Estado del formulario:', !!form);
+        console.log('🔍 Estado de botones:', !!botones);
+        if (form) {
+            const formData = new FormData(form);
+            const campos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'descripcion_hechos'];
+            campos.forEach(campo => {
+                const valor = formData.get(campo);
+                console.log(`📝 ${campo}: "${valor}"`);
+            });
+        }
+    };
 }
 
 // Función para configurar validación dinámica de campos
@@ -922,39 +944,110 @@ function configurarValidacionDinamica() {
     
     function validarYMostrarBotones() {
         const form = document.getElementById('formCrearActa');
-        if (!form) return;
+        const estadoValidacion = document.getElementById('estadoValidacion');
+        
+        if (!form) {
+            console.warn('❌ Formulario no encontrado');
+            return;
+        }
         
         const formData = new FormData(form);
         let camposCompletos = 0;
+        let camposTotal = camposRequeridos.length;
         
         camposRequeridos.forEach(campo => {
+            const elemento = form.querySelector(`[name="${campo}"]`);
             const valor = formData.get(campo)?.trim();
-            if (valor) {
-                camposCompletos++;
+            
+            // Validación especial para selects
+            if (elemento && elemento.tagName === 'SELECT') {
+                if (valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione') {
+                    camposCompletos++;
+                }
+            } else {
+                // Validación normal para inputs y textareas
+                if (valor && valor.length > 0) {
+                    camposCompletos++;
+                }
             }
         });
         
+        console.log(`📋 Validación: ${camposCompletos}/${camposTotal} campos completos`);
+        
+        // Actualizar mensaje de estado con información específica
+        if (estadoValidacion) {
+            if (camposCompletos === camposTotal) {
+                estadoValidacion.innerHTML = '<i class="fas fa-check-circle text-success"></i> Formulario completo - Opciones disponibles';
+                estadoValidacion.className = 'text-success';
+            } else {
+                const faltantes = camposTotal - camposCompletos;
+                const camposFaltantes = [];
+                
+                camposRequeridos.forEach(campo => {
+                    const elemento = form.querySelector(`[name="${campo}"]`);
+                    const valor = formData.get(campo)?.trim();
+                    
+                    let valido = false;
+                    if (elemento && elemento.tagName === 'SELECT') {
+                        valido = valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione';
+                    } else {
+                        valido = valor && valor.length > 0;
+                    }
+                    
+                    if (!valido) {
+                        const label = elemento ? (elemento.closest('.col-md-6, .col-md-4, .col-md-3, .col-12')?.querySelector('label')?.textContent?.replace('*', '')?.trim() || campo) : campo;
+                        camposFaltantes.push(label);
+                    }
+                });
+                
+                if (faltantes === 1) {
+                    estadoValidacion.innerHTML = `<i class="fas fa-info-circle text-warning"></i> Falta: ${camposFaltantes[0]}`;
+                } else {
+                    estadoValidacion.innerHTML = `<i class="fas fa-list-check text-warning"></i> Faltan ${faltantes} campos`;
+                }
+                estadoValidacion.className = 'text-warning';
+            }
+        }
+        
         // Mostrar botones cuando todos los campos estén completos
-        if (camposCompletos === camposRequeridos.length) {
+        if (camposCompletos === camposTotal) {
             if (botonesAccion) {
-                botonesAccion.style.display = 'block';
+                botonesAccion.style.display = 'flex';
+                botonesAccion.style.gap = '0.5rem';
+                console.log('✅ Botones de acción mostrados');
             }
         } else {
             if (botonesAccion) {
                 botonesAccion.style.display = 'none';
+                console.log(`⏳ Botones ocultos - Faltan ${camposTotal - camposCompletos} campos`);
             }
         }
     }
     
     // Agregar event listeners a todos los campos del formulario
     const todosLosCampos = document.querySelectorAll('#formCrearActa input, #formCrearActa select, #formCrearActa textarea');
+    console.log(`🔍 Configurando validación en ${todosLosCampos.length} campos`);
+    
     todosLosCampos.forEach(campo => {
         campo.addEventListener('input', validarYMostrarBotones);
         campo.addEventListener('change', validarYMostrarBotones);
+        campo.addEventListener('keyup', validarYMostrarBotones);
+        campo.addEventListener('blur', validarYMostrarBotones);
     });
     
-    // Validación inicial
-    validarYMostrarBotones();
+    // Validación inicial después de un pequeño delay
+    setTimeout(() => {
+        validarYMostrarBotones();
+    }, 500);
+    
+    // Validación periódica para asegurar funcionamiento
+    const validacionInterval = setInterval(() => {
+        if (!document.getElementById('formCrearActa')) {
+            clearInterval(validacionInterval);
+            return;
+        }
+        validarYMostrarBotones();
+    }, 2000);
 }
 
 // Función para exportar acta actual (antes de guardar)

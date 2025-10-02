@@ -737,17 +737,43 @@ async function aprobarUsuario(userId) {
         confirmText: 'Aprobar',
         cancelText: 'Cancelar',
         onConfirm: async () => {
+            // Evitar múltiples envíos y mostrar estado
             try {
+                const confirmBtnEl = document.querySelector('.confirm-modal-confirm');
+                if (confirmBtnEl) {
+                    confirmBtnEl.disabled = true;
+                    confirmBtnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+                }
+
+                const fetchWithTimeout = (url, options, timeout = 10000) => {
+                    return Promise.race([
+                        fetch(url, options),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), timeout))
+                    ]);
+                };
+
                 const formData = new FormData();
                 formData.append('user_id', userId);
-                
-                const response = await fetch(`${window.location.origin}${window.location.pathname}?api=approve-user`, {
+
+                const urlObj = new URL(window.location.href);
+                urlObj.searchParams.set('api', 'approve-user');
+                const url = urlObj.toString();
+
+                const response = await fetchWithTimeout(url, {
                     method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
+                    body: formData,
+                    credentials: 'same-origin'
+                }, 12000);
+
+                if (!response.ok) {
+                    let text = '';
+                    try { text = await response.text(); } catch(e) { text = ''; }
+                    throw new Error(`Error en servidor: ${response.status} ${response.statusText} ${text ? '- ' + text : ''}`);
+                }
+
+                let result;
+                try { result = await response.json(); } catch(e) { throw new Error('Respuesta inválida del servidor (no JSON)'); }
+
                 if (result.success) {
                     showToast('Usuario aprobado correctamente', 'success');
                     cargarUsuariosPendientes(); // Recargar lista
@@ -756,7 +782,13 @@ async function aprobarUsuario(userId) {
                 }
             } catch (error) {
                 console.error('Error al aprobar usuario:', error);
-                showToast('Error al aprobar usuario: ' + error.message, 'error');
+                showToast('No se pudo conectar con el servidor para aprobar el usuario. (' + error.message + ')', 'error');
+            } finally {
+                const confirmBtnEl = document.querySelector('.confirm-modal-confirm');
+                if (confirmBtnEl) {
+                    confirmBtnEl.disabled = false;
+                    confirmBtnEl.innerHTML = 'Aprobar';
+                }
             }
         }
     });
@@ -812,20 +844,51 @@ async function rechazarUsuario(userId) {
     confirmBtn.addEventListener('click', async () => {
         const razon = reasonTextarea.value.trim() || 'Sin razón especificada';
         
+        // Prevenir múltiples envíos
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+
+        // Helper para fetch con timeout
+        const fetchWithTimeout = (url, options, timeout = 10000) => {
+            return Promise.race([
+                fetch(url, options),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de conexión')), timeout))
+            ]);
+        };
+
         try {
             const formData = new FormData();
             formData.append('user_id', userId);
             formData.append('reason', razon);
-            
-            const response = await fetch(`${window.location.origin}${window.location.pathname}?api=reject-user`, {
+
+            // Construir URL robusta usando la API URL para evitar problemas de ruta
+            const urlObj = new URL(window.location.href);
+            urlObj.searchParams.set('api', 'reject-user');
+            const url = urlObj.toString();
+
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
+                body: formData,
+                credentials: 'same-origin'
+            }, 12000);
+
+            if (!response.ok) {
+                // Intentar leer texto de error
+                let text = '';
+                try { text = await response.text(); } catch(e) { text = ''; }
+                throw new Error(`Error en servidor: ${response.status} ${response.statusText} ${text ? '- ' + text : ''}`);
+            }
+
+            // Intentar parsear JSON, manejo si no es JSON válido
+            let result;
+            try {
+                result = await response.json();
+            } catch (parseError) {
+                throw new Error('Respuesta inválida del servidor (no JSON)');
+            }
+
             modal.hide();
-            
+
             if (result.success) {
                 showToast('Usuario rechazado correctamente', 'success');
                 cargarUsuariosPendientes(); // Recargar lista
@@ -835,7 +898,12 @@ async function rechazarUsuario(userId) {
         } catch (error) {
             console.error('Error al rechazar usuario:', error);
             modal.hide();
-            showToast('Error al rechazar usuario: ' + error.message, 'error');
+            // Mensaje más claro para el usuario final
+            showToast('No se pudo conectar con el servidor para rechazar el usuario. Verifica tu conexión o intenta más tarde. (' + error.message + ')', 'error');
+        } finally {
+            // Restaurar estado del botón
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-user-times me-1"></i>Rechazar Usuario';
         }
     });
     

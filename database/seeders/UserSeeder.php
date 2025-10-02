@@ -16,8 +16,8 @@ class UserSeeder extends Seeder
         User::updateOrCreate([
             'username' => 'ADMIN'
         ], [
-            'name' => 'Administrador1',
-            'email' => 'admin1@example.com',
+            'name' => 'Administrador',
+            'email' => 'admin2@example.com',
             'password' => Hash::make('admin123'),
             'role' => 'administrador',
             'status' => 'approved',
@@ -25,47 +25,8 @@ class UserSeeder extends Seeder
             'approved_by' => 1,
             'email_verified_at' => now(),
         ]);
-
-         User::updateOrCreate([
-            'username' => 'ADMIN2'
-        ], [
-            'name' => 'Administrador2',
-            'email' => 'admin2@example.com',
-            'password' => Hash::make('admin12345'),
-            'role' => 'administrador',
-            'status' => 'approved',
-            'approved_at' => now(),
-            'approved_by' => 1,
-            'email_verified_at' => now(),
-        ]);
-
-
-        // Usuario Fiscalizador
-        User::updateOrCreate([
-            'username' => 'FISCAL'
-        ], [
-            'name' => 'Fiscalizador',
-            'email' => 'fiscal1@example.com',
-            'password' => Hash::make('fiscal123'),
-            'role' => 'fiscalizador',
-            'status' => 'approved',
-            'approved_at' => now(),
-            'approved_by' => 1,
-            'email_verified_at' => now(),
-        ]);
-
-        // Usuario Ventanilla
-        User::updateOrCreate([
-            'username' => 'VENTA'
-        ], [
-            'name' => 'Ventanilla',
-            'email' => 'ventanilla1@example.com',
-            'password' => Hash::make('ventanilla123'),
-            'role' => 'ventanilla',
-            'status' => 'approved',
-            'approved_at' => now(),
-            'approved_by' => 1,
-            'email_verified_at' => now(),
-        ]);
+        // Nota: Se eliminaron los usuarios de prueba (ADMINISTRADOR, FISCAL, VENTA)
+        // para evitar que aparezcan cuentas no deseadas en entornos de producción.
+        // Si necesita cuentas adicionales para pruebas locales, agréguelo manualmente.
     }
 }
