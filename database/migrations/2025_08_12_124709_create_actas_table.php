@@ -55,9 +55,8 @@ return new class extends Migration
             // fallos en entornos con tablas `users`/`usuarios` distintas.
             $table->unsignedBigInteger('inspector_id')->nullable()->index();
 
-            // Relación con vehículo - FK restaurada
+            // Relación con vehículo - FK se creará después por orden de migraciones
             $table->unsignedBigInteger('vehiculo_id')->nullable();
-            $table->foreign('vehiculo_id')->references('id')->on('vehiculos')->onDelete('set null');
 
             // Descripción de hechos e infracciones
             $table->text('descripcion_hechos');
