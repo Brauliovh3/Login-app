@@ -16,8 +16,8 @@ class UserSeeder extends Seeder
         User::updateOrCreate([
             'username' => 'ADMIN'
         ], [
-            'name' => 'Administrador',
-            'email' => 'admin2@example.com',
+            'name' => 'Administrador1',
+            'email' => 'admin1@example.com',
             'password' => Hash::make('admin123'),
             'role' => 'administrador',
             'status' => 'approved',
@@ -27,10 +27,10 @@ class UserSeeder extends Seeder
         ]);
 
          User::updateOrCreate([
-            'username' => 'ADMINISTRADOR'
+            'username' => 'ADMIN2'
         ], [
-            'name' => 'Administrador1',
-            'email' => 'admin3@example.com',
+            'name' => 'Administrador2',
+            'email' => 'admin2@example.com',
             'password' => Hash::make('admin12345'),
             'role' => 'administrador',
             'status' => 'approved',
