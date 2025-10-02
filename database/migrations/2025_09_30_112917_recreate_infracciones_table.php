@@ -18,7 +18,7 @@ return new class extends Migration
         // Eliminar tabla existente  
         Schema::dropIfExists('infracciones');
         
-        // Crear nueva tabla con estructura correcta
+        // Crear nueva tabla con estructura completa y final
         Schema::create('infracciones', function (Blueprint $table) {
             $table->id();
             $table->string('codigo_infraccion')->unique();
@@ -34,6 +34,11 @@ return new class extends Migration
             $table->boolean('retencion_vehiculo')->default(false);
             $table->boolean('internamiento_deposito')->default(false);
             $table->timestamps();
+            
+            // Índices para optimizar consultas
+            $table->index('codigo_infraccion');
+            $table->index('estado');
+            $table->index('gravedad');
         });
         
         // Restaurar verificación de claves foráneas
