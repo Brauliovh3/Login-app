@@ -3,7 +3,7 @@
  * Funcionalidades específicas para el rol administrador
  */
 
-console.log('🔐 Cargando módulo administrador...');
+console.log(' Cargando módulo administrador...');
 
 // Variable global para verificar que el usuario es administrador
 let isAdministrador = false;
@@ -235,13 +235,13 @@ function showConfirmModal(options) {
 document.addEventListener('DOMContentLoaded', function() {
     if (window.dashboardUserRole === 'administrador' || window.dashboardUserRole === 'admin') {
         isAdministrador = true;
-        console.log('✅ Módulo administrador habilitado para:', window.dashboardUserName);
+        console.log(' Módulo administrador habilitado para:', window.dashboardUserName);
         initializeAdministradorModule();
     }
 });
 
 function initializeAdministradorModule() {
-    console.log('🚀 Inicializando módulo administrador...');
+    console.log(' Inicializando módulo administrador...');
     
     // Cargar estadísticas del dashboard al inicio
     loadDashboardStatsAdmin();
@@ -252,12 +252,12 @@ function initializeAdministradorModule() {
 
 function setupAdministradorEvents() {
     // Configurar eventos específicos para administrador
-    console.log('⚙️ Configurando eventos del administrador...');
+    console.log(' Configurando eventos del administrador...');
 }
 
 // ==================== DASHBOARD STATS ADMIN ====================
 async function loadDashboardStatsAdmin() {
-    console.log('📊 Cargando estadísticas del administrador...');
+    console.log(' Cargando estadísticas del administrador...');
     
     try {
         const response = await fetch(`${window.location.origin}${window.location.pathname}?api=dashboard-stats`);
@@ -266,15 +266,15 @@ async function loadDashboardStatsAdmin() {
         if (result.success && result.stats) {
             updateDashboardStatsAdmin(result.stats);
         } else {
-            console.error('❌ Error al cargar estadísticas:', result.message);
+            console.error(' Error al cargar estadísticas:', result.message);
         }
     } catch (error) {
-        console.error('❌ Error al cargar estadísticas del admin:', error);
+        console.error(' Error al cargar estadísticas del admin:', error);
     }
 }
 
 function updateDashboardStatsAdmin(stats) {
-    console.log('📈 Actualizando estadísticas del admin:', stats);
+    console.log(' Actualizando estadísticas del admin:', stats);
     
     // Actualizar contadores específicos para administrador
     if (document.getElementById('total-actas')) {
@@ -366,7 +366,7 @@ function createAdminSpecificCards(stats) {
 
 // ==================== GESTIÓN DE USUARIOS ====================
 function loadUsuariosList() {
-    console.log('👥 [ADMIN] Cargando lista de usuarios...');
+    console.log(' [ADMIN] Cargando lista de usuarios...');
     
     if (!isAdministrador) {
         showToast('Acceso denegado. Solo administradores pueden ver esta sección.', 'error');
@@ -375,7 +375,7 @@ function loadUsuariosList() {
     
     const contentContainer = document.getElementById('contentContainer');
     if (!contentContainer) {
-        console.error('❌ ContentContainer no encontrado');
+        console.error(' ContentContainer no encontrado');
         return;
     }
     
@@ -433,15 +433,15 @@ function loadUsuariosList() {
 }
 
 async function cargarDatosUsuarios() {
-    console.log('📡 Cargando datos de usuarios desde la base de datos...');
+    console.log(' Cargando datos de usuarios desde la base de datos...');
     
     try {
         const response = await fetch(`${window.location.origin}${window.location.pathname}?api=users`);
         const result = await response.json();
         
         if (result.success && result.users) {
-            console.log('✅ Usuarios cargados desde la base de datos:', result.users.length);
-            console.log('🔍 Datos mapeados:', result.users[0]); // Debug primer usuario
+            console.log(' Usuarios cargados desde la base de datos:', result.users.length);
+            console.log(' Datos mapeados:', result.users[0]); // Debug primer usuario
             // Actualizar datos locales para uso en modales
             usuariosData = result.users.map(user => ({
                 id: user.id,
@@ -456,16 +456,16 @@ async function cargarDatosUsuarios() {
                 telefono: 'Por definir',
                 dni: 'Por definir'
             }));
-            console.log('🔍 Usuario mapeado:', usuariosData[0]); // Debug primer usuario mapeado
+            console.log(' Usuario mapeado:', usuariosData[0]); // Debug primer usuario mapeado
             mostrarUsuariosEnTabla(usuariosData);
         } else {
-            console.log('❌ Error desde API:', result.message);
-            console.log('📄 Usando datos locales como respaldo');
+            console.log(' Error desde API:', result.message);
+            console.log(' Usando datos locales como respaldo');
             mostrarUsuariosEnTabla(usuariosData);
         }
     } catch (error) {
-        console.error('❌ Error de conexión:', error);
-        console.log('📄 Usando datos locales como respaldo');
+        console.error(' Error de conexión:', error);
+        console.log(' Usando datos locales como respaldo');
         mostrarUsuariosEnTabla(usuariosData);
     }
 }
@@ -556,7 +556,7 @@ function getStatusBadgeColor(status) {
 
 // ==================== APROBAR USUARIOS ====================
 function loadAprobarUsuarios() {
-    console.log('✅ [ADMIN] Cargando sección aprobar usuarios...');
+    console.log(' [ADMIN] Cargando sección aprobar usuarios...');
     
     if (!isAdministrador) {
         showToast('Acceso denegado. Solo administradores pueden ver esta sección.', 'error');
@@ -603,63 +603,62 @@ function loadAprobarUsuarios() {
 }
 
 async function cargarUsuariosPendientes() {
-    console.log('⏳ Cargando usuarios pendientes...');
+    console.log(' Cargando usuarios pendientes...');
+    console.log('URL completa:', `${window.location.origin}${window.location.pathname}?api=pending-users`);
     
     try {
-        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=pending-users`);
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=pending-users`, {
+            method: 'GET',
+            credentials: 'same-origin', // Incluir cookies de sesión
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
         
+        console.log(' Respuesta de la API:', result);
+        
         if (result.success && result.users) {
+            console.log(' Usuarios encontrados:', result.users.length);
             mostrarUsuariosPendientes(result.users);
         } else {
-            console.error('❌ Error al cargar usuarios pendientes:', result.message);
-            // Mostrar datos de ejemplo
-            const usuariosPendientesEjemplo = [
-                {
-                    id: 4,
-                    nombre: 'Ana Rodríguez',
-                    username: 'arodriguez',
-                    email: 'ana@ejemplo.com',
-                    rol_solicitado: 'fiscalizador',
-                    fecha_solicitud: '2025-09-29',
-                    motivo: 'Solicitud para trabajar como fiscalizadora en el área de tránsito'
-                },
-                {
-                    id: 5,
-                    nombre: 'Pedro Martínez',
-                    username: 'pmartinez',
-                    email: 'pedro@ejemplo.com',
-                    rol_solicitado: 'inspector',
-                    fecha_solicitud: '2025-09-28',
-                    motivo: 'Experiencia previa en inspección vehicular'
-                }
-            ];
-            mostrarUsuariosPendientes(usuariosPendientesEjemplo);
+            console.error(' Error al cargar usuarios pendientes:', result.message);
+            // Mostrar mensaje de error en lugar de datos de ejemplo
+            const container = document.getElementById('usuariosPendientesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h6>No se pudieron cargar los usuarios pendientes</h6>
+                        <p class="text-muted">${result.message || 'Error de conexión'}</p>
+                        <button class="btn btn-outline-primary" onclick="cargarUsuariosPendientes()">
+                            <i class="fas fa-refresh"></i> Reintentar
+                        </button>
+                    </div>
+                `;
+            }
         }
     } catch (error) {
-        console.error('❌ Error al cargar usuarios pendientes:', error);
-        // Mostrar datos de ejemplo en caso de error
-        const usuariosPendientesEjemplo = [
-            {
-                id: 4,
-                nombre: 'Ana Rodríguez',
-                username: 'arodriguez',
-                email: 'ana@ejemplo.com',
-                rol_solicitado: 'fiscalizador',
-                fecha_solicitud: '2025-09-29',
-                motivo: 'Solicitud para trabajar como fiscalizadora en el área de tránsito'
-            },
-            {
-                id: 5,
-                nombre: 'Pedro Martínez',
-                username: 'pmartinez',
-                email: 'pedro@ejemplo.com',
-                rol_solicitado: 'inspector',
-                fecha_solicitud: '2025-09-28',
-                motivo: 'Experiencia previa en inspección vehicular'
-            }
-        ];
-        mostrarUsuariosPendientes(usuariosPendientesEjemplo);
+        console.error(' Error al cargar usuarios pendientes:', error);
+        // Mostrar mensaje de error en lugar de datos de ejemplo
+        const container = document.getElementById('usuariosPendientesContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <h6>Error de conexión</h6>
+                    <p class="text-muted">No se pudo conectar con el servidor</p>
+                    <button class="btn btn-outline-primary" onclick="cargarUsuariosPendientes()">
+                        <i class="fas fa-refresh"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 
@@ -1435,8 +1434,8 @@ window.showWarningToast = showWarningToast;
 window.showInfoToast = showInfoToast;
 
 // Debug: Verificar que las funciones están disponibles
-console.log('🔍 Verificando funciones exportadas del administrador:');
+console.log(' Verificando funciones exportadas del administrador:');
 console.log('- loadUsuariosList:', typeof window.loadUsuariosList);
 console.log('- loadAprobarUsuarios:', typeof window.loadAprobarUsuarios);
 
-console.log('✅ Módulo administrador cargado completamente');
+console.log(' Módulo administrador cargado completamente');

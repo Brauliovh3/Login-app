@@ -102,6 +102,10 @@ class DashboardApp {
                     }
                     break;
                     
+                case 'pending-users':
+                    echo json_encode($this->getPendingUsers());
+                    break;
+                    
                 default:
                     http_response_code(404);
                     echo json_encode(['success' => false, 'message' => 'API endpoint no encontrado']);
@@ -2605,7 +2609,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     
                     <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
                     <div class="mt-3 p-3 bg-light border rounded">
-                        <h6><strong>🔧 Panel de Administrador</strong></h6>
+                        <h6><strong> Panel de Administrador</strong></h6>
                         <button class="btn btn-primary me-2" onclick="loadUsuariosList()" style="display: block !important;">
                             <i class="fas fa-users"></i> Lista de Usuarios
                         </button>
@@ -2810,12 +2814,12 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
         window.dashboardUserRole = '<?php echo $rol; ?>';
         window.dashboardUserName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
         
-        console.log('✅ Archivos JS cargados correctamente');
+        console.log(' Archivos JS cargados correctamente');
         console.log('Dashboard cargado para:', window.dashboardUserName, 'Rol:', window.dashboardUserRole);
         
         // Debug: Verificar elementos del DOM
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔍 Verificando elementos del sidebar...');
+            console.log(' Verificando elementos del sidebar...');
             const submenuUsuarios = document.getElementById('submenu-usuarios');
             console.log('Submenu usuarios encontrado:', !!submenuUsuarios);
             
