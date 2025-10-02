@@ -14,8 +14,15 @@ return new class extends Migration
         Schema::create('detalle_infraccion', function (Blueprint $table) {
             $table->id();
             $table->foreignId('infraccion_id')->constrained('infracciones')->onDelete('cascade');
-            $table->string('descripcion')->nullable();
+            $table->string('subcategoria')->nullable(); // a), b), c), etc.
+            $table->text('descripcion_detallada'); // Descripción específica del sub-ítem
+            $table->text('condiciones_especiales')->nullable(); // Condiciones específicas
+            $table->string('observaciones')->nullable(); // Observaciones adicionales
             $table->timestamps();
+            
+            // Índices para optimizar consultas
+            $table->index('infraccion_id');
+            $table->index('subcategoria');
         });
     }
 

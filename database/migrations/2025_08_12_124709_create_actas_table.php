@@ -29,11 +29,10 @@ return new class extends Migration
 
             // Datos del infractor
             $table->enum('tipo_agente', ['Transportista', 'Operador de Ruta', 'Conductor', 'Inspector']);
-            $table->string('placa');
-            // Campo legacy usado por seeders y vistas
-            $table->string('placa_vehiculo')->nullable();
-            $table->string('razon_social');
-            $table->string('ruc_dni');
+            $table->string('placa')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas
+            $table->string('placa_vehiculo')->nullable(); // Campo legacy
+            $table->string('razon_social')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas  
+            $table->string('ruc_dni')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas
             $table->string('nombre_conductor')->nullable();
             $table->string('licencia')->nullable();
             $table->string('clase_licencia')->nullable();
@@ -56,8 +55,9 @@ return new class extends Migration
             // fallos en entornos con tablas `users`/`usuarios` distintas.
             $table->unsignedBigInteger('inspector_id')->nullable()->index();
 
-            // Relación con vehículo (columna creada aquí, FK añadida en migración posterior)
+            // Relación con vehículo - FK restaurada
             $table->unsignedBigInteger('vehiculo_id')->nullable();
+            $table->foreign('vehiculo_id')->references('id')->on('vehiculos')->onDelete('set null');
 
             // Descripción de hechos e infracciones
             $table->text('descripcion_hechos');
@@ -71,8 +71,8 @@ return new class extends Migration
             // Campo usado por seeders y scripts antiguos
             $table->text('observaciones')->nullable();
 
-            // Estado y metadatos
-            $table->enum('estado', ['pendiente', 'procesada', 'anulada', 'pagada'])->default('pendiente');
+            // Estado y metadatos (cambiar a tinyint como estaba en migraciones eliminadas)
+            $table->tinyInteger('estado')->default(0); // 0=pendiente, 1=procesada, 2=anulada, 3=pagada
             // Inspector que creó el acta. Usamos columna idx en lugar de FK para
             // evitar errores en instalaciones con tablas distintas.
             $table->unsignedBigInteger('user_id')->nullable()->index();

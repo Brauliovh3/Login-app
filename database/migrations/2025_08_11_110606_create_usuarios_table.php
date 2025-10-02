@@ -19,13 +19,21 @@ return new class extends Migration
 			$table->string('email')->unique();
 			$table->timestamp('email_verified_at')->nullable();
 			$table->string('password');
-			$table->string('role')->default('fiscalizador');
+			$table->enum('role', ['fiscalizador', 'administrador', 'superadmin', 'ventanilla'])->default('fiscalizador');
 			$table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
 			$table->string('approval_status')->nullable();
 			$table->timestamp('approved_at')->nullable();
 			$table->unsignedBigInteger('approved_by')->nullable();
+			$table->timestamp('blocked_at')->nullable();
+			$table->text('rejection_reason')->nullable();
 			$table->rememberToken();
 			$table->timestamps();
+			
+			// Índices para optimizar consultas
+			$table->index('username');
+			$table->index('email');
+			$table->index('role');
+			$table->index('status');
 		});
 	}
 

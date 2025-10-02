@@ -17,6 +17,12 @@ return new class extends Migration
             $table->string('resolucion')->nullable();
             $table->string('conductor');
             $table->string('licencia_conductor')->nullable();
+            $table->string('estado')->default('activo'); // Campo consolidado de migraciones eliminadas
+            $table->timestamps(); // Timestamps consolidados de migraciones eliminadas
+            
+            // Índices para optimizar consultas
+            $table->index('conductor');
+            $table->index('estado');
         });
     }
 
