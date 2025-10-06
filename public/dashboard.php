@@ -106,6 +106,25 @@ class DashboardApp {
                     echo json_encode($this->getPendingUsers());
                     break;
                     
+                case 'obtener_actas_fiscalizador':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        $fiscalizador_id = $input['fiscalizador_id'] ?? null;
+                        echo json_encode($this->getActasFiscalizador($fiscalizador_id));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'actas':
+                    echo json_encode($this->getActas());
+                    break;
+                    
+                case 'notifications':
+                    echo json_encode($this->getUserNotifications());
+                    break;
+                    
                 default:
                     http_response_code(404);
                     echo json_encode(['success' => false, 'message' => 'API endpoint no encontrado']);
@@ -803,6 +822,26 @@ class DashboardApp {
             
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Convertir estado numérico a texto
+            foreach ($actas as &$acta) {
+                switch((int)$acta['estado']) {
+                    case 0:
+                        $acta['estado'] = 'pendiente';
+                        break;
+                    case 1:
+                        $acta['estado'] = 'procesada';
+                        break;
+                    case 2:
+                        $acta['estado'] = 'anulada';
+                        break;
+                    case 3:
+                        $acta['estado'] = 'pagada';
+                        break;
+                    default:
+                        $acta['estado'] = 'pendiente';
+                }
+            }
+            
             return ['success' => true, 'actas' => $actas];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
@@ -827,6 +866,24 @@ class DashboardApp {
             $acta = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($acta) {
+                // Convertir estado numérico a texto
+                switch((int)$acta['estado']) {
+                    case 0:
+                        $acta['estado'] = 'pendiente';
+                        break;
+                    case 1:
+                        $acta['estado'] = 'procesada';
+                        break;
+                    case 2:
+                        $acta['estado'] = 'anulada';
+                        break;
+                    case 3:
+                        $acta['estado'] = 'pagada';
+                        break;
+                    default:
+                        $acta['estado'] = 'pendiente';
+                }
+                
                 return ['success' => true, 'acta' => $acta];
             } else {
                 return ['success' => false, 'message' => 'Acta no encontrada'];
@@ -1605,6 +1662,10 @@ class DashboardApp {
     public function getUserName() {
         return $this->userName;
     }
+    
+    public function getUserId() {
+        return $this->user['id'] ?? 0;
+    }
 
     // Nuevos métodos para gestión completa de usuarios
     public function updateUserComplete() {
@@ -1738,7 +1799,8 @@ class DashboardApp {
             }
 
             // Verificar que el usuario actual puede ver las actas (debe ser el mismo fiscalizador o un administrador)
-            if ($this->userRole !== 'admin' && $this->userRole !== 'superadmin' && $this->user['id'] != $fiscalizadorId) {
+            if (!in_array($this->userRole, ['administrador', 'superadmin', 'fiscalizador']) || 
+                ($this->userRole === 'fiscalizador' && $this->user['id'] != $fiscalizadorId)) {
                 return ['success' => false, 'message' => 'No tienes permisos para ver estas actas'];
             }
 
@@ -1752,6 +1814,26 @@ class DashboardApp {
             
             $stmt->execute([$fiscalizadorId]);
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Convertir estado numérico a texto
+            foreach ($actas as &$acta) {
+                switch((int)$acta['estado']) {
+                    case 0:
+                        $acta['estado'] = 'pendiente';
+                        break;
+                    case 1:
+                        $acta['estado'] = 'procesada';
+                        break;
+                    case 2:
+                        $acta['estado'] = 'anulada';
+                        break;
+                    case 3:
+                        $acta['estado'] = 'pagada';
+                        break;
+                    default:
+                        $acta['estado'] = 'pendiente';
+                }
+            }
             
             return [
                 'success' => true, 
@@ -2813,6 +2895,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
         // Variables globales para los archivos JS
         window.dashboardUserRole = '<?php echo $rol; ?>';
         window.dashboardUserName = '<?php echo htmlspecialchars($app->getUserName()); ?>';
+        window.dashboardUserId = <?php echo $app->getUserId(); ?>;
         
         console.log(' Archivos JS cargados correctamente');
         console.log('Dashboard cargado para:', window.dashboardUserName, 'Rol:', window.dashboardUserRole);

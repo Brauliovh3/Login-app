@@ -9,6 +9,32 @@
 let todasLasActas = [];
 
 // ================================
+// FUNCIONES HELPER - USUARIO
+// ================================
+
+// Función para obtener datos del usuario actual
+function getCurrentUserData() {
+    // Obtener datos del usuario desde variables globales del dashboard
+    if (typeof window.dashboardUserName !== 'undefined' && typeof window.dashboardUserRole !== 'undefined') {
+        return {
+            id: window.dashboardUserId || 1, // Usar ID real del usuario
+            name: window.dashboardUserName,
+            role: window.dashboardUserRole,
+            username: window.dashboardUserName
+        };
+    }
+    
+    // Fallback si no hay datos globales
+    console.warn('No se encontraron datos del usuario en variables globales');
+    return {
+        id: 1,
+        name: 'Fiscalizador',
+        role: 'fiscalizador',
+        username: 'fiscal'
+    };
+}
+
+// ================================
 // FUNCIONES HELPER - CONEXIÓN
 // ================================
 
@@ -1874,8 +1900,11 @@ function cargarMisActasDesdeAPI() {
     }
 
     // Cargar actas del fiscalizador
-    fetch('dashboard.php?action=obtener_actas_fiscalizador', {
+    console.log('Enviando solicitud para fiscalizador ID:', usuario.id);
+    
+    fetch('dashboard.php?api=obtener_actas_fiscalizador', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -1883,19 +1912,28 @@ function cargarMisActasDesdeAPI() {
             fiscalizador_id: usuario.id
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Respuesta HTTP status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Datos recibidos:', data);
         if (data.success) {
             window.misActasFiscalizador = data.actas || [];
             mostrarMisActasEnTabla(window.misActasFiscalizador);
             actualizarEstadisticasFiscalizador(window.misActasFiscalizador);
+            console.log('Actas cargadas exitosamente:', window.misActasFiscalizador.length);
         } else {
+            console.error('Error en respuesta:', data.message);
             mostrarErrorActas('Error al cargar mi historial: ' + (data.message || 'Error desconocido'));
         }
     })
     .catch(error => {
         console.error('Error al cargar actas del fiscalizador:', error);
-        mostrarErrorActas('Error de conexión al cargar mi historial');
+        mostrarErrorActas('Error de conexión al cargar mi historial: ' + error.message);
     });
 }
 
@@ -1920,6 +1958,7 @@ function mostrarMisActasEnTabla(actas) {
         const estado = acta.estado || 'pendiente';
         const estadoClase = {
             'pendiente': 'warning',
+            'procesada': 'info',
             'pagada': 'success',
             'anulada': 'danger'
         }[estado] || 'secondary';
@@ -1951,6 +1990,7 @@ function mostrarMisActasEnTabla(actas) {
 function actualizarEstadisticasFiscalizador(actas) {
     const total = actas.length;
     const pendientes = actas.filter(a => a.estado === 'pendiente').length;
+    const procesadas = actas.filter(a => a.estado === 'procesada').length;
     const pagadas = actas.filter(a => a.estado === 'pagada').length;
     const anuladas = actas.filter(a => a.estado === 'anulada').length;
 
