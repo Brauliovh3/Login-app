@@ -118,17 +118,17 @@ function loadTestClick() {
                                 <div class="row">
                                     <div class="col-md-4">
                                         <button class="btn btn-outline-primary w-100 mb-2" onclick="testApiEndpoint('dashboard-stats')">
-                                            <i class="fas fa-chart-bar"></i> Test Dashboard Stats
+                                            <i class="fas fa-chart-bar"></i> Probar Estadísticas del Dashboard
                                         </button>
                                     </div>
                                     <div class="col-md-4">
                                         <button class="btn btn-outline-success w-100 mb-2" onclick="testApiEndpoint('notifications')">
-                                            <i class="fas fa-bell"></i> Test Notifications
+                                            <i class="fas fa-bell"></i> Probar Notificaciones
                                         </button>
                                     </div>
                                     <div class="col-md-4">
                                         <button class="btn btn-outline-info w-100 mb-2" onclick="testApiEndpoint('users')">
-                                            <i class="fas fa-users"></i> Test Users API
+                                            <i class="fas fa-users"></i> Probar API de Usuarios
                                         </button>
                                     </div>
                                 </div>

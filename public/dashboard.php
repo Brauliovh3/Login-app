@@ -1,11 +1,7 @@
 <?php
 session_start();
 
-// Configuración de la base de datos
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'login_app');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+$config = require __DIR__ . '/../config/database.php';
 
 // Clase principal del Dashboard
 class DashboardApp {
@@ -34,11 +30,12 @@ class DashboardApp {
     }
     
     private function connectDatabase() {
+        global $config;
         try {
-            $this->pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USER, DB_PASS);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $dsn = "mysql:host={$config['host']};dbname={$config['name']}";
+            $this->pdo = new PDO($dsn, $config['user'], $config['pass'], $config['options']);
         } catch(PDOException $e) {
-            $this->showLoginForm("Error de conexión a la base de datos");
+            $this->showLoginForm("Error de conexión a la base de datos: " . $e->getMessage());
             exit;
         }
     }
@@ -517,7 +514,8 @@ class DashboardApp {
                                     </div>
                                 <?php endif; ?>
                                 
-                                <form method="POST" action="dashboard.php">
+                                <div id="loginSection">
+                                <form id="loginForm" method="POST" action="dashboard.php">
                                     <input type="hidden" name="login_action" value="1">
                                     <div class="row">
                                         <div class="col-md-6 mb-4">
@@ -542,12 +540,10 @@ class DashboardApp {
                                         </div>
                                     </div>
                                 </form>
-                                
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div></div>
-                                    <div>
-                                        <a href="#" id="showRegisterLink">¿No tienes cuenta? Registrarse</a>
-                                    </div>
+                                </div>
+
+                                <div class="text-center my-3">
+                                    <a href="#" id="showRegisterLink" class="btn btn-link">¿No tienes cuenta? Registrarse</a>
                                 </div>
 
                                 <div id="registerSection" style="display:none;">
@@ -582,7 +578,10 @@ class DashboardApp {
                                     <script>
                                         function showRegister(show) {
                                             document.getElementById('registerSection').style.display = show ? 'block' : 'none';
-                                            document.getElementById('loginForm')?.scrollIntoView({behavior: 'smooth'});
+                                            document.getElementById('loginSection').style.display = show ? 'none' : 'block';
+                                            if (!show) {
+                                                document.getElementById('loginForm')?.scrollIntoView({behavior: 'smooth'});
+                                            }
                                         }
 
                                         document.getElementById('showRegisterLink').addEventListener('click', function(e){
@@ -622,7 +621,7 @@ class DashboardApp {
                                                 if (result.success) {
                                                     alert(result.message);
                                                     document.getElementById('registerForm').reset();
-                                                    showRegister(false);
+                                                            showRegister(false);
                                                 } else {
                                                     alert('Error: ' + (result.message || 'Error desconocido'));
                                                 }
@@ -631,6 +630,16 @@ class DashboardApp {
                                                 alert('No se pudo registrar. Intenta más tarde.');
                                             }
                                         });
+                                
+                                        // Mostrar registro si la URL contiene ?show=register
+                                        (function(){
+                                            try {
+                                                const params = new URLSearchParams(window.location.search);
+                                                if (params.get('show') === 'register') {
+                                                    showRegister(true);
+                                                }
+                                            } catch(e){}
+                                        })();
                                     </script>
                                 </div>
 
