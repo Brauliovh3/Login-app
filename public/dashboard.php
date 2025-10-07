@@ -2572,34 +2572,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('infracciones', event)">
-                    <i class="fas fa-exclamation-triangle"></i> Gestión de Infracciones
-                </a>
-                <ul class="sidebar-submenu" id="submenu-infracciones" style="display: none;">
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="gestionar-infracciones">
-                            <i class="fas fa-list"></i> Gestionar Infracciones
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="nueva-infraccion">
-                            <i class="fas fa-plus-circle"></i> Nueva Infracción
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="buscar-infracciones">
-                            <i class="fas fa-search"></i> Buscar Infracciones
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadInfracciones(event)" data-section="estadisticas-infracciones">
-                            <i class="fas fa-chart-bar"></i> Estadísticas
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            </li>
-            <li class="sidebar-item">
                 <a class="sidebar-link" href="#" onclick="loadSection('reportes')" data-section="reportes">
                     <i class="fas fa-chart-bar"></i> Reportes
                 </a>
@@ -3023,6 +2995,34 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             animation: fadeInSlide 0.4s ease-out;
         }
 
+        .fade-out {
+            animation: fadeOutSlide 0.3s ease-in;
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOutSlide {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</body>
+</html>
         .fade-out {
             animation: fadeOutSlide 0.3s ease-in;
         }
