@@ -112,12 +112,15 @@ function limpiarTodosLosModales() {
 }
 
 // Función específica para cancelar acciones
-function cancelarAccion() {
-    console.log('❌ Cancelando acción...');
+function cancelarAccion(mostrarMensaje = true) {
+    console.log('❌ Cancelando acción... mostrarMensaje:', mostrarMensaje);
+    console.trace('Llamada a cancelarAccion desde:'); // Debug para ver de dónde viene la llamada
     limpiarTodosLosModales();
     
-    // Mostrar mensaje de cancelación
-    mostrarInfoActas('Acción cancelada por el usuario');
+    // Solo mostrar mensaje si es una cancelación explícita del usuario
+    if (mostrarMensaje) {
+        mostrarInfoActas('Acción cancelada por el usuario');
+    }
 }
 
 // ================================
