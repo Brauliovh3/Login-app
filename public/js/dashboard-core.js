@@ -94,9 +94,6 @@ function loadSection(sectionId) {
         case 'mis-actas':
             loadMisActas();
             break;
-        case 'actas-contra':
-            loadActasContra();
-            break;
         case 'reportes':
             loadReportes();
             break;
@@ -742,49 +739,6 @@ function loadMisActas() {
     }
 }
 
-function loadActasContra() {
-    console.log('⚖️ Cargando actas contraventor...');
-    
-    const contentContainer = document.getElementById('contentContainer');
-    if (contentContainer) {
-        contentContainer.innerHTML = `
-            <div class="content-section active">
-                <h2><i class="fas fa-gavel"></i> Actas por Contraventor</h2>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
-                    Búsqueda de actas por DNI del contraventor
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6>Buscar por DNI</h6>
-                                <div class="mb-3">
-                                    <input type="text" class="form-control" id="dniSearch" 
-                                           placeholder="Ingrese DNI" maxlength="8">
-                                </div>
-                                <button onclick="buscarActasPorDNI()" class="btn btn-primary btn-block">
-                                    <i class="fas fa-search"></i> Buscar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-body">
-                                <div id="resultadosActas" class="text-center text-muted">
-                                    <i class="fas fa-search fa-2x mb-2"></i>
-                                    <p>Ingrese un DNI para buscar actas</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-}
-
 function loadReportes() {
     console.log('📊 Cargando reportes...');
     
@@ -975,17 +929,6 @@ function generarReporte(tipo) {
     // Aquí iría la lógica para generar el reporte
 }
 
-function buscarActasPorDNI() {
-    const dni = document.getElementById('dniSearch').value;
-    if (!dni) {
-        showAlert('warning', 'Por favor ingrese un DNI', 'Búsqueda');
-        return;
-    }
-    
-    showAlert('info', `Buscando actas para DNI: ${dni}...`, 'Búsqueda');
-    // Aquí iría la lógica para buscar actas
-}
-
 function renderPendingUsers(users) {
     if (!users || users.length === 0) {
         return '<p class="text-muted">No hay usuarios pendientes de aprobación</p>';
@@ -1062,7 +1005,6 @@ window.loadNotifications = loadNotifications;
 window.loadRolesPermisos = loadRolesPermisos;
 window.loadCrearActa = loadCrearActa;
 window.loadMisActas = loadMisActas;
-window.loadActasContra = loadActasContra;
 window.loadReportes = loadReportes;
 window.loadConfiguracion = loadConfiguracion;
 window.loadPerfilMejorado = loadPerfilMejorado;
@@ -1079,7 +1021,6 @@ window.formatDate = formatDate;
 window.getStatusBadge = getStatusBadge;
 window.getRoleBadge = getRoleBadge;
 window.generarReporte = generarReporte;
-window.buscarActasPorDNI = buscarActasPorDNI;
 window.approveUser = approveUser;
 window.rejectUser = rejectUser;
 

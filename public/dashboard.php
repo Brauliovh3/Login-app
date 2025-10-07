@@ -2475,11 +2475,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="#" onclick="loadActas(event)" data-section="actas-contra">
-                            <i class="fas fa-file-invoice"></i> Gestionar Actas
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="#" onclick="loadActas(event)" data-section="mis-actas">
                             <i class="fas fa-user-edit"></i> Mis Actas
                         </a>
@@ -2644,11 +2639,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             <li class="sidebar-item">
                 <a class="sidebar-link" href="#" onclick="loadSection('consultas')" data-section="consultas">
                     <i class="fas fa-search"></i> Consultas
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="#" onclick="loadSection('actas-contra')" data-section="actas-contra">
-                    <i class="fas fa-clipboard-list"></i> Actas
                 </a>
             </li>
             <?php endif; ?>
