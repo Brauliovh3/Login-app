@@ -684,7 +684,7 @@ function mostrarUsuariosPendientes(usuarios) {
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h5 class="card-title mb-1">
-                            <i class="fas fa-user"></i> ${usuario.name || 'Sin nombre'}
+                            <i class="fas fa-user"></i> ${(usuario.name && usuario.name.trim()) ? usuario.name : (usuario.username || 'Usuario')}
                         </h5>
                         <p class="card-text mb-2">
                             <strong>Username:</strong> ${usuario.username || 'N/A'}<br>

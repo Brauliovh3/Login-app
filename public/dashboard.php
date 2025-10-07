@@ -105,6 +105,15 @@ class DashboardApp {
                         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
                     }
                     break;
+
+                case 'pending-users':
+                    if ($method === 'GET') {
+                        $this->apiGetPendingUsers();
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
                     
                 default:
                     http_response_code(404);
@@ -115,6 +124,14 @@ class DashboardApp {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
         }
+    }
+
+    // Devuelve usuarios con estado pendiente
+    private function apiGetPendingUsers() {
+        $stmt = $this->pdo->prepare("SELECT id, name as nombre, username, email, role as rol_solicitado, status, created_at as fecha_solicitud FROM usuarios WHERE status = 'pending' OR status = 'pendiente' ORDER BY created_at DESC");
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'users' => $users]);
     }
     
     private function apiGetUsers() {
@@ -184,11 +201,9 @@ class DashboardApp {
         $rol = $input['rol'] ?? 'usuario';
 
         if (empty($nombre) || empty($username) || empty($email) || empty($password)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Todos los campos son obligatorios']);
             return;
         }
-
+        
         // Verificar duplicados
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE username = ? OR email = ?");
         $stmt->execute([$username, $email]);
@@ -197,12 +212,12 @@ class DashboardApp {
             echo json_encode(['success' => false, 'message' => 'Username o email ya existe']);
             return;
         }
-
+        
         try {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $this->pdo->prepare("INSERT INTO usuarios (name, username, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', NOW())");
             $stmt->execute([$nombre, $username, $email, $hashedPassword, $rol]);
-
+            
             echo json_encode(['success' => true, 'message' => 'Registro recibido. Un administrador revisará su solicitud.']);
         } catch (Exception $e) {
             http_response_code(500);
@@ -514,132 +529,112 @@ class DashboardApp {
                                     </div>
                                 <?php endif; ?>
                                 
-                                <div id="loginSection">
-                                <form id="loginForm" method="POST" action="dashboard.php">
-                                    <input type="hidden" name="login_action" value="1">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-4">
-                                            <label class="form-label"><i class="fas fa-user"></i> Usuario o Email</label>
-                                            <input type="text" class="form-control" name="username" required>
+                                <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+                                    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mb-4">
+                                        <div class="card p-4 shadow-lg border-0" id="loginCard" style="border-radius: 18px; max-width: 600px; min-width: 350px; margin: 0 auto;">
+                                            <h4 class="mb-3 text-center">Iniciar Sesión</h4>
+                                            <form id="loginForm" method="POST" action="dashboard.php">
+                                                <input type="hidden" name="login_action" value="1">
+                                                <div class="mb-3">
+                                                    <label class="form-label"><i class="fas fa-user"></i> Usuario o Email</label>
+                                                    <input type="text" class="form-control" name="username" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label"><i class="fas fa-lock"></i> Contraseña</label>
+                                                    <div class="password-container">
+                                                        <input type="password" class="form-control" name="password" id="password" required>
+                                                        <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="d-grid mb-2">
+                                                    <button type="submit" class="btn btn-primary btn-login" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
+                                                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                                    </button>
+                                                </div>
+                                                <div class="text-center">
+                                                    <button type="button" id="showRegisterBtn" class="btn btn-link" style="font-size: 1rem;">¿No tienes cuenta? <b>Registrarse</b></button>
+                                                </div>
+                                            </form>
                                         </div>
-                                        <div class="col-md-6 mb-4">
-                                            <label class="form-label"><i class="fas fa-lock"></i> Contraseña</label>
-                                            <div class="password-container">
-                                                <input type="password" class="form-control" name="password" id="password" required>
-                                                <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
-                                            </div>
+                                        <div class="card p-4 shadow-lg border-0 d-none" id="registerCard" style="border-radius: 18px; max-width: 600px; min-width: 350px; margin: 0 auto;">
+                                            <h4 class="mb-3 text-center">Registro de Nuevo Usuario</h4>
+                                            <div id="registerAlert"></div>
+                                            <form id="registerForm" method="POST" action="#" autocomplete="off">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Nombre completo</label>
+                                                    <input type="text" name="nombre" class="form-control" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Username</label>
+                                                    <input type="text" name="username" class="form-control" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Email</label>
+                                                    <input type="email" name="email" class="form-control" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Contraseña</label>
+                                                    <input type="password" name="password" class="form-control" required>
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <button type="submit" class="btn btn-success">Registrar (espera aprobación)</button>
+                                                    <button type="button" id="backToLoginBtn" class="btn btn-link">Volver al login</button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <div class="d-grid">
-                                                <button type="submit" class="btn btn-primary btn-login">
-                                                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
                                 </div>
-
-                                <div class="text-center my-3">
-                                    <a href="#" id="showRegisterLink" class="btn btn-link">¿No tienes cuenta? Registrarse</a>
-                                </div>
-
-                                <div id="registerSection" style="display:none;">
-                                    <h5 class="mt-3">Registro de Nuevo Usuario</h5>
-                                    <form id="registerForm" class="mb-3">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label">Nombre completo</label>
-                                            <input type="text" id="reg_nombre" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label">Username</label>
-                                            <input type="text" id="reg_username" class="form-control" required>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label">Email</label>
-                                            <input type="email" id="reg_email" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label class="form-label">Contraseña</label>
-                                            <input type="password" id="reg_password" class="form-control" required>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <button type="button" id="btnBackToLogin" class="btn btn-link">Volver al login</button>
-                                        <button type="button" id="btnRegister" class="btn btn-outline-success">Registrar (espera aprobación)</button>
-                                    </div>
-                                    </form>
-
-                                    <script>
-                                        function showRegister(show) {
-                                            document.getElementById('registerSection').style.display = show ? 'block' : 'none';
-                                            document.getElementById('loginSection').style.display = show ? 'none' : 'block';
-                                            if (!show) {
-                                                document.getElementById('loginForm')?.scrollIntoView({behavior: 'smooth'});
-                                            }
+                                <script>
+                                // Mostrar/ocultar tarjetas
+                                document.getElementById('showRegisterBtn').onclick = function() {
+                                    document.getElementById('loginCard').classList.add('d-none');
+                                    document.getElementById('registerCard').classList.remove('d-none');
+                                };
+                                document.getElementById('backToLoginBtn').onclick = function() {
+                                    document.getElementById('registerCard').classList.add('d-none');
+                                    document.getElementById('loginCard').classList.remove('d-none');
+                                };
+                                // Validación y envío registro
+                                document.getElementById('registerForm').addEventListener('submit', async function(e) {
+                                    e.preventDefault();
+                                    const form = e.target;
+                                    const nombre = form.nombre.value.trim();
+                                    const username = form.username.value.trim();
+                                    const email = form.email.value.trim();
+                                    const password = form.password.value;
+                                    const alertDiv = document.getElementById('registerAlert');
+                                    alertDiv.innerHTML = '';
+                                    if (!nombre || !username || !email || !password) {
+                                        alertDiv.innerHTML = `<div class='alert alert-danger'>Por favor complete todos los campos para registrarse.</div>`;
+                                        return;
+                                    }
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append('nombre', nombre);
+                                        formData.append('username', username);
+                                        formData.append('email', email);
+                                        formData.append('password', password);
+                                        const resp = await fetch('registro.php', {
+                                            method: 'POST',
+                                            body: formData
+                                        });
+                                        const result = await resp.text();
+                                        let successMatch = result.match(/<div class=\"alert alert-success\">([\s\S]*?)<\/div>/);
+                                        let errorMatch = result.match(/<div class=\"alert alert-danger\">([\s\S]*?)<\/div>/);
+                                        if (successMatch) {
+                                            alertDiv.innerHTML = `<div class='alert alert-success'>${successMatch[1]}</div>`;
+                                            form.reset();
+                                        } else if (errorMatch) {
+                                            alertDiv.innerHTML = `<div class='alert alert-danger'>${errorMatch[1]}</div>`;
+                                        } else {
+                                            alertDiv.innerHTML = `<div class='alert alert-danger'>Ocurrió un error inesperado.</div>`;
                                         }
-
-                                        document.getElementById('showRegisterLink').addEventListener('click', function(e){
-                                            e.preventDefault();
-                                            showRegister(true);
-                                        });
-
-                                        document.getElementById('btnBackToLogin').addEventListener('click', function(e){
-                                            e.preventDefault();
-                                            showRegister(false);
-                                        });
-
-                                        document.getElementById('btnRegister').addEventListener('click', async function() {
-                                            const nombre = document.getElementById('reg_nombre').value.trim();
-                                            const username = document.getElementById('reg_username').value.trim();
-                                            const email = document.getElementById('reg_email').value.trim();
-                                            const password = document.getElementById('reg_password').value;
-
-                                            if (!nombre || !username || !email || !password) {
-                                                alert('Por favor complete todos los campos para registrarse');
-                                                return;
-                                            }
-
-                                            try {
-                                                const formData = new FormData();
-                                                formData.append('nombre', nombre);
-                                                formData.append('username', username);
-                                                formData.append('email', email);
-                                                formData.append('password', password);
-
-                                                const resp = await fetch(window.location.pathname + '?api=register', {
-                                                    method: 'POST',
-                                                    body: formData
-                                                });
-
-                                                const result = await resp.json();
-                                                if (result.success) {
-                                                    alert(result.message);
-                                                    document.getElementById('registerForm').reset();
-                                                            showRegister(false);
-                                                } else {
-                                                    alert('Error: ' + (result.message || 'Error desconocido'));
-                                                }
-                                            } catch (err) {
-                                                console.error('Error al registrar:', err);
-                                                alert('No se pudo registrar. Intenta más tarde.');
-                                            }
-                                        });
-                                
-                                        // Mostrar registro si la URL contiene ?show=register
-                                        (function(){
-                                            try {
-                                                const params = new URLSearchParams(window.location.search);
-                                                if (params.get('show') === 'register') {
-                                                    showRegister(true);
-                                                }
-                                            } catch(e){}
-                                        })();
+                                    } catch (err) {
+                                        alertDiv.innerHTML = `<div class='alert alert-danger'>No se pudo registrar. Intenta más tarde.</div>`;
+                                    }
+                                });
+                                </script>
+                                <!-- Código JS de registro eliminado: solo formularios limpios -->
                                     </script>
                                 </div>
 
@@ -655,198 +650,7 @@ class DashboardApp {
         exit;
     }
     
-    // API Handler
-    public function handleAPI() {
-        if (isset($_GET['api'])) {
-            header('Content-Type: application/json');
-            
-            switch($_GET['api']) {
-                case 'dashboard-stats':
-                    echo json_encode($this->getDashboardStats());
-                    break;
-                case 'actas':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->saveActa());
-                    } else {
-                        echo json_encode($this->getActas());
-                    }
-                    break;
-                case 'obtener_actas_fiscalizador':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $input = json_decode(file_get_contents('php://input'), true);
-                        $fiscalizador_id = $input['fiscalizador_id'] ?? null;
-                        echo json_encode($this->getActasFiscalizador($fiscalizador_id));
-                    } else {
-                        http_response_code(405);
-                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
-                    }
-                    break;
-                case 'acta-details':
-                    echo json_encode($this->getActaDetails($_GET['id'] ?? 0));
-                    break;
-                case 'users':
-                    echo json_encode($this->getUsers());
-                    break;
-                case 'pending-users':
-                    echo json_encode($this->getPendingUsers());
-                    break;
-                case 'create-user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->createUser());
-                    }
-                    break;
-                case 'save-acta':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->saveActa());
-                    }
-                    break;
-                case 'consultar-documento':
-                    echo json_encode($this->consultarDocumento($_GET['documento'] ?? ''));
-                    break;
-                case 'approve-user':
-                    echo json_encode($this->approveUser($_POST['user_id'] ?? 0));
-                    break;
-                case 'reject-user':
-                    echo json_encode($this->rejectUser($_POST['user_id'] ?? 0, $_POST['reason'] ?? ''));
-                    break;
-                case 'delete-acta':
-                    echo json_encode($this->deleteActa($_POST['acta_id'] ?? 0));
-                    break;
-                case 'notifications':
-                    echo json_encode($this->getUserNotifications());
-                    break;
-                    
-                case 'mark_notification_read':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $notificationId = $_POST['notification_id'] ?? null;
-                        echo json_encode($this->markNotificationRead($notificationId));
-                    }
-                    break;
-                    
-                case 'conductores':
-                    echo json_encode($this->getConductores());
-                    break;
-                    
-                case 'conductor':
-                    echo json_encode($this->getConductor($_GET['id'] ?? 0));
-                    break;
-                    
-                case 'vehiculos':
-                    echo json_encode($this->getVehiculos());
-                    break;
-                    
-                case 'vehiculo':
-                    echo json_encode($this->getVehiculo($_GET['id'] ?? 0));
-                    break;
-                    
-                case 'infracciones':
-                    echo json_encode($this->getInfracciones());
-                    break;
-                    
-                case 'inspecciones':
-                    echo json_encode($this->getInspecciones());
-                    break;
-                    
-                case 'acta_details':
-                    $actaId = $_GET['id'] ?? null;
-                    echo json_encode($this->getActaDetails($actaId));
-                    break;
-                    
-                case 'update_acta':
-                    if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $actaId = $_GET['id'] ?? $_POST['id'] ?? null;
-                        echo json_encode($this->updateActa($actaId));
-                    }
-                    break;
-                    
-                case 'create_user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->createUser());
-                    }
-                    break;
-                    
-                case 'update_user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->updateUser());
-                    }
-                    break;
-                    
-                case 'update-user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->updateUserComplete());
-                    }
-                    break;
-                    
-                case 'update-user-status':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->updateUserStatus());
-                    }
-                    break;
-                    
-                case 'delete-user':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        echo json_encode($this->deleteUserComplete());
-                    }
-                    break;
-                    break;
-                    
-                case 'toggle_user_status':
-                    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                        $userId = $_POST['id'] ?? null;
-                        echo json_encode($this->toggleUserStatus($userId));
-                    }
-                    break;
-                case 'mark-notification-read':
-                    echo json_encode($this->markNotificationAsRead($_POST['notification_id'] ?? 0));
-                    break;
-                case 'mark-all-notifications-read':
-                    echo json_encode($this->markAllNotificationsAsRead());
-                    break;
-                case 'conductores':
-                    echo json_encode($this->getConductores());
-                    break;
-                case 'vehiculos':
-                    echo json_encode($this->getVehiculos());
-                    break;
-                case 'infracciones':
-                    echo json_encode($this->getInfracciones());
-                    break;
-                case 'update-acta':
-                    echo json_encode($this->updateActa($_POST['acta_id'] ?? 0));
-                    break;
-                case 'profile':
-                    echo json_encode($this->getUserProfile());
-                    break;
-                case 'update-profile':
-                    echo json_encode($this->updateUserProfile());
-                    break;
-                case 'system-config':
-                    echo json_encode($this->getSystemConfig());
-                    break;
-                case 'update-config':
-                    echo json_encode($this->updateSystemConfig());
-                    break;
-                case 'infracciones':
-                    echo json_encode($this->getInfracciones());
-                    break;
-                case 'save-infraccion':
-                    echo json_encode($this->saveInfraccion());
-                    break;
-                case 'export-data':
-                    echo json_encode($this->exportData($_GET['type'] ?? 'users'));
-                    break;
-                case 'update-conductor':
-                    echo json_encode($this->updateConductor());
-                    break;
-                case 'update-vehiculo':
-                    echo json_encode($this->updateVehiculo());
-                    break;
-                default:
-                    echo json_encode(['success' => false, 'message' => 'API endpoint no encontrado']);
-            }
-            exit;
-        }
-    }
+    // ...existing code...
     
     // Métodos API
     private function getDashboardStats() {
@@ -985,19 +789,19 @@ class DashboardApp {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
             
-            // Si no se envió JSON, intentar obtener de $_POST
+            //Si no se envió JSON intentar obtener de $_POST
             if (!$data) {
                 $data = $_POST;
             }
             
-            // Generar número de acta automático si no se proporciona
+            //Generar número de acta automático si no se proporciona
             if (empty($data['numero_acta'])) {
                 $stmt = $this->pdo->query("SELECT MAX(CAST(SUBSTRING(numero_acta, 4) AS UNSIGNED)) as last_num FROM actas WHERE numero_acta LIKE 'ACT%'");
                 $lastNum = $stmt->fetch()['last_num'] ?? 0;
                 $data['numero_acta'] = 'ACT' . str_pad($lastNum + 1, 6, '0', STR_PAD_LEFT);
             }
             
-            // Preparar la consulta SQL con todos los campos correctos de la base de datos
+            //Preparar la consulta SQL con todos los campos correctos de la base de datos
             $sql = "INSERT INTO actas (
                 numero_acta, lugar_intervencion, fecha_intervencion, hora_intervencion, 
                 inspector_responsable, tipo_servicio, tipo_agente, placa, placa_vehiculo,
@@ -1911,8 +1715,8 @@ class DashboardApp {
 }
 
 // Inicializar la aplicación
+
 $app = new DashboardApp();
-$app->handleAPI();
 
 // Variables para la vista
 $usuario = $app->getUserName();
