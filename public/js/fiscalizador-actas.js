@@ -112,9 +112,8 @@ function limpiarTodosLosModales() {
 }
 
 // Función específica para cancelar acciones
-function cancelarAccion(mostrarMensaje = true) {
+function cancelarAccion(mostrarMensaje = false) {
     console.log('❌ Cancelando acción... mostrarMensaje:', mostrarMensaje);
-    console.trace('Llamada a cancelarAccion desde:'); // Debug para ver de dónde viene la llamada
     limpiarTodosLosModales();
     
     // Solo mostrar mensaje si es una cancelación explícita del usuario
@@ -1452,7 +1451,7 @@ async function editarActa(actaId) {
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" onclick="cancelarAccion()">Cancelar</button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelarAccion(true)">Cancelar</button>
                             <button type="button" class="btn btn-primary" onclick="guardarEdicionActa()">Guardar Cambios</button>
                         </div>
                     </div>

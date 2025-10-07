@@ -1248,19 +1248,14 @@ class DashboardApp {
     
     private function getUserNotifications() {
         try {
-            $roles = $this->userRole;
-            if ($this->userRole === 'superadmin') {
-                $roles .= ',administrador';
-            }
-            
+            // Simplificar la consulta para usar solo user_id
             $stmt = $this->pdo->prepare("
                 SELECT * FROM notifications 
-                WHERE (target_role = 'all' OR target_role LIKE ? OR FIND_IN_SET(?, target_role)) 
-                AND (user_id IS NULL OR user_id = ?)
+                WHERE user_id IS NULL OR user_id = ?
                 ORDER BY created_at DESC 
                 LIMIT 20
             ");
-            $stmt->execute(["%{$this->userRole}%", $this->userRole, $this->user['id']]);
+            $stmt->execute([$this->user['id']]);
             $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             return ['success' => true, 'notifications' => $notifications];
@@ -1283,10 +1278,10 @@ class DashboardApp {
     private function createNotification($title, $message, $targetRole = 'all', $userId = null) {
         try {
             $stmt = $this->pdo->prepare("
-                INSERT INTO notifications (title, message, target_role, user_id, created_at) 
-                VALUES (?, ?, ?, ?, NOW())
+                INSERT INTO notifications (title, message, user_id, created_at, type) 
+                VALUES (?, ?, ?, NOW(), 'info')
             ");
-            $result = $stmt->execute([$title, $message, $targetRole, $userId]);
+            $result = $stmt->execute([$title, $message, $userId]);
             
             return $result;
         } catch (Exception $e) {
