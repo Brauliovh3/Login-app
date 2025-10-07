@@ -702,11 +702,33 @@ function loadCrearActa() {
                 </div>
             </div>
         `;
-        
-        // Agregar event listener al formulario
-        document.getElementById('crearActaForm').addEventListener('submit', function(e) {
+
+        // Mejor manejo de errores y ejemplo de envío real
+        document.getElementById('crearActaForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            showAlert('info', 'Funcionalidad de crear acta en desarrollo');
+            const form = e.target;
+            const data = {
+                placa: form.placa.value,
+                tipo_infraccion: form.tipo_infraccion.value,
+                dni_conductor: form.dni_conductor.value,
+                nombre_conductor: form.nombre_conductor.value,
+                observaciones: form.observaciones.value
+            };
+            try {
+                // Simulación de envío (AJAX real aquí si existe endpoint)
+                // let response = await fetch('dashboard.php?api=crear-acta', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify(data)
+                // });
+                // let result = await response.json();
+                // if (!result.success) throw new Error(result.message || 'Error al crear acta');
+                // showAlert('success', 'Acta creada correctamente');
+                // form.reset();
+                showAlert('info', 'Funcionalidad de crear acta en desarrollo');
+            } catch (err) {
+                showAlert('error', err.message || 'No se pudo conectar con el servidor. Verifique su conexión.');
+            }
         });
     }
 }
