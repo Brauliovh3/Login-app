@@ -31,7 +31,7 @@ if ($xamppRunning) {
 }
 
 // Cambiar al directorio public
-chdir(__DIR__ . '/public');
+chdir(dirname(__DIR__) . '/public');
 
 // Iniciar servidor PHP
 $host = '127.0.0.1';

@@ -19,7 +19,7 @@ if ($xamppRunning) {
 }
 
 # Cambiar al directorio del proyecto
-Set-Location $PSScriptRoot
+Set-Location (Split-Path $PSScriptRoot -Parent)
 
 # Iniciar el servidor PHP
 Write-Host "🔄 Iniciando php artisan serve..." -ForegroundColor Blue
