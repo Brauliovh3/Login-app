@@ -155,13 +155,13 @@ async function loadInfracciones(event) {
     
     console.log('📋 Cargando sección:', seccion);
     
-    // Actualizar título del contenido principal
+    //Actualizar título del contenido principal
     const mainTitle = document.querySelector('#main-content h2');
     if (mainTitle) {
         mainTitle.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Gestión de Infracciones';
     }
     
-    // Cargar la sección correspondiente
+    //Cargar la sección correspondiente
     switch(seccion) {
         case 'gestionar-infracciones':
             await loadGestionarInfracciones();

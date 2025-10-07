@@ -27,7 +27,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 REM Cambiar al directorio del proyecto
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 
 REM Verificar si PHP está disponible
 php --version >NUL 2>&1
