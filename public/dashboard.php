@@ -2939,7 +2939,8 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Información</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <!-- Ajuste aquí: solo btn-close, sin btn-close-white -->
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modalBody">
                     <!-- Contenido dinámico -->
@@ -3095,7 +3096,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     </style>
 </body>
 </html>
-        .fade-out {
             animation: fadeOutSlide 0.3s ease-in;
         }
 
