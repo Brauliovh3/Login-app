@@ -18,11 +18,10 @@ class DatabaseSeeder extends Seeder
             VehiculosSeeder::class,
             InspectoresSeeder::class,
             InfraccionesSeeder::class,
+            DetalleInfraccionSeeder::class,  
             InspeccionesSeeder::class,
             ActasSeeder::class,
             CargaPasajeroSeeder::class,
-            
-
         ]);
     }
 }
