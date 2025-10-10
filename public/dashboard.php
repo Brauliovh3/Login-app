@@ -133,6 +133,15 @@ class DashboardApp {
                 case 'actas':
                     echo json_encode($this->getActas());
                     break;
+
+                case 'guardar_acta':
+                    if ($method === 'POST') {
+                        echo json_encode($this->saveActa());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
                     
                 case 'notifications':
                     echo json_encode($this->getUserNotifications());
@@ -810,7 +819,7 @@ class DashboardApp {
                        i.descripcion as infraccion_descripcion
                 FROM actas a 
                 LEFT JOIN usuarios u ON a.user_id = u.id
-                LEFT JOIN conductores c ON a.licencia_conductor = c.numero_licencia
+                LEFT JOIN conductores c ON a.licencia = c.numero_licencia
                 LEFT JOIN vehiculos v ON a.placa = v.placa
                 LEFT JOIN infracciones i ON a.numero_acta = i.codigo_infraccion
                 WHERE a.id = ?
@@ -857,19 +866,20 @@ class DashboardApp {
             
             //Generar número de acta automático si no se proporciona
             if (empty($data['numero_acta'])) {
-                $stmt = $this->pdo->query("SELECT MAX(CAST(SUBSTRING(numero_acta, 4) AS UNSIGNED)) as last_num FROM actas WHERE numero_acta LIKE 'ACT%'");
+                $year = date('Y');
+                $stmt = $this->pdo->query("SELECT MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(numero_acta, '-', -1), '-', -1) AS UNSIGNED)) as last_num FROM actas WHERE numero_acta LIKE 'DRTC-APU-$year-%'");
                 $lastNum = $stmt->fetch()['last_num'] ?? 0;
-                $data['numero_acta'] = 'ACT' . str_pad($lastNum + 1, 6, '0', STR_PAD_LEFT);
+                $data['numero_acta'] = 'DRTC-APU-' . $year . '-' . str_pad($lastNum + 1, 6, '0', STR_PAD_LEFT);
             }
             
             //Preparar la consulta SQL con todos los campos correctos de la base de datos
             $sql = "INSERT INTO actas (
-                numero_acta, lugar_intervencion, fecha_intervencion, hora_intervencion, 
+                numero_acta, lugar_intervencion, fecha_intervencion, hora_intervencion,
                 inspector_responsable, tipo_servicio, tipo_agente, placa, placa_vehiculo,
-                razon_social, ruc_dni, nombre_conductor, licencia_conductor,
+                razon_social, ruc_dni, nombre_conductor, licencia,
                 descripcion_hechos, monto_multa, estado, user_id, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-            
+
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute([
                 $data['numero_acta'],
@@ -884,7 +894,7 @@ class DashboardApp {
                 $data['razon_social'] ?? null,
                 $data['ruc_dni'] ?? null,
                 $data['nombre_conductor'] ?? null,
-                $data['licencia_conductor'] ?? null,
+                $data['licencia_conductor'] ?? $data['licencia'] ?? null,
                 $data['descripcion_hechos'] ?? null,
                 $data['monto_multa'] ?? null,
                 $data['estado'] ?? 'pendiente',
@@ -924,7 +934,7 @@ class DashboardApp {
                 lugar_intervencion = ?, fecha_intervencion = ?, hora_intervencion = ?,
                 inspector_responsable = ?, tipo_servicio = ?, tipo_agente = ?,
                 placa = ?, placa_vehiculo = ?, razon_social = ?, ruc_dni = ?,
-                licencia_conductor = ?, nombre_conductor = ?, clase_licencia = ?,
+                licencia = ?, nombre_conductor = ?, clase_licencia = ?,
                 monto_multa = ?, updated_at = NOW()
                 WHERE id = ? AND (user_id = ? OR ? IN ('administrador', 'superadmin'))";
             
@@ -940,7 +950,7 @@ class DashboardApp {
                 $data['placa_vehiculo'] ?? $data['placa'],
                 $data['razon_social'],
                 $data['ruc_dni'],
-                $data['licencia_conductor'] ?? null,
+                $data['licencia_conductor'] ?? $data['licencia'] ?? null,
                 $data['nombre_conductor'] ?? null,
                 $data['clase_licencia'] ?? null,
                 $data['monto_multa'] ?? null,
@@ -1451,7 +1461,7 @@ class DashboardApp {
                 lugar_intervencion, fecha_intervencion, hora_intervencion,
                 inspector_responsable, tipo_servicio, tipo_agente,
                 placa, placa_vehiculo, razon_social, ruc_dni,
-                licencia_conductor, nombre_conductor, clase_licencia,
+                licencia, nombre_conductor, clase_licencia,
                 monto_multa, user_id, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
             
@@ -1466,7 +1476,7 @@ class DashboardApp {
                 $data['placa_vehiculo'] ?? $data['placa'] ?? '',
                 $data['razon_social'] ?? '',
                 $data['ruc_dni'] ?? '',
-                $data['licencia_conductor'] ?? '',
+                $data['licencia_conductor'] ?? $data['licencia'] ?? '',
                 $data['nombre_conductor'] ?? '',
                 $data['clase_licencia'] ?? '',
                 $data['monto_multa'] ?? 0,

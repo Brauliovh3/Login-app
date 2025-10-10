@@ -787,7 +787,7 @@ function showCrearActaModal() {
             <div class="d-flex align-items-center">
                 <i class="fas fa-plus-circle me-2"></i> Crear Nueva Acta
             </div>
-            <button type="button" class="btn-close" onclick="cancelarAccion()" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
     `;
     
@@ -940,7 +940,16 @@ function showCrearActaModal() {
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('generalModal'));
     modal.show();
-    
+
+    // Agregar event listener para limpiar backdrop cuando se cierre el modal
+    document.getElementById('generalModal').addEventListener('hidden.bs.modal', function() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    });
+
     // Configurar captura automática de timestamp cuando el usuario comience a escribir
     setTimeout(() => {
         configurarTimestampAutomatico();
@@ -969,6 +978,79 @@ function showCrearActaModal() {
 function configurarValidacionDinamica() {
     const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'descripcion_hechos'];
     const botonesAccion = document.getElementById('botonesAccion');
+    
+    // Función para restringir DNI/RUC a solo números (máx 11 dígitos)
+    function restringirDNI(event) {
+        const input = event.target;
+        const key = event.key;
+        
+        // En keypress, prevenir teclas no numéricas
+        if (event.type === 'keypress' && !/\d/.test(key) && key.length === 1) {
+            event.preventDefault();
+            return;
+        }
+        
+        // En input, limpiar no dígitos y limitar longitud
+        if (event.type === 'input') {
+            input.value = input.value.replace(/\D/g, '').slice(0, 11);
+            
+            // Opcional: feedback visual si excede 8 dígitos (para DNI)
+            if (input.value.length > 8) {
+                input.classList.add('is-warning');
+                input.title = 'Para DNI: máximo 8 dígitos. Para RUC: 11 dígitos.';
+            } else {
+                input.classList.remove('is-warning');
+                input.title = '';
+            }
+        }
+    }
+    
+    // Función para restringir licencia (1 letra mayúscula + números, máx 9 chars)
+    function restringirLicencia(event) {
+        const input = event.target;
+        const key = event.key;
+        const currentValue = input.value;
+        
+        // En keypress, validar según posición
+        if (event.type === 'keypress' && key.length === 1) {
+            if (currentValue.length === 0) {
+                // Primera posición: solo A-Z
+                if (!/[A-Z]/.test(key)) {
+                    event.preventDefault();
+                    return;
+                }
+            } else {
+                // Resto: solo números
+                if (!/\d/.test(key)) {
+                    event.preventDefault();
+                    return;
+                }
+            }
+        }
+        
+        // En input, formatear: primera letra mayúscula, resto números, limitar longitud
+        if (event.type === 'input') {
+            let valorLimpio = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            
+            // Asegurar que solo la primera sea letra, resto números
+            if (valorLimpio.length > 0) {
+                const primeraLetra = valorLimpio[0].match(/[A-Z]/) ? valorLimpio[0] : '';
+                const restoNumeros = valorLimpio.slice(1).replace(/[^0-9]/g, '');
+                valorLimpio = primeraLetra + restoNumeros;
+            }
+            
+            input.value = valorLimpio.slice(0, 9);
+            
+            // Feedback si no sigue el formato
+            if (input.value.length > 0 && !/^[A-Z]\d*$/.test(input.value)) {
+                input.classList.add('is-invalid');
+                input.title = 'Formato: 1 letra mayúscula (A-Z) seguida de números (ej: A12345678)';
+            } else {
+                input.classList.remove('is-invalid');
+                input.title = 'Licencia peruana: 1 letra + hasta 8 números';
+            }
+        }
+    }
     
     function validarYMostrarBotones() {
         const form = document.getElementById('formCrearActa');
@@ -1062,6 +1144,20 @@ function configurarValidacionDinamica() {
         campo.addEventListener('keyup', validarYMostrarBotones);
         campo.addEventListener('blur', validarYMostrarBotones);
     });
+    
+    // Listeners específicos para restricciones de campos
+    const dniInput = document.getElementById('ruc_dni');
+    const licenciaInput = document.getElementById('licencia_conductor');
+    
+    if (dniInput) {
+        dniInput.addEventListener('keypress', restringirDNI);
+        dniInput.addEventListener('input', restringirDNI);
+    }
+    
+    if (licenciaInput) {
+        licenciaInput.addEventListener('keypress', restringirLicencia);
+        licenciaInput.addEventListener('input', restringirLicencia);
+    }
     
     // Validación inicial después de un pequeño delay
     setTimeout(() => {
@@ -1247,16 +1343,16 @@ async function guardarNuevaActa() {
     console.log('📋 Datos a enviar:', actaData);
     
     try {
-        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(actaData)
-        });
-        
+    const response = await fetchWithTimeout('/dashboard.php?api=guardar_acta', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(actaData)
+    });
+
         const text = await response.text();
         let data;
         try {
@@ -1265,17 +1361,26 @@ async function guardarNuevaActa() {
             console.error('Respuesta no es JSON válido:', text);
             throw { status: response.status, text };
         }
-        
+
         if (data.success) {
             mostrarExitoActas(`Acta ${data.numero_acta || 'nueva'} creada exitosamente`);
-            
+
             // Cerrar modal usando la función de limpieza
             limpiarTodosLosModales();
-            
+
             // Recargar la lista de actas
             cargarActasDesdeAPI();
         } else {
-            mostrarErrorActas('Error al crear acta: ' + (data.message || 'Error desconocido'));
+            // Handle validation errors
+            if (data.errors) {
+                let errorMsg = 'Errores de validación:\n';
+                for (let field in data.errors) {
+                    errorMsg += `- ${field}: ${data.errors[field].join(', ')}\n`;
+                }
+                mostrarErrorActas(errorMsg);
+            } else {
+                mostrarErrorActas('Error al crear acta: ' + (data.message || 'Error desconocido'));
+            }
         }
     } catch (error) {
         console.error('Error al guardar acta:', error);
