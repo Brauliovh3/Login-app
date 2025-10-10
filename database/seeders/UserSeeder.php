@@ -54,8 +54,5 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // Nota: Se agregaron usuarios básicos del sistema para funcionalidad completa.
-        // Fiscalizador: Para gestión de actas e infracciones
-        // Ventanilla: Para atención al público y consultas
     }
 }

@@ -134,6 +134,10 @@ class DashboardApp {
                     echo json_encode($this->getActas());
                     break;
 
+                case 'infracciones':
+                    echo json_encode($this->getInfracciones());
+                    break;
+
                 case 'guardar_acta':
                     if ($method === 'POST') {
                         echo json_encode($this->saveActa());
@@ -1614,6 +1618,11 @@ class DashboardApp {
                     break;
                 case 'actas':
                     $stmt = $this->pdo->prepare("SELECT * FROM actas ORDER BY created_at DESC");
+                    $stmt->execute();
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    break;
+                case 'infracciones':
+                    $stmt = $this->pdo->prepare("SELECT * FROM infracciones ORDER BY codigo_infraccion");
                     $stmt->execute();
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     break;

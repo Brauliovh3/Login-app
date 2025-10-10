@@ -1480,9 +1480,494 @@ function formatearFecha(fecha) {
     }
 }
 
+// ==================== FUNCIONES GESTIÓN DE ACTAS ====================
+
+function loadActasList() {
+    console.log('🔄 Cargando lista de actas para administrador...');
+    
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <div class="content-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4><i class="fas fa-file-invoice"></i> Lista de Actas</h4>
+                        <p class="text-muted mb-0">Gestión completa de actas de infracciones</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" onclick="exportarActasExcel()">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                        <button class="btn btn-primary" onclick="loadCrearActa()">
+                            <i class="fas fa-plus"></i> Nueva Acta
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="buscarActa" placeholder="Buscar por número, conductor...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="procesada">Procesadas</option>
+                            <option value="pagada">Pagadas</option>
+                            <option value="anulada">Anuladas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroFiscalizador">
+                            <option value="">Todos los fiscalizadores</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosActas()">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Fecha</th>
+                                        <th>Fiscalizador</th>
+                                        <th>Conductor</th>
+                                        <th>Placa</th>
+                                        <th>Estado</th>
+                                        <th>Monto</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="actasTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            <p class="mt-2">Cargando actas...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Cargar datos de actas
+        cargarActasAdmin();
+    }
+}
+
+function loadCrearActa() {
+    console.log('🔄 Cargando formulario crear acta para administrador...');
+    
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <div class="content-header mb-4">
+                    <h4><i class="fas fa-plus-circle"></i> Crear Nueva Acta</h4>
+                    <p class="text-muted mb-0">Registro de nueva acta de infracción</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-edit"></i> Datos del Acta</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="formCrearActa">
+                                    <!-- Datos del operador -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Fiscalizador Responsable</label>
+                                            <select class="form-select" id="fiscalizadorResponsable" required>
+                                                <option value="">Seleccionar fiscalizador</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Número de Acta</label>
+                                            <input type="text" class="form-control" id="numeroActa" placeholder="Se generará automáticamente" readonly>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Datos del conductor -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">RUC/DNI Conductor *</label>
+                                            <input type="text" class="form-control" id="rucDniConductor" required maxlength="11">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Nombre del Conductor *</label>
+                                            <input type="text" class="form-control" id="nombreConductor" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Datos del vehículo -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Placa Vehículo *</label>
+                                            <input type="text" class="form-control" id="placaVehiculo" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Tipo de Servicio</label>
+                                            <select class="form-select" id="tipoServicio">
+                                                <option value="regular">Regular</option>
+                                                <option value="especial">Especial</option>
+                                                <option value="turismo">Turismo</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Tipo de Agente</label>
+                                            <select class="form-select" id="tipoAgente">
+                                                <option value="conductor">Conductor</option>
+                                                <option value="empresa">Empresa</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Datos de la intervención -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Lugar de Intervención *</label>
+                                            <input type="text" class="form-control" id="lugarIntervencion" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Fecha *</label>
+                                            <input type="date" class="form-control" id="fechaIntervencion" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Hora *</label>
+                                            <input type="time" class="form-control" id="horaIntervencion" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Descripción de Hechos *</label>
+                                            <textarea class="form-control" id="descripcionHechos" rows="3" required></textarea>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Monto de Multa</label>
+                                            <input type="number" class="form-control" id="montoMulta" step="0.01" min="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Estado</label>
+                                            <select class="form-select" id="estadoActa">
+                                                <option value="0">Pendiente</option>
+                                                <option value="1">Procesada</option>
+                                                <option value="2">Anulada</option>
+                                                <option value="3">Pagada</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Guardar Acta
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="loadActasList()">
+                                            <i class="fas fa-arrow-left"></i> Volver a Lista
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> Información</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-lightbulb"></i> Consejos:</h6>
+                                    <ul class="mb-0">
+                                        <li>El número de acta se genera automáticamente</li>
+                                        <li>Verificar datos del conductor antes de guardar</li>
+                                        <li>La descripción debe ser clara y detallada</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Inicializar formulario
+        inicializarFormularioActa();
+    }
+}
+
+function loadGestionarInfracciones() {
+    console.log('🔄 Cargando gestión de infracciones para administrador...');
+    
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <div class="content-header d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4><i class="fas fa-exclamation-triangle"></i> Gestión de Infracciones</h4>
+                        <p class="text-muted mb-0">Administración de tipos de infracciones y sanciones</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="mostrarModalNuevaInfraccion()">
+                        <i class="fas fa-plus"></i> Nueva Infracción
+                    </button>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list"></i> Infracciones Registradas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Descripción</th>
+                                                <th>Gravedad</th>
+                                                <th>Monto Base</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="infraccionesTableBody">
+                                            <tr>
+                                                <td colspan="6" class="text-center">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                    <p class="mt-2">Cargando infracciones...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-pie"></i> Estadísticas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Total Infracciones:</span>
+                                    <span class="badge bg-primary" id="totalInfracciones">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Activas:</span>
+                                    <span class="badge bg-success" id="infraccionesActivas">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Inactivas:</span>
+                                    <span class="badge bg-secondary" id="infraccionesInactivas">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> Información</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted">
+                                    Las infracciones son la base para la generación de actas. 
+                                    Cada infracción tiene un código único y monto base establecido.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Cargar datos de infracciones
+        cargarInfraccionesAdmin();
+    }
+}
+
+// Funciones auxiliares para gestión de actas
+async function cargarActasAdmin() {
+    try {
+        const response = await fetch('dashboard.php?api=actas', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarActasEnTabla(data.actas);
+        } else {
+            showErrorToast('Error al cargar actas: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al cargar actas:', error);
+        showErrorToast('Error de conexión al cargar actas');
+    }
+}
+
+function mostrarActasEnTabla(actas) {
+    const tbody = document.getElementById('actasTableBody');
+    if (!tbody) return;
+    
+    if (!actas || actas.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center">
+                    <i class="fas fa-inbox text-muted"></i>
+                    <p class="mt-2 text-muted">No hay actas registradas</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = actas.map(acta => {
+        const estadoClase = {
+            'pendiente': 'warning',
+            'procesada': 'info',
+            'pagada': 'success',
+            'anulada': 'danger'
+        }[acta.estado] || 'secondary';
+        
+        const monto = acta.monto_multa ? `S/ ${parseFloat(acta.monto_multa).toFixed(2)}` : 'No especificado';
+        
+        return `
+            <tr>
+                <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
+                <td>${acta.created_at ? new Date(acta.created_at).toLocaleDateString('es-PE') : 'N/A'}</td>
+                <td>${acta.user_name || 'N/A'}</td>
+                <td>${acta.conductor_nombre || 'N/A'}</td>
+                <td><span class="badge bg-primary">${acta.placa_vehiculo || 'N/A'}</span></td>
+                <td><span class="badge bg-${estadoClase}">${acta.estado || 'N/A'}</span></td>
+                <td><strong>${monto}</strong></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="verDetalleActaAdmin(${acta.id})" title="Ver detalle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editarActaAdmin(${acta.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarActaAdmin(${acta.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function cargarInfraccionesAdmin() {
+    try {
+        const response = await fetch('dashboard.php?api=infracciones', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarInfraccionesEnTabla(data.infracciones);
+            actualizarEstadisticasInfracciones(data.infracciones);
+        } else {
+            showErrorToast('Error al cargar infracciones: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al cargar infracciones:', error);
+        showErrorToast('Error de conexión al cargar infracciones');
+    }
+}
+
+function mostrarInfraccionesEnTabla(infracciones) {
+    const tbody = document.getElementById('infraccionesTableBody');
+    if (!tbody) return;
+    
+    if (!infracciones || infracciones.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <i class="fas fa-inbox text-muted"></i>
+                    <p class="mt-2 text-muted">No hay infracciones registradas</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = infracciones.map(infraccion => {
+        const gravedadClase = {
+            'leve': 'success',
+            'grave': 'warning', 
+            'muy_grave': 'danger'
+        }[infraccion.gravedad] || 'secondary';
+        
+        return `
+            <tr>
+                <td><strong>${infraccion.codigo_infraccion}</strong></td>
+                <td>${infraccion.descripcion}</td>
+                <td><span class="badge bg-${gravedadClase}">${infraccion.gravedad || 'N/A'}</span></td>
+                <td>S/ ${parseFloat(infraccion.monto_base || 0).toFixed(2)}</td>
+                <td><span class="badge bg-success">Activa</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editarInfraccion(${infraccion.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarInfraccion(${infraccion.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function actualizarEstadisticasInfracciones(infracciones) {
+    const total = infracciones.length;
+    const activas = infracciones.filter(i => i.estado === 'activa').length;
+    const inactivas = total - activas;
+    
+    document.getElementById('totalInfracciones').textContent = total;
+    document.getElementById('infraccionesActivas').textContent = activas;
+    document.getElementById('infraccionesInactivas').textContent = inactivas;
+}
+
 // Exportar funciones globalmente
 window.loadUsuariosList = loadUsuariosList;
 window.loadAprobarUsuarios = loadAprobarUsuarios;
+window.loadActasList = loadActasList;
+window.loadCrearActa = loadCrearActa;
+window.loadGestionarInfracciones = loadGestionarInfracciones;
 window.cargarDatosUsuarios = cargarDatosUsuarios;
 window.cargarUsuariosPendientes = cargarUsuariosPendientes;
 window.aprobarUsuario = aprobarUsuario;
