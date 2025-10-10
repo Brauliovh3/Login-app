@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background: #f8f9fc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .login-box { max-width: 420px; margin: 6vh auto; }
+        .login-box { max-width: 800px; margin: 6vh auto; width: 100%; }
         .card { border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
         .brand { font-weight: 700; color: #ff8c00; }
     </style>
@@ -96,6 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="d-flex justify-content-between align-items-center">
                     <button class="btn btn-primary">Ingresar</button>
                     <a href="/" class="text-muted">Volver</a>
+                </div>
+                <div class="mt-3 text-center">
+                    <p class="mb-2">¿No tienes cuenta?</p>
+                    <a href="/register" class="fw-bold">Crear cuenta nueva</a>
                 </div>
             </form>
         </div>

@@ -232,10 +232,17 @@ class DashboardApp {
         $password = $input['password'] ?? '';
         $rol = $input['rol'] ?? 'usuario';
 
-        if (empty($nombre) || empty($username) || empty($email) || empty($password)) {
+        // Si no hay nombre, usar username como nombre
+        if (empty($nombre)) {
+            $nombre = $username;
+        }
+
+        if (empty($username) || empty($email) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Username, email y contraseña son obligatorios']);
             return;
         }
-        
+
         // Verificar duplicados
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE username = ? OR email = ?");
         $stmt->execute([$username, $email]);
@@ -244,13 +251,13 @@ class DashboardApp {
             echo json_encode(['success' => false, 'message' => 'Username o email ya existe']);
             return;
         }
-        
+
         try {
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $this->pdo->prepare("INSERT INTO usuarios (name, username, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, 'pending', NOW())");
             $stmt->execute([$nombre, $username, $email, $hashedPassword, $rol]);
-            
-            echo json_encode(['success' => true, 'message' => 'Registro recibido. Un administrador revisará su solicitud.']);
+
+            echo json_encode(['success' => true, 'message' => 'Usuario registrado con éxito. Su cuenta está pendiente de aprobación por un administrador.']);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error al registrar usuario: ' . $e->getMessage()]);
@@ -428,12 +435,14 @@ class DashboardApp {
                     border-radius: 25px;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.15);
                     overflow: hidden;
-                    max-width: 900px;
-                    width: 85%;
+                    max-width: 700px;
+                    width: 90%;
                     margin: auto;
                     min-height: 500px;
                     display: flex;
                     flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
                 }
                 .login-header {
                     background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -453,11 +462,12 @@ class DashboardApp {
                     margin-bottom: 0;
                 }
                 .login-body {
-                    padding: 50px 80px;
+                    padding: 50px;
                     flex: 1;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
+                    align-items: center;
                 }
                 .form-control {
                     border-radius: 12px;
@@ -545,137 +555,236 @@ class DashboardApp {
             </style>
         </head>
         <body>
-            <div class="container-fluid">
-                <div class="row justify-content-center align-items-center min-vh-100">
-                    <div class="col-12 col-sm-11 col-md-9 col-lg-8 col-xl-7">
-                        <div class="login-container">
-                            <div class="login-header">
-                                <i class="fas fa-shield-alt fa-3x mb-3"></i>
-                                <h3>Sistema de Gestión</h3>
-                                <p class="mb-0">Acceso al Dashboard</p>
-                            </div>
-                            <div class="login-body">
-                                <?php if ($error): ?>
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
-                                    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mb-4">
-                                        <div class="card p-4 shadow-lg border-0" id="loginCard" style="border-radius: 18px; max-width: 600px; min-width: 350px; margin: 0 auto;">
-                                            <h4 class="mb-3 text-center">Iniciar Sesión</h4>
-                                            <form id="loginForm" method="POST" action="dashboard.php">
-                                                <input type="hidden" name="login_action" value="1">
-                                                <div class="mb-3">
-                                                    <label class="form-label"><i class="fas fa-user"></i> Usuario o Email</label>
-                                                    <input type="text" class="form-control" name="username" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label"><i class="fas fa-lock"></i> Contraseña</label>
-                                                    <div class="password-container">
-                                                        <input type="password" class="form-control" name="password" id="password" required>
-                                                        <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                <div class="container-fluid">
+                    <div class="row justify-content-center align-items-center min-vh-100">
+                        <div class="col-12">
+                            <div class="login-container" style="max-width: 400px; width: 100%; margin: 0 auto;">
+                                <div class="login-header">
+                                    <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                                    <h3>Sistema de Gestión</h3>
+                                    <p class="mb-0">Acceso al Dashboard</p>
+                                </div>
+                                <div class="login-body">
+                                    <?php if ($error): ?>
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; width: 100%;">
+                                        <div style="max-width: 600px; min-width: 350px; width: 100%;">
+                                            <div class="card p-4 shadow-lg border-0" id="loginCard" style="border-radius: 18px; margin: 0 auto;">
+                                                <h4 class="mb-3 text-center">Iniciar Sesión</h4>
+                                                <form id="loginForm" method="POST" action="dashboard.php">
+                                                    <input type="hidden" name="login_action" value="1">
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-user"></i> Usuario o Email</label>
+                                                        <input type="text" class="form-control" name="username" required>
                                                     </div>
-                                                </div>
-                                                <div class="d-grid mb-2">
-                                                    <button type="submit" class="btn btn-primary btn-login" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
-                                                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                                                    </button>
-                                                </div>
-                                                <div class="text-center">
-                                                    <button type="button" id="showRegisterBtn" class="btn btn-link" style="font-size: 1rem;">¿No tienes cuenta? <b>Registrarse</b></button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                        <div class="card p-4 shadow-lg border-0 d-none" id="registerCard" style="border-radius: 18px; max-width: 600px; min-width: 350px; margin: 0 auto;">
-                                            <h4 class="mb-3 text-center">Registro de Nuevo Usuario</h4>
-                                            <div id="registerAlert"></div>
-                                            <form id="registerForm" method="POST" action="#" autocomplete="off">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Nombre completo</label>
-                                                    <input type="text" name="nombre" class="form-control" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Username</label>
-                                                    <input type="text" name="username" class="form-control" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Email</label>
-                                                    <input type="email" name="email" class="form-control" required>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Contraseña</label>
-                                                    <input type="password" name="password" class="form-control" required>
-                                                </div>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <button type="submit" class="btn btn-success">Registrar (espera aprobación)</button>
-                                                    <button type="button" id="backToLoginBtn" class="btn btn-link">Volver al login</button>
-                                                </div>
-                                            </form>
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-lock"></i> Contraseña</label>
+                                                        <div class="password-container">
+                                                            <input type="password" class="form-control" name="password" id="password" required>
+                                                            <i class="fas fa-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-grid mb-2">
+                                                        <button type="submit" class="btn btn-primary btn-login" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
+                                                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                                        </button>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <button type="button" id="showRegisterBtn" class="btn btn-link" style="font-size: 1rem;" onclick="showRegisterForm()">¿No tienes cuenta? <b>Registrarse</b></button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="card p-4 shadow-lg border-0 d-none" id="registerCard" style="border-radius: 18px; margin: 0 auto;">
+                                                <h4 class="mb-3 text-center">Registro de Nuevo Usuario</h4>
+                                                <div id="registerAlert" class="alert d-none"></div>
+                                                <form id="registerForm" method="POST" action="#" autocomplete="off">
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-user-tag"></i> Nombre de usuario</label>
+                                                        <input type="text" class="form-control" name="username" id="username" required placeholder="Elija un nombre de usuario único">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+                                                        <input type="email" class="form-control" name="email" id="email" required placeholder="tu@email.com">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-lock"></i> Contraseña</label>
+                                                        <div class="password-container">
+                                                            <input type="password" class="form-control" name="password" id="registerPassword" required placeholder="Mínimo 8 caracteres">
+                                                            <i class="fas fa-eye password-toggle" id="toggleRegisterPassword" onclick="toggleRegisterPasswordVisibility()"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-lock"></i> Confirmar contraseña</label>
+                                                        <div class="password-container">
+                                                            <input type="password" class="form-control" name="password_confirm" id="passwordConfirm" required placeholder="Repita la contraseña">
+                                                            <i class="fas fa-eye password-toggle" id="toggleConfirmPassword" onclick="toggleConfirmPasswordVisibility()"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label"><i class="fas fa-user-cog"></i> Rol</label>
+                                                        <select class="form-select" name="rol" id="rol" required>
+                                                            <option value="">Seleccione un rol</option>
+                                                            <option value="administrador">Administrador</option>
+                                                            <option value="fiscalizador">Fiscalizador</option>
+                                                            <option value="ventanilla">Ventanilla</option>
+                                                            <option value="inspector">Inspector</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="d-grid mb-2">
+                                                        <button type="submit" class="btn btn-success btn-login" id="registerSubmit" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
+                                                            <i class="fas fa-user-plus"></i> Registrarse
+                                                        </button>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <button type="button" class="btn btn-link" style="font-size: 1rem;" onclick="showLoginForm()">¿Ya tienes cuenta? Iniciar Sesión</button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <script>
-                                // Mostrar/ocultar tarjetas
-                                document.getElementById('showRegisterBtn').onclick = function() {
-                                    document.getElementById('loginCard').classList.add('d-none');
-                                    document.getElementById('registerCard').classList.remove('d-none');
-                                };
-                                document.getElementById('backToLoginBtn').onclick = function() {
-                                    document.getElementById('registerCard').classList.add('d-none');
-                                    document.getElementById('loginCard').classList.remove('d-none');
-                                };
-                                // Validación y envío registro
-                                document.getElementById('registerForm').addEventListener('submit', async function(e) {
-                                    e.preventDefault();
-                                    const form = e.target;
-                                    const nombre = form.nombre.value.trim();
-                                    const username = form.username.value.trim();
-                                    const email = form.email.value.trim();
-                                    const password = form.password.value;
-                                    const alertDiv = document.getElementById('registerAlert');
-                                    alertDiv.innerHTML = '';
-                                    if (!nombre || !username || !email || !password) {
-                                        alertDiv.innerHTML = `<div class='alert alert-danger'>Por favor complete todos los campos para registrarse.</div>`;
-                                        return;
-                                    }
-                                    try {
-                                        const formData = new FormData();
-                                        formData.append('nombre', nombre);
-                                        formData.append('username', username);
-                                        formData.append('email', email);
-                                        formData.append('password', password);
-                                        const resp = await fetch('registro.php', {
-                                            method: 'POST',
-                                            body: formData
-                                        });
-                                        const result = await resp.text();
-                                        let successMatch = result.match(/<div class=\"alert alert-success\">([\s\S]*?)<\/div>/);
-                                        let errorMatch = result.match(/<div class=\"alert alert-danger\">([\s\S]*?)<\/div>/);
-                                        if (successMatch) {
-                                            alertDiv.innerHTML = `<div class='alert alert-success'>${successMatch[1]}</div>`;
-                                            form.reset();
-                                        } else if (errorMatch) {
-                                            alertDiv.innerHTML = `<div class='alert alert-danger'>${errorMatch[1]}</div>`;
-                                        } else {
-                                            alertDiv.innerHTML = `<div class='alert alert-danger'>Ocurrió un error inesperado.</div>`;
-                                        }
-                                    } catch (err) {
-                                        alertDiv.innerHTML = `<div class='alert alert-danger'>No se pudo registrar. Intenta más tarde.</div>`;
-                                    }
-                                });
-                                </script>
-                                <!-- Código JS de registro eliminado: solo formularios limpios -->
-                                    </script>
-                                </div>
 
-                                <script src="js/login.js"></script>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                    <script>
+                                        // Funciones para toggle de contraseña en login (si no está en login.js)
+                                        function togglePasswordVisibility() {
+                                            const passwordInput = document.getElementById('password');
+                                            const toggleIcon = document.getElementById('togglePassword');
+                                            if (passwordInput && toggleIcon) {
+                                                if (passwordInput.type === 'password') {
+                                                    passwordInput.type = 'text';
+                                                    toggleIcon.classList.remove('fa-eye');
+                                                    toggleIcon.classList.add('fa-eye-slash');
+                                                } else {
+                                                    passwordInput.type = 'password';
+                                                    toggleIcon.classList.remove('fa-eye-slash');
+                                                    toggleIcon.classList.add('fa-eye');
+                                                }
+                                            }
+                                        }
+
+                                        // Funciones para toggle de contraseña en registro
+                                        function toggleRegisterPasswordVisibility() {
+                                            const passwordInput = document.getElementById('registerPassword');
+                                            const toggleIcon = document.getElementById('toggleRegisterPassword');
+                                            if (passwordInput && toggleIcon) {
+                                                if (passwordInput.type === 'password') {
+                                                    passwordInput.type = 'text';
+                                                    toggleIcon.classList.remove('fa-eye');
+                                                    toggleIcon.classList.add('fa-eye-slash');
+                                                } else {
+                                                    passwordInput.type = 'password';
+                                                    toggleIcon.classList.remove('fa-eye-slash');
+                                                    toggleIcon.classList.add('fa-eye');
+                                                }
+                                            }
+                                        }
+
+                                        function toggleConfirmPasswordVisibility() {
+                                            const passwordInput = document.getElementById('passwordConfirm');
+                                            const toggleIcon = document.getElementById('toggleConfirmPassword');
+                                            if (passwordInput && toggleIcon) {
+                                                if (passwordInput.type === 'password') {
+                                                    passwordInput.type = 'text';
+                                                    toggleIcon.classList.remove('fa-eye');
+                                                    toggleIcon.classList.add('fa-eye-slash');
+                                                } else {
+                                                    passwordInput.type = 'password';
+                                                    toggleIcon.classList.remove('fa-eye-slash');
+                                                    toggleIcon.classList.add('fa-eye');
+                                                }
+                                            }
+                                        }
+
+                                        // Toggle entre login y register
+                                        function showRegisterForm() {
+                                            document.getElementById('loginCard').classList.add('d-none');
+                                            document.getElementById('registerCard').classList.remove('d-none');
+                                        }
+
+                                        function showLoginForm() {
+                                            document.getElementById('registerCard').classList.add('d-none');
+                                            document.getElementById('loginCard').classList.remove('d-none');
+                                            const alertDiv = document.getElementById('registerAlert');
+                                            if (alertDiv) {
+                                                alertDiv.classList.add('d-none');
+                                            }
+                                            const form = document.getElementById('registerForm');
+                                            if (form) {
+                                                form.reset();
+                                            }
+                                        }
+
+                                        // Validación y envío AJAX para registro
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const registerForm = document.getElementById('registerForm');
+                                            if (registerForm) {
+                                                registerForm.addEventListener('submit', function(e) {
+                                                    e.preventDefault();
+                                                    
+                                                    const password = document.getElementById('registerPassword').value;
+                                                    const confirmPassword = document.getElementById('passwordConfirm').value;
+                                                    
+                                                    if (password !== confirmPassword) {
+                                                        showAlert('Las contraseñas no coinciden', 'danger');
+                                                        return false;
+                                                    }
+                                                    
+                                                    if (password.length < 8) {
+                                                        showAlert('La contraseña debe tener al menos 8 caracteres', 'danger');
+                                                        return false;
+                                                    }
+                                                    
+                                                    const formData = new FormData(registerForm);
+                                                    const submitBtn = document.getElementById('registerSubmit');
+                                                    if (submitBtn) {
+                                                        submitBtn.disabled = true;
+                                                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+                                                    }
+                                                    
+                                                    fetch(window.location.href + '?api=register', {
+                                                        method: 'POST',
+                                                        body: formData
+                                                    })
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        if (data.success) {
+                                                            showAlert(data.message || 'Registro exitoso. Un administrador revisará su solicitud.', 'success');
+                                                            setTimeout(() => {
+                                                                showLoginForm();
+                                                            }, 3000);
+                                                        } else {
+                                                            showAlert(data.message || 'Error en el registro', 'danger');
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        showAlert('Error de conexión: ' + error.message, 'danger');
+                                                    })
+                                                    .finally(() => {
+                                                        if (submitBtn) {
+                                                            submitBtn.disabled = false;
+                                                            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Registrarse';
+                                                        }
+                                                    });
+                                                });
+                                            }
+                                        });
+
+                                        // Función para mostrar alertas en registro
+                                        function showAlert(message, type) {
+                                            const alertDiv = document.getElementById('registerAlert');
+                                            if (alertDiv) {
+                                                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                                                alertDiv.innerHTML = `
+                                                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                                                    ${message}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                `;
+                                            }
+                                        }
+                                    </script>
         </body>
         </html>
         <?php
@@ -2883,33 +2992,6 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
         }
 
         .fade-out {
-            animation: fadeOutSlide 0.3s ease-in;
-        }
-
-        @keyframes fadeInSlide {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes fadeOutSlide {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-    </style>
-</body>
-</html>
             animation: fadeOutSlide 0.3s ease-in;
         }
 
