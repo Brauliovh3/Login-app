@@ -425,7 +425,7 @@ class DashboardApp {
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
             <style>
                 body {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #ff8c00 0%, #e67e22 100%);
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
@@ -457,11 +457,17 @@ class DashboardApp {
                     align-items: center;
                 }
                 .login-header {
-                    background: linear-gradient(135deg, #2c3e50, #34495e);
+                    background: linear-gradient(135deg, #ff8c00, #e67e22);
                     color: white;
-                    padding: 40px 60px;
+                    padding: 15px 80px 30px 80px;
                     text-align: center;
                     flex: 0 0 auto;
+                }
+
+                .login-header .logo-img {
+                    max-width: 80px !important;
+                    height: auto;
+                    border-radius: 8px;
                 }
                 .login-header h3 {
                     font-size: 2.2rem;
@@ -474,7 +480,7 @@ class DashboardApp {
                     margin-bottom: 0;
                 }
                 .login-body {
-                    padding: 50px;
+                    padding: 50px 70px;
                     flex: 1;
                     display: flex;
                     flex-direction: column;
@@ -511,11 +517,11 @@ class DashboardApp {
                 }
                 
                 .password-toggle:hover {
-                    color: #3498db;
+                    color: #ff8c00;
                 }
                 .form-control:focus {
-                    border-color: #3498db;
-                    box-shadow: 0 0 0 0.3rem rgba(52, 152, 219, 0.25);
+                    border-color: #ff8c00;
+                    box-shadow: 0 0 0 0.3rem rgba(255, 140, 0, 0.25);
                 }
                 .form-label {
                     font-size: 16px;
@@ -524,7 +530,7 @@ class DashboardApp {
                     color: #2c3e50;
                 }
                 .btn-login {
-                    background: linear-gradient(135deg, #3498db, #2980b9);
+                    background: linear-gradient(135deg, #ff8c00, #e67e22);
                     border: none;
                     border-radius: 25px;
                     padding: 15px 50px;
@@ -537,7 +543,7 @@ class DashboardApp {
                 }
                 .btn-login:hover {
                     transform: translateY(-2px);
-                    background: linear-gradient(135deg, #2980b9, #1f4e79);
+                    background: linear-gradient(135deg, #e67e22, #d68910);
                 }
                 .alert {
                     border-radius: 10px;
@@ -570,9 +576,11 @@ class DashboardApp {
                 <div class="container-fluid">
                     <div class="row justify-content-center align-items-center min-vh-100">
                         <div class="col-12">
-                            <div class="login-container" style="max-width: 400px; width: 100%; margin: 0 auto;">
+                            <div class="login-container" style="max-width: 500px; width: 100%; margin: 0 auto;">
                                 <div class="login-header">
-                                    <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                                     <div class="logo-container mb-3">
+                                         <img src="images/logo.png" alt="Logo Sistema" class="logo-img mx-auto d-block">
+                                     </div>
                                     <h3>Sistema de Gestión</h3>
                                     <p class="mb-0">Acceso al Dashboard</p>
                                 </div>
@@ -584,7 +592,7 @@ class DashboardApp {
                                     <?php endif; ?>
                                     
                                     <div style="display: flex; justify-content: center; align-items: center; min-height: 400px; width: 100%;">
-                                        <div style="max-width: 600px; min-width: 350px; width: 100%;">
+                                        <div style="max-width: 700px; min-width: 400px; width: 100%;">
                                             <div class="card p-4 shadow-lg border-0" id="loginCard" style="border-radius: 18px; margin: 0 auto;">
                                                 <h4 class="mb-3 text-center">Iniciar Sesión</h4>
                                                 <form id="loginForm" method="POST" action="dashboard.php">
@@ -601,7 +609,7 @@ class DashboardApp {
                                                         </div>
                                                     </div>
                                                     <div class="d-grid mb-2">
-                                                        <button type="submit" class="btn btn-primary btn-login" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
+                                                        <button type="submit" class="btn btn-warning btn-login" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem; background: linear-gradient(135deg, #ff8c00, #e67e22) !important; border-color: #ff8c00 !important;">
                                                             <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                                                         </button>
                                                     </div>
@@ -610,7 +618,7 @@ class DashboardApp {
                                                     </div>
                                                 </form>
                                             </div>
-                                            <div class="card p-4 shadow-lg border-0 d-none" id="registerCard" style="border-radius: 18px; margin: 0 auto;">
+                                            <div class="card p-4 shadow-lg border-0 d-none" id="registerCard" style="border-radius: 18px; margin: 0 auto; max-width: 700px;">
                                                 <h4 class="mb-3 text-center">Registro de Nuevo Usuario</h4>
                                                 <div id="registerAlert" class="alert d-none"></div>
                                                 <form id="registerForm" method="POST" action="#" autocomplete="off">
@@ -647,7 +655,7 @@ class DashboardApp {
                                                         </select>
                                                     </div>
                                                     <div class="d-grid mb-2">
-                                                        <button type="submit" class="btn btn-success btn-login" id="registerSubmit" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem;">
+                                                        <button type="submit" class="btn btn-warning btn-login" id="registerSubmit" style="font-size: 1.15rem; padding: 0.75rem 0; border-radius: 2rem; background: linear-gradient(135deg, #ff8c00, #e67e22) !important; border-color: #ff8c00 !important;">
                                                             <i class="fas fa-user-plus"></i> Registrarse
                                                         </button>
                                                     </div>
@@ -1971,13 +1979,33 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <link href="css/dashboard.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
+            --primary-color: #ff8c00;
+            --secondary-color: #e67e22;
             --success-color: #27ae60;
-            --warning-color: #f39c12;
+            --warning-color: #ff8c00;
             --danger-color: #e74c3c;
-            --dark-color: #34495e;
+            --dark-color: #e67e22;
             --light-color: #ecf0f1;
+        }
+
+        .logo-img {
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 30%;
+        }
+
+
+        .sidebar-header .logo-img {
+            max-width: 50px;
+        }
+
+        .navbar-brand .logo-img {
+            max-width: 50px;
         }
 
         body {
@@ -1989,7 +2017,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
         }
 
         .navbar {
-            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
@@ -2031,7 +2059,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
 
         .sidebar-header {
             padding: 20px;
-            background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             text-align: center;
             position: sticky;
@@ -2059,14 +2087,14 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
 
         .sidebar-link:hover {
             background-color: #f8f9fa;
-            color: var(--secondary-color);
-            border-left-color: var(--secondary-color);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
         }
 
         .sidebar-link.active {
-            background-color: #e3f2fd;
-            color: var(--secondary-color);
-            border-left-color: var(--secondary-color);
+            background-color: #fff3e0;
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
             font-weight: 600;
         }
 
@@ -2085,7 +2113,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             margin: 0;
             background-color: #f8f9fa;
             display: none;
-            border-left: 3px solid var(--secondary-color);
+            border-left: 3px solid var(--primary-color);
             margin-left: 20px;
             padding-top: 5px;
             padding-bottom: 5px;
@@ -2124,12 +2152,12 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
 
         .sidebar-sublink:hover {
             background-color: #e9ecef;
-            color: var(--secondary-color);
+            color: var(--primary-color);
             padding-left: 50px;
         }
 
         .sidebar-sublink.active {
-            background-color: var(--secondary-color);
+            background-color: var(--primary-color);
             color: white;
         }
 
@@ -2253,7 +2281,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             margin-bottom: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
-            border-left: 4px solid var(--secondary-color);
+            border-left: 4px solid var(--primary-color);
             text-align: center;
             position: relative;
         }
@@ -2345,7 +2373,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
 
         .sidebar-link.active,
         .sidebar-sublink.active {
-            background-color: var(--secondary-color);
+            background-color: var(--primary-color);
             color: white !important;
         }
 
@@ -2467,7 +2495,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             <button class="mobile-sidebar-toggle" onclick="toggleSidebar()">
                 <i class="fas fa-bars"></i>
             </button>
-            <a class="navbar-brand" href="#"><i class="fas fa-shield-alt"></i> Sistema de Gestión</a>
+            <a class="navbar-brand" href="#"><img src="images/logo.png" alt="Logo Sistema" class="logo-img me-2 d-none d-md-inline">Sistema de Gestión</a>
             
             <div class="d-flex align-items-center">
                 <!-- Notificaciones -->
@@ -2505,8 +2533,8 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="mb-3">
-                <i class="fas fa-user-circle fa-3x"></i>
+            <div class="logo-container mb-3">
+                <img src="images/logo.png" alt="Logo Sistema" class="logo-img mx-auto d-block">
             </div>
             <h6><?php echo htmlspecialchars($app->getUserName()); ?></h6>
             <span class="role-badge role-<?php echo $app->getUserRole(); ?>">
@@ -2816,7 +2844,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 <div class="row mt-4" id="dashboardContent">
                     <!-- Dashboard stats cards -->
                     <div class="col-md-3 mb-4">
-                        <div class="card bg-primary text-white">
+                        <div class="card bg-warning text-white">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
@@ -2830,7 +2858,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     </div>
                     
                     <div class="col-md-3 mb-4">
-                        <div class="card bg-success text-white">
+                        <div class="card bg-warning text-white">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
@@ -2858,7 +2886,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     </div>
                     
                     <div class="col-md-3 mb-4">
-                        <div class="card bg-danger text-white">
+                        <div class="card bg-warning text-white">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-grow-1">
