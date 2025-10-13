@@ -998,7 +998,6 @@ function showCrearActaModal() {
     };
 }
 
-// Función para configurar validación dinámica de campos
 function configurarValidacionDinamica() {
     const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'codigo_infraccion'];
     const botonesAccion = document.getElementById('botonesAccion');
@@ -1263,7 +1262,6 @@ function configurarValidacionDinamica() {
     // Listeners específicos para restricciones de campos
     const dniInput = document.getElementById('ruc_dni');
     const licenciaInput = document.getElementById('licencia_conductor');
-    const codigoInfraccionInput = document.getElementById('codigo_infraccion');
 
     if (dniInput) {
         dniInput.addEventListener('keypress', restringirDNI);
@@ -1290,15 +1288,6 @@ function configurarValidacionDinamica() {
         }
         validarYMostrarBotones();
     }, 2000);
-
-    // Ensure datalist is compatible and working
-    const codigoInfraccionInput = document.getElementById('codigo_infraccion');
-    if (codigoInfraccionInput) {
-        // Test if datalist works by logging on focus
-        codigoInfraccionInput.addEventListener('focus', function() {
-            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
-        });
-    }
 
     // Ensure datalist is compatible and working
     if (codigoInfraccionInput) {
