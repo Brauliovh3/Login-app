@@ -883,7 +883,7 @@ function showCrearActaModal() {
                     <i class="fas fa-map-marker-alt"></i> Datos de la Intervención
                 </h6>
             </div>
-            
+
             <div class="col-md-4">
                 <label class="form-label">Lugar de Intervención *</label>
                 <input type="text" class="form-control" name="lugar_intervencion" id="lugar_intervencion" required
@@ -908,14 +908,38 @@ function showCrearActaModal() {
                        value="${window.dashboardUserName || ''}" readonly>
             </div>
             
+            <div class="col-12">
+                <label class="form-label">Código de Infracción *</label>
+                <div class="d-flex gap-2">
+                    <input type="text" class="form-control" name="codigo_infraccion" id="codigo_infraccion" required list="codigo_infraccion_list" placeholder="Escribe o selecciona un código (ej: F.4-a)" style="flex: 0 0 200px; text-transform: uppercase;">
+                    <datalist id="codigo_infraccion_list">
+                        <option value="F.4-a">F.4-a</option>
+                        <option value="F.4-b">F.4-b</option>
+                        <option value="F.4-c">F.4-c</option>
+                        <option value="F.5-a">F.5-a</option>
+                        <option value="F.5-b">F.5-b</option>
+                        <option value="F.5-c">F.5-c</option>
+                        <option value="F.6-a">F.6-a</option>
+                        <option value="F.6-b">F.6-b</option>
+                        <option value="F.6-c">F.6-c</option>
+                        <option value="F.6-d">F.6-d</option>
+                        <option value="I.1-a">I.1-a</option>
+                        <option value="I.1-b">I.1-b</option>
+                        <option value="I.1-c">I.1-c</option>
+                        <option value="I.1-d">I.1-d</option>
+                        <option value="I.1-e">I.1-e</option>
+                        <option value="I.1-f">I.1-f</option>
+                        <option value="I.2-a">I.2-a</option>
+                        <option value="I.2-b">I.2-b</option>
+                    </datalist>
+                    <div id="descripcionInfraccion" class="form-control-plaintext border rounded p-2 bg-light flex-grow-1" style="min-height: 38px; font-size: 0.9em;">
+                        Escribe o selecciona un código para ver la descripción
+                    </div>
+                </div>
+            </div>
+            
             <!-- Campo oculto para timestamp exacto -->
             <input type="hidden" name="timestamp_inicio" id="timestamp_inicio" value="">
-            
-            <div class="col-12">
-                <label class="form-label">Descripción de los Hechos *</label>
-                <textarea class="form-control" name="descripcion_hechos" id="descripcion_hechos" rows="3" required
-                          placeholder="Describa detalladamente la infracción o situación encontrada..."></textarea>
-            </div>
         </form>
     `;
     
@@ -974,26 +998,25 @@ function showCrearActaModal() {
     };
 }
 
-// Función para configurar validación dinámica de campos
 function configurarValidacionDinamica() {
-    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'descripcion_hechos'];
+    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'codigo_infraccion'];
     const botonesAccion = document.getElementById('botonesAccion');
     
     // Función para restringir DNI/RUC a solo números (máx 11 dígitos)
     function restringirDNI(event) {
         const input = event.target;
         const key = event.key;
-        
+
         // En keypress, prevenir teclas no numéricas
         if (event.type === 'keypress' && !/\d/.test(key) && key.length === 1) {
             event.preventDefault();
             return;
         }
-        
+
         // En input, limpiar no dígitos y limitar longitud
         if (event.type === 'input') {
             input.value = input.value.replace(/\D/g, '').slice(0, 11);
-            
+
             // Opcional: feedback visual si excede 8 dígitos (para DNI)
             if (input.value.length > 8) {
                 input.classList.add('is-warning');
@@ -1001,6 +1024,32 @@ function configurarValidacionDinamica() {
             } else {
                 input.classList.remove('is-warning');
                 input.title = '';
+            }
+        }
+    }
+
+    // Función para restringir código de infracción (letras, números, guiones)
+    function restringirCodigoInfraccion(event) {
+        const input = event.target;
+        const key = event.key;
+
+        // En keypress, permitir letras, números y guiones
+        if (event.type === 'keypress' && !/[A-Za-z0-9\-]/.test(key) && key.length === 1) {
+            event.preventDefault();
+            return;
+        }
+
+        // En input, formatear: mayúsculas, solo caracteres permitidos, limitar longitud
+        if (event.type === 'input') {
+            input.value = input.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '').slice(0, 20);
+
+            // Feedback si no sigue el formato esperado
+            if (input.value.length > 0 && !/^[A-Z0-9\-]+$/.test(input.value)) {
+                input.classList.add('is-invalid');
+                input.title = 'Solo letras, números y guiones. Ej: ART-001, INF-123';
+            } else {
+                input.classList.remove('is-invalid');
+                input.title = 'Código de infracción (ej: ART-001, INF-123)';
             }
         }
     }
@@ -1137,27 +1186,94 @@ function configurarValidacionDinamica() {
     // Agregar event listeners a todos los campos del formulario
     const todosLosCampos = document.querySelectorAll('#formCrearActa input, #formCrearActa select, #formCrearActa textarea');
     console.log(`🔍 Configurando validación en ${todosLosCampos.length} campos`);
-    
+
     todosLosCampos.forEach(campo => {
         campo.addEventListener('input', validarYMostrarBotones);
         campo.addEventListener('change', validarYMostrarBotones);
         campo.addEventListener('keyup', validarYMostrarBotones);
         campo.addEventListener('blur', validarYMostrarBotones);
     });
+
+    // Configurar el listener para actualizar la descripción del código de infracción (ahora input con datalist)
+    const codigoInfraccionInput = document.getElementById('codigo_infraccion');
+    const descripcionDiv = document.getElementById('descripcionInfraccion');
+
+    console.log('🔍 Configurando listener de código infracción:', !!codigoInfraccionInput, !!descripcionDiv);
+
+    if (codigoInfraccionInput && descripcionDiv) {
+        const descripciones = {
+            'F.4-a': 'Negarse a entregar información o documentación al ser requerido.',
+            'F.4-b': 'Brindar información falsa intencionalmente durante fiscalización.',
+            'F.4-c': 'Actos de simulación o suplantación para evadir controles.',
+            'F.5-a': 'Contratar transportista no autorizado.',
+            'F.5-b': 'Usar vía pública como lugar habitual de carga/descarga.',
+            'F.5-c': 'Exigir autorización especial para cargas sobredimensionadas sin verificar.',
+            'F.6-a': 'Negarse a entregar documentación como conductor.',
+            'F.6-b': 'Proporcionar información falsa como conductor.',
+            'F.6-c': 'Maniobras evasivas para evitar fiscalización.',
+            'F.6-d': 'Simulación o suplantación como conductor.',
+            'I.1-a': 'No portar manifiesto de usuarios en transporte de personas.',
+            'I.1-b': 'No portar hoja de ruta.',
+            'I.1-c': 'No portar guía de remisión en mercancías.',
+            'I.1-d': 'No portar documento de habilitación del vehículo.',
+            'I.1-e': 'No portar certificado de Inspección Técnica Vehicular.',
+            'I.1-f': 'No portar certificado de seguro CAT.',
+            'I.2-a': 'No exhibir modalidad del servicio y razón social en vehículo.',
+            'I.2-b': 'No mostrar tarifas y ruta en transporte provincial.'
+        };
+
+        const actualizarDescripcion = function() {
+            const codigoSeleccionado = this.value.toUpperCase().trim();
+            console.log('📝 Código seleccionado:', codigoSeleccionado);
+            if (codigoSeleccionado && descripciones[codigoSeleccionado]) {
+                descripcionDiv.textContent = descripciones[codigoSeleccionado];
+                descripcionDiv.classList.remove('text-muted');
+                descripcionDiv.classList.add('text-dark');
+                console.log('✅ Descripción actualizada:', descripciones[codigoSeleccionado]);
+            } else {
+                descripcionDiv.textContent = 'Escribe o selecciona un código válido para ver la descripción';
+                descripcionDiv.classList.remove('text-dark');
+                descripcionDiv.classList.add('text-muted');
+                console.log('⚠️ Código no válido o vacío');
+            }
+        };
+
+        // Bind to both 'input' (for typing) and 'change' (for selection)
+        codigoInfraccionInput.addEventListener('input', actualizarDescripcion);
+        codigoInfraccionInput.addEventListener('change', actualizarDescripcion);
+        // Also on focus to reset if needed
+        codigoInfraccionInput.addEventListener('focus', function() {
+            if (!this.value.trim()) {
+                actualizarDescripcion.call(this);
+            }
+            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
+        });
+
+        // Restrict input to uppercase and valid characters
+        codigoInfraccionInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9.\-]*/g, '');
+        });
+
+        console.log('✅ Event listeners agregados al input de código infracción');
+    } else {
+        console.error('❌ No se encontraron los elementos del código infracción');
+    }
     
     // Listeners específicos para restricciones de campos
     const dniInput = document.getElementById('ruc_dni');
     const licenciaInput = document.getElementById('licencia_conductor');
-    
+
     if (dniInput) {
         dniInput.addEventListener('keypress', restringirDNI);
         dniInput.addEventListener('input', restringirDNI);
     }
-    
+
     if (licenciaInput) {
         licenciaInput.addEventListener('keypress', restringirLicencia);
         licenciaInput.addEventListener('input', restringirLicencia);
     }
+
+    // The codigoInfraccionInput restrictions are now handled in the listener above (toUpperCase and regex filter)
     
     // Validación inicial después de un pequeño delay
     setTimeout(() => {
@@ -1172,6 +1288,14 @@ function configurarValidacionDinamica() {
         }
         validarYMostrarBotones();
     }, 2000);
+
+    // Ensure datalist is compatible and working
+    if (codigoInfraccionInput) {
+        // Test if datalist works by logging on focus
+        codigoInfraccionInput.addEventListener('focus', function() {
+            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
+        });
+    }
 }
 
 // Función para exportar acta actual (antes de guardar)
@@ -1200,7 +1324,7 @@ function exportarActaActual(formato) {
         tipo_servicio: formData.get('tipo_servicio') || 'N/A',
         tipo_agente: formData.get('tipo_agente') || 'N/A',
         licencia_conductor: formData.get('licencia_conductor') || 'N/A',
-        descripcion_hechos: formData.get('descripcion_hechos') || 'N/A',
+        codigo_infraccion: formData.get('codigo_infraccion') || 'N/A',
         inspector_responsable: formData.get('inspector_responsable') || 'N/A',
         created_at: new Date().toISOString()
     };
@@ -1316,9 +1440,9 @@ async function guardarNuevaActa() {
     const formData = new FormData(form);
     
     // Validar campos requeridos
-    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'descripcion_hechos'];
+    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'codigo_infraccion', 'lugar_intervencion'];
     const camposFaltantes = [];
-    
+
     camposRequeridos.forEach(campo => {
         if (!formData.get(campo)?.trim()) {
             camposFaltantes.push(campo);
@@ -1338,7 +1462,8 @@ async function guardarNuevaActa() {
     
     // Agregar campos adicionales para la base de datos
     actaData.placa_vehiculo = actaData.placa; // Usar la misma placa
-    
+    actaData.tipo_infraccion = actaData.codigo_infraccion; // Mapear código de infracción
+
     // Log para debugging
     console.log('📋 Datos a enviar:', actaData);
     
