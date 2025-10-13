@@ -134,6 +134,10 @@ class DashboardApp {
                     echo json_encode($this->getActas());
                     break;
 
+                case 'infracciones':
+                    echo json_encode($this->getInfracciones());
+                    break;
+
                 case 'guardar_acta':
                     if ($method === 'POST') {
                         echo json_encode($this->saveActa());
@@ -1617,6 +1621,11 @@ class DashboardApp {
                     $stmt->execute();
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     break;
+                case 'infracciones':
+                    $stmt = $this->pdo->prepare("SELECT * FROM infracciones ORDER BY codigo_infraccion");
+                    $stmt->execute();
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    break;
                 case 'stats':
                     $stats = $this->getStatsData();
                     $data = $stats['success'] ? $stats : [];
@@ -2507,6 +2516,29 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadAprobarUsuarios()" data-section="aprobar-usuarios">
                             <i class="fas fa-user-check"></i> Aprobar Usuarios
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('actas', event); return false;">
+                    <i class="fas fa-file-invoice"></i> Gestión de Actas
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-actas" style="display: none !important;">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadActasList()" data-section="listar-actas">
+                            <i class="fas fa-list"></i> Lista de Actas
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCrearActa()" data-section="crear-acta">
+                            <i class="fas fa-plus-circle"></i> Crear Acta
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadGestionarInfracciones()" data-section="gestionar-infracciones">
+                            <i class="fas fa-exclamation-triangle"></i> Infracciones
                         </a>
                     </li>
                 </ul>

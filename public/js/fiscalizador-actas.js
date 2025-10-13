@@ -911,8 +911,8 @@ function showCrearActaModal() {
             <div class="col-12">
                 <label class="form-label">Código de Infracción *</label>
                 <div class="d-flex gap-2">
-                    <select class="form-select" name="codigo_infraccion" id="codigo_infraccion" required style="flex: 0 0 150px;">
-                        <option value="">Seleccione...</option>
+                    <input type="text" class="form-control" name="codigo_infraccion" id="codigo_infraccion" required list="codigo_infraccion_list" placeholder="Escribe o selecciona un código (ej: F.4-a)" style="flex: 0 0 200px; text-transform: uppercase;">
+                    <datalist id="codigo_infraccion_list">
                         <option value="F.4-a">F.4-a</option>
                         <option value="F.4-b">F.4-b</option>
                         <option value="F.4-c">F.4-c</option>
@@ -931,9 +931,9 @@ function showCrearActaModal() {
                         <option value="I.1-f">I.1-f</option>
                         <option value="I.2-a">I.2-a</option>
                         <option value="I.2-b">I.2-b</option>
-                    </select>
+                    </datalist>
                     <div id="descripcionInfraccion" class="form-control-plaintext border rounded p-2 bg-light flex-grow-1" style="min-height: 38px; font-size: 0.9em;">
-                        Seleccione un código para ver la descripción
+                        Escribe o selecciona un código para ver la descripción
                     </div>
                 </div>
             </div>
@@ -1195,13 +1195,13 @@ function configurarValidacionDinamica() {
         campo.addEventListener('blur', validarYMostrarBotones);
     });
 
-    // Configurar el listener para actualizar la descripción del código de infracción
-    const codigoInfraccionSelect = document.getElementById('codigo_infraccion');
+    // Configurar el listener para actualizar la descripción del código de infracción (ahora input con datalist)
+    const codigoInfraccionInput = document.getElementById('codigo_infraccion');
     const descripcionDiv = document.getElementById('descripcionInfraccion');
 
-    console.log('🔍 Configurando listener de código infracción:', !!codigoInfraccionSelect, !!descripcionDiv);
+    console.log('🔍 Configurando listener de código infracción:', !!codigoInfraccionInput, !!descripcionDiv);
 
-    if (codigoInfraccionSelect && descripcionDiv) {
+    if (codigoInfraccionInput && descripcionDiv) {
         const descripciones = {
             'F.4-a': 'Negarse a entregar información o documentación al ser requerido.',
             'F.4-b': 'Brindar información falsa intencionalmente durante fiscalización.',
@@ -1224,7 +1224,7 @@ function configurarValidacionDinamica() {
         };
 
         const actualizarDescripcion = function() {
-            const codigoSeleccionado = this.value;
+            const codigoSeleccionado = this.value.toUpperCase().trim();
             console.log('📝 Código seleccionado:', codigoSeleccionado);
             if (codigoSeleccionado && descripciones[codigoSeleccionado]) {
                 descripcionDiv.textContent = descripciones[codigoSeleccionado];
@@ -1232,15 +1232,30 @@ function configurarValidacionDinamica() {
                 descripcionDiv.classList.add('text-dark');
                 console.log('✅ Descripción actualizada:', descripciones[codigoSeleccionado]);
             } else {
-                descripcionDiv.textContent = 'Seleccione un código para ver la descripción';
+                descripcionDiv.textContent = 'Escribe o selecciona un código válido para ver la descripción';
                 descripcionDiv.classList.remove('text-dark');
                 descripcionDiv.classList.add('text-muted');
                 console.log('⚠️ Código no válido o vacío');
             }
         };
 
-        codigoInfraccionSelect.addEventListener('change', actualizarDescripcion);
-        console.log('✅ Event listener agregado al select de código infracción');
+        // Bind to both 'input' (for typing) and 'change' (for selection)
+        codigoInfraccionInput.addEventListener('input', actualizarDescripcion);
+        codigoInfraccionInput.addEventListener('change', actualizarDescripcion);
+        // Also on focus to reset if needed
+        codigoInfraccionInput.addEventListener('focus', function() {
+            if (!this.value.trim()) {
+                actualizarDescripcion.call(this);
+            }
+            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
+        });
+
+        // Restrict input to uppercase and valid characters
+        codigoInfraccionInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase().replace(/[^A-Z0-9.\-]*/g, '');
+        });
+
+        console.log('✅ Event listeners agregados al input de código infracción');
     } else {
         console.error('❌ No se encontraron los elementos del código infracción');
     }
@@ -1260,10 +1275,7 @@ function configurarValidacionDinamica() {
         licenciaInput.addEventListener('input', restringirLicencia);
     }
 
-    if (codigoInfraccionInput) {
-        codigoInfraccionInput.addEventListener('keypress', restringirCodigoInfraccion);
-        codigoInfraccionInput.addEventListener('input', restringirCodigoInfraccion);
-    }
+    // The codigoInfraccionInput restrictions are now handled in the listener above (toUpperCase and regex filter)
     
     // Validación inicial después de un pequeño delay
     setTimeout(() => {
@@ -1278,6 +1290,23 @@ function configurarValidacionDinamica() {
         }
         validarYMostrarBotones();
     }, 2000);
+
+    // Ensure datalist is compatible and working
+    const codigoInfraccionInput = document.getElementById('codigo_infraccion');
+    if (codigoInfraccionInput) {
+        // Test if datalist works by logging on focus
+        codigoInfraccionInput.addEventListener('focus', function() {
+            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
+        });
+    }
+
+    // Ensure datalist is compatible and working
+    if (codigoInfraccionInput) {
+        // Test if datalist works by logging on focus
+        codigoInfraccionInput.addEventListener('focus', function() {
+            console.log('🔍 Input de código enfocado - Datalist debería aparecer al escribir');
+        });
+    }
 }
 
 // Función para exportar acta actual (antes de guardar)
