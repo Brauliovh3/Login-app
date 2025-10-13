@@ -1,9 +1,10 @@
 /**
  * SISTEMA DE GESTIÓN - MÓDULO ADMINISTRADOR
  * Funcionalidades específicas para el rol administrador
+ * Última actualización: 2025-10-10 11:20:00
  */
 
-console.log(' Cargando módulo administrador...');
+console.log('🚀 Cargando módulo administrador v2.0...');
 
 // Variable global para verificar que el usuario es administrador
 let isAdministrador = false;
@@ -1962,12 +1963,346 @@ function actualizarEstadisticasInfracciones(infracciones) {
     document.getElementById('infraccionesInactivas').textContent = inactivas;
 }
 
+// ==================== GESTIÓN DE CARGA Y PASAJEROS ====================
+
+function loadCargaPasajerosList() {
+    document.getElementById('main-content').innerHTML = `
+        <div class="content-wrapper">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3 class="card-title">
+                                <i class="fas fa-truck"></i> Lista de Registros de Carga y Pasajeros
+                            </h3>
+                            <button class="btn btn-primary" onclick="loadCrearCargaPasajero()">
+                                <i class="fas fa-plus"></i> Nuevo Registro
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Tipo</th>
+                                            <th>Descripción</th>
+                                            <th>Peso/Cantidad</th>
+                                            <th>Origen</th>
+                                            <th>Destino</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="carga-pasajeros-list">
+                                        <tr>
+                                            <td colspan="9" class="text-center">
+                                                <div class="spinner-border" role="status">
+                                                    <span class="sr-only">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    cargarDatosCargaPasajeros();
+}
+
+function loadCrearCargaPasajero() {
+    document.getElementById('main-content').innerHTML = `
+        <div class="content-wrapper">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-plus"></i> Nuevo Registro de Carga/Pasajero
+                            </h3>
+                            <button class="btn btn-secondary float-right" onclick="loadCargaPasajerosList()">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form id="crear-carga-form">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="tipo">Tipo *</label>
+                                            <select class="form-control" id="tipo" required>
+                                                <option value="">Seleccionar tipo</option>
+                                                <option value="carga">Carga</option>
+                                                <option value="pasajero">Pasajero</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="descripcion">Descripción *</label>
+                                            <input type="text" class="form-control" id="descripcion" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="peso_cantidad">Peso/Cantidad</label>
+                                            <input type="text" class="form-control" id="peso_cantidad">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="origen">Origen *</label>
+                                            <input type="text" class="form-control" id="origen" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="destino">Destino *</label>
+                                            <input type="text" class="form-control" id="destino" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="fecha_registro">Fecha de Registro</label>
+                                            <input type="date" class="form-control" id="fecha_registro" value="${new Date().toISOString().split('T')[0]}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="estado">Estado</label>
+                                            <select class="form-control" id="estado">
+                                                <option value="en_transito">En Tránsito</option>
+                                                <option value="entregado">Entregado</option>
+                                                <option value="pendiente">Pendiente</option>
+                                                <option value="cancelado">Cancelado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="observaciones">Observaciones</label>
+                                    <textarea class="form-control" id="observaciones" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="form-group text-right">
+                                    <button type="button" class="btn btn-secondary" onclick="loadCargaPasajerosList()">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Guardar Registro
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function loadEstadisticasCarga() {
+    document.getElementById('main-content').innerHTML = `
+        <div class="content-wrapper">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-bar"></i> Estadísticas de Carga y Pasajeros
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-3 col-6">
+                                    <div class="small-box bg-info">
+                                        <div class="inner">
+                                            <h3 id="totalRegistros">0</h3>
+                                            <p>Total Registros</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-truck"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-3 col-6">
+                                    <div class="small-box bg-success">
+                                        <div class="inner">
+                                            <h3 id="registrosCarga">0</h3>
+                                            <p>Registros de Carga</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-boxes"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-3 col-6">
+                                    <div class="small-box bg-warning">
+                                        <div class="inner">
+                                            <h3 id="registrosPasajeros">0</h3>
+                                            <p>Registros de Pasajeros</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-3 col-6">
+                                    <div class="small-box bg-danger">
+                                        <div class="inner">
+                                            <h3 id="registrosTransito">0</h3>
+                                            <p>En Tránsito</p>
+                                        </div>
+                                        <div class="icon">
+                                            <i class="fas fa-route"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h4>Distribución por Estado</h4>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="estadosChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    cargarEstadisticasCarga();
+}
+
+async function cargarDatosCargaPasajeros() {
+    try {
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=carga-pasajeros`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('carga-pasajeros-list');
+            if (data.carga_pasajeros && data.carga_pasajeros.length > 0) {
+                tbody.innerHTML = data.carga_pasajeros.map(registro => `
+                    <tr>
+                        <td>${registro.id}</td>
+                        <td>
+                            <span class="badge badge-${registro.tipo === 'carga' ? 'primary' : 'info'}">
+                                ${registro.tipo.charAt(0).toUpperCase() + registro.tipo.slice(1)}
+                            </span>
+                        </td>
+                        <td>${registro.descripcion || 'N/A'}</td>
+                        <td>${registro.peso_cantidad || 'N/A'}</td>
+                        <td>${registro.origen || 'N/A'}</td>
+                        <td>${registro.destino || 'N/A'}</td>
+                        <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
+                        <td>
+                            <span class="badge badge-${getEstadoBadgeClass(registro.estado)}">
+                                ${registro.estado || 'N/A'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="verDetalleCarga(${registro.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editarCarga(${registro.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarCarga(${registro.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay registros disponibles</td></tr>';
+            }
+        } else {
+            showErrorToast('Error al cargar datos: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al cargar datos de carga y pasajeros:', error);
+        showErrorToast('Error al cargar los datos');
+    }
+}
+
+async function cargarEstadisticasCarga() {
+    try {
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=carga-pasajeros`);
+        const data = await response.json();
+        
+        if (data.success && data.carga_pasajeros) {
+            const registros = data.carga_pasajeros;
+            const total = registros.length;
+            const carga = registros.filter(r => r.tipo === 'carga').length;
+            const pasajeros = registros.filter(r => r.tipo === 'pasajero').length;
+            const enTransito = registros.filter(r => r.estado === 'en_transito').length;
+            
+            document.getElementById('totalRegistros').textContent = total;
+            document.getElementById('registrosCarga').textContent = carga;
+            document.getElementById('registrosPasajeros').textContent = pasajeros;
+            document.getElementById('registrosTransito').textContent = enTransito;
+        }
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+        showErrorToast('Error al cargar estadísticas');
+    }
+}
+
+function getEstadoBadgeClass(estado) {
+    switch(estado) {
+        case 'entregado': return 'success';
+        case 'en_transito': return 'primary';
+        case 'pendiente': return 'warning';
+        case 'cancelado': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function verDetalleCarga(id) {
+    showInfoToast('Función ver detalle en desarrollo');
+}
+
+function editarCarga(id) {
+    showInfoToast('Función editar en desarrollo');
+}
+
+function eliminarCarga(id) {
+    showInfoToast('Función eliminar en desarrollo');
+}
+
 // Exportar funciones globalmente
 window.loadUsuariosList = loadUsuariosList;
 window.loadAprobarUsuarios = loadAprobarUsuarios;
 window.loadActasList = loadActasList;
 window.loadCrearActa = loadCrearActa;
 window.loadGestionarInfracciones = loadGestionarInfracciones;
+window.loadCargaPasajerosList = loadCargaPasajerosList;
+window.loadCrearCargaPasajero = loadCrearCargaPasajero;
+window.loadEstadisticasCarga = loadEstadisticasCarga;
 window.cargarDatosUsuarios = cargarDatosUsuarios;
 window.cargarUsuariosPendientes = cargarUsuariosPendientes;
 window.aprobarUsuario = aprobarUsuario;
@@ -1987,8 +2322,13 @@ window.showWarningToast = showWarningToast;
 window.showInfoToast = showInfoToast;
 
 // Debug: Verificar que las funciones están disponibles
-console.log(' Verificando funciones exportadas del administrador:');
+console.log('🔍 Verificando funciones exportadas del administrador:');
 console.log('- loadUsuariosList:', typeof window.loadUsuariosList);
 console.log('- loadAprobarUsuarios:', typeof window.loadAprobarUsuarios);
+console.log('- loadCargaPasajerosList:', typeof window.loadCargaPasajerosList);
+console.log('- loadCrearCargaPasajero:', typeof window.loadCrearCargaPasajero);
+console.log('- loadEstadisticasCarga:', typeof window.loadEstadisticasCarga);
+
+console.log('✅ Módulo administrador cargado completamente');
 
 console.log(' Módulo administrador cargado completamente');

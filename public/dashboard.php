@@ -138,6 +138,14 @@ class DashboardApp {
                     echo json_encode($this->getInfracciones());
                     break;
 
+                case 'carga-pasajeros':
+                    echo json_encode($this->getCargaPasajeros());
+                    break;
+
+                case 'dashboard-stats':
+                    echo json_encode($this->getDashboardStats());
+                    break;
+
                 case 'guardar_acta':
                     if ($method === 'POST') {
                         echo json_encode($this->saveActa());
@@ -1155,6 +1163,17 @@ class DashboardApp {
         }
     }
     
+    private function getCargaPasajeros() {
+        try {
+            $stmt = $this->pdo->query("SELECT * FROM carga_pasajeros ORDER BY created_at DESC LIMIT 100");
+            $cargaPasajeros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return ['success' => true, 'carga_pasajeros' => $cargaPasajeros];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
     private function getInspecciones() {
         try {
             if ($this->userRole === 'fiscalizador' || $this->userRole === 'inspector') {
@@ -1623,6 +1642,11 @@ class DashboardApp {
                     break;
                 case 'infracciones':
                     $stmt = $this->pdo->prepare("SELECT * FROM infracciones ORDER BY codigo_infraccion");
+                    $stmt->execute();
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    break;
+                case 'carga-pasajeros':
+                    $stmt = $this->pdo->prepare("SELECT * FROM carga_pasajeros ORDER BY created_at DESC");
                     $stmt->execute();
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     break;
@@ -2539,6 +2563,29 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadGestionarInfracciones()" data-section="gestionar-infracciones">
                             <i class="fas fa-exclamation-triangle"></i> Infracciones
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('carga-pasajeros', event); return false;">
+                    <i class="fas fa-users-cog"></i> Gestión de Carga y Pasajeros
+                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                </a>
+                <ul class="sidebar-submenu" id="submenu-carga-pasajeros" style="display: none !important;">
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCargaPasajerosList()" data-section="listar-carga-pasajeros">
+                            <i class="fas fa-list"></i> Lista de Registros
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCrearCargaPasajero()" data-section="crear-carga-pasajero">
+                            <i class="fas fa-plus-circle"></i> Nuevo Registro
+                        </a>
+                    </li>
+                    <li class="sidebar-subitem">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadEstadisticasCarga()" data-section="estadisticas-carga">
+                            <i class="fas fa-chart-pie"></i> Estadísticas
                         </a>
                     </li>
                 </ul>
