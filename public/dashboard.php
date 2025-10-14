@@ -146,6 +146,10 @@ class DashboardApp {
                     echo json_encode($this->getDashboardStats());
                     break;
 
+                case 'actas-admin':
+                    echo json_encode($this->getActasAdmin());
+                    break;
+
                 case 'guardar_acta':
                     if ($method === 'POST') {
                         echo json_encode($this->saveActa());
@@ -1179,6 +1183,73 @@ class DashboardApp {
             return ['success' => true, 'carga_pasajeros' => $cargaPasajeros];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
+    private function getActasAdmin() {
+        error_log("🔍 getActasAdmin() iniciada");
+        
+        try {
+            // Solo administradores pueden ver TODAS las actas
+            if ($this->userRole !== 'administrador' && $this->userRole !== 'admin') {
+                error_log("❌ Acceso denegado. Rol actual: " . $this->userRole);
+                return ['success' => false, 'message' => 'Acceso denegado. Rol: ' . $this->userRole];
+            }
+            
+            error_log("✅ Usuario autorizado como administrador");
+            
+            // Consulta simple para obtener TODAS las actas de la tabla carga_pasajeros
+            $query = "
+                SELECT 
+                    cp.*,
+                    i.infraccion as infraccion_descripcion,
+                    i.codigo_infraccion as infraccion_articulo,
+                    i.sancion as infraccion_monto
+                FROM carga_pasajeros cp
+                LEFT JOIN infracciones i ON cp.informe = i.codigo_infraccion
+                ORDER BY cp.created_at DESC 
+                LIMIT 200
+            ";
+            
+            error_log("🔍 Ejecutando consulta SQL");
+            $stmt = $this->pdo->query($query);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("📊 Actas encontradas: " . count($actas));
+            
+            // Agregar estadísticas
+            $statsQuery = "
+                SELECT 
+                    COUNT(*) as total_actas,
+                    SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+                    SUM(CASE WHEN estado = 'procesado' THEN 1 ELSE 0 END) as procesadas,
+                    SUM(CASE WHEN estado = 'aprobado' THEN 1 ELSE 0 END) as aprobadas
+                FROM carga_pasajeros
+            ";
+            
+            $statsStmt = $this->pdo->query($statsQuery);
+            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+            
+            error_log("📊 Estadísticas: " . json_encode($stats));
+            
+            $result = [
+                'success' => true, 
+                'actas' => $actas,
+                'stats' => $stats,
+                'total_count' => count($actas),
+                'debug' => [
+                    'user_role' => $this->userRole,
+                    'actas_count' => count($actas),
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]
+            ];
+            
+            error_log("✅ getActasAdmin() completada exitosamente");
+            return $result;
+            
+        } catch (Exception $e) {
+            error_log("💥 Error en getActasAdmin(): " . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage(), 'file' => __FILE__, 'line' => __LINE__];
         }
     }
     
@@ -2579,7 +2650,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 </a>
                 <ul class="sidebar-submenu" id="submenu-actas" style="display: none !important;">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadActasList()" data-section="listar-actas">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadActasList()">
                             <i class="fas fa-list"></i> Lista de Actas
                         </a>
                     </li>
@@ -2602,17 +2673,17 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                 </a>
                 <ul class="sidebar-submenu" id="submenu-carga-pasajeros" style="display: none !important;">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCargaPasajerosList()" data-section="listar-carga-pasajeros">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCargaPasajerosList()">
                             <i class="fas fa-list"></i> Lista de Registros
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCrearCargaPasajero()" data-section="crear-carga-pasajero">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCrearCargaPasajero()">
                             <i class="fas fa-plus-circle"></i> Nuevo Registro
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadEstadisticasCarga()" data-section="estadisticas-carga">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadEstadisticasCarga()">
                             <i class="fas fa-chart-pie"></i> Estadísticas
                         </a>
                     </li>

@@ -1484,88 +1484,116 @@ function formatearFecha(fecha) {
 // ==================== FUNCIONES GESTIÓN DE ACTAS ====================
 
 function loadActasList() {
-    console.log('🔄 Cargando lista de actas para administrador...');
+    console.log('🔄 Cargando lista completa de actas para administrador...');
     
-    const contentContainer = document.getElementById('contentContainer');
-    if (contentContainer) {
-        contentContainer.innerHTML = `
-            <div class="content-section active">
-                <div class="content-header d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h4><i class="fas fa-file-invoice"></i> Lista de Actas</h4>
-                        <p class="text-muted mb-0">Gestión completa de actas de infracciones</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-success" onclick="exportarActasExcel()">
-                            <i class="fas fa-file-excel"></i> Exportar Excel
-                        </button>
-                        <button class="btn btn-primary" onclick="loadCrearActa()">
-                            <i class="fas fa-plus"></i> Nueva Acta
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" id="buscarActa" placeholder="Buscar por número, conductor...">
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filtroEstado">
-                            <option value="">Todos los estados</option>
-                            <option value="pendiente">Pendientes</option>
-                            <option value="procesada">Procesadas</option>
-                            <option value="pagada">Pagadas</option>
-                            <option value="anulada">Anuladas</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filtroFiscalizador">
-                            <option value="">Todos los fiscalizadores</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltrosActas()">
-                            <i class="fas fa-times"></i> Limpiar
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Número</th>
-                                        <th>Fecha</th>
-                                        <th>Fiscalizador</th>
-                                        <th>Conductor</th>
-                                        <th>Placa</th>
-                                        <th>Estado</th>
-                                        <th>Monto</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="actasTableBody">
-                                    <tr>
-                                        <td colspan="8" class="text-center">
-                                            <div class="spinner-border text-primary" role="status">
-                                                <span class="visually-hidden">Cargando...</span>
-                                            </div>
-                                            <p class="mt-2">Cargando actas...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+    document.getElementById('contentContainer').innerHTML = `
+        <div class="content-section active">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="card-title">
+                                    <i class="fas fa-file-invoice"></i> Lista Completa de Actas
+                                </h3>
+                                <p class="text-muted mb-0">Supervisión de todas las actas del sistema</p>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-success" onclick="exportarActasExcel()">
+                                    <i class="fas fa-file-excel"></i> Exportar Excel
+                                </button>
+                                <button class="btn btn-primary" onclick="loadCrearActa()">
+                                    <i class="fas fa-plus"></i> Nueva Acta
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas rápidas -->
+                        <div class="card-body border-bottom">
+                            <div class="row text-center">
+                                <div class="col-md-2">
+                                    <div class="info-box bg-info">
+                                        <span class="info-box-icon"><i class="fas fa-file-alt"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Total Actas</span>
+                                            <span class="info-box-number" id="totalActasAdmin">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-warning">
+                                        <span class="info-box-icon"><i class="fas fa-clock"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Pendientes</span>
+                                            <span class="info-box-number" id="actasPendientes">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-primary">
+                                        <span class="info-box-icon"><i class="fas fa-cogs"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Procesadas</span>
+                                            <span class="info-box-number" id="actasProcesadas">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-success">
+                                        <span class="info-box-icon"><i class="fas fa-check"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Aprobadas</span>
+                                            <span class="info-box-number" id="actasAprobadas">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-box bg-secondary">
+                                        <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                                        <div class="info-box-content">
+                                            <span class="info-box-text">Fiscalizadores</span>
+                                            <span class="info-box-number" id="totalFiscalizadores">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de actas -->
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Informe</th>
+                                            <th>Conductor</th>
+                                            <th>Licencia</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="actas-admin-list">
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                <div class="spinner-border" role="status">
+                                                    <span class="sr-only">Cargando actas...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        `;
-        
-        // Cargar datos de actas
-        cargarActasAdmin();
-    }
+        </div>
+    `;
+    
+    // Cargar datos
+    cargarActasAdmin();
 }
 
 function loadCrearActa() {
@@ -1715,6 +1743,150 @@ function loadCrearActa() {
     }
 }
 
+async function cargarActasAdmin() {
+    try {
+        console.log('📊 Cargando datos completos de actas para administrador...');
+        console.log('🌐 URL API:', 'dashboard.php?api=actas-admin');
+        
+        const response = await fetch('dashboard.php?api=actas-admin', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+        
+        const data = await response.json();
+        console.log('📦 Datos recibidos:', data);
+        
+        if (data.success) {
+            const actas = data.actas || [];
+            const stats = data.stats || {};
+            
+            console.log('✅ Actas encontradas:', actas.length);
+            console.log('📊 Estadísticas:', stats);
+            
+            // Actualizar estadísticas
+            document.getElementById('totalActasAdmin').textContent = stats.total_actas || 0;
+            document.getElementById('actasPendientes').textContent = stats.pendientes || 0;
+            document.getElementById('actasProcesadas').textContent = stats.procesadas || 0;
+            document.getElementById('actasAprobadas').textContent = stats.aprobadas || 0;
+            document.getElementById('totalFiscalizadores').textContent = '0'; // Sin fiscalizadores por ahora
+            
+            // Poblar tabla
+            const tbody = document.getElementById('actas-admin-list');
+            if (actas.length > 0) {
+                tbody.innerHTML = actas.map(acta => `
+                    <tr>
+                        <td>
+                            <strong>#${acta.id}</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">${acta.informe || 'N/A'}</span>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>${acta.conductor || 'No especificado'}</strong>
+                                <br>
+                                <small class="text-muted">${acta.resolucion || ''}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <code>${acta.licencia_conductor || 'N/A'}</code>
+                        </td>
+                        <td>
+                            <span class="badge badge-${getEstadoBadgeClassActa(acta.estado)}">
+                                ${(acta.estado || 'Pendiente').charAt(0).toUpperCase() + (acta.estado || 'pendiente').slice(1)}
+                            </span>
+                        </td>
+                        <td>
+                            <div>
+                                ${acta.created_at ? new Date(acta.created_at).toLocaleDateString() : 'N/A'}
+                                <br>
+                                <small class="text-muted">${acta.created_at ? new Date(acta.created_at).toLocaleTimeString() : ''}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-info" onclick="verDetalleActaAdmin(${acta.id})" title="Ver detalle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editarActaAdmin(${acta.id})" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="aprobarActaAdmin(${acta.id})" title="Aprobar">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="rechazarActaAdmin(${acta.id})" title="Rechazar">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+                
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay actas registradas en el sistema</td></tr>';
+            }
+            
+        } else {
+            console.error('❌ Error en la API:', data.message);
+            showErrorToast('Error al cargar actas: ' + (data.message || 'Error desconocido'));
+            const tbody = document.getElementById('actas-admin-list');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error: ' + (data.message || 'Error desconocido') + '</td></tr>';
+        }
+    } catch (error) {
+        console.error('💥 Error completo al cargar actas de administrador:', error);
+        console.error('💥 Detalles del error:', error.message);
+        showErrorToast('Error al cargar las actas: ' + error.message);
+        const tbody = document.getElementById('actas-admin-list');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error de conexión: ' + error.message + '</td></tr>';
+        }
+    }
+}
+
+function getEstadoBadgeClassActa(estado) {
+    switch(estado) {
+        case 'aprobado': return 'success';
+        case 'procesado': return 'primary';
+        case 'pendiente': return 'warning';
+        case 'rechazado': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// Funciones de acciones administrativas
+function verDetalleActaAdmin(id) {
+    showInfoToast('Función ver detalle de acta en desarrollo');
+}
+
+function editarActaAdmin(id) {
+    showInfoToast('Función editar acta en desarrollo');
+}
+
+function aprobarActaAdmin(id) {
+    showInfoToast('Función aprobar acta en desarrollo');
+}
+
+function rechazarActaAdmin(id) {
+    showInfoToast('Función rechazar acta en desarrollo');
+}
+
+function limpiarFiltrosActasAdmin() {
+    document.getElementById('buscarActaAdmin').value = '';
+    document.getElementById('filtroEstadoAdmin').value = '';
+    document.getElementById('filtroFiscalizadorAdmin').value = '';
+    document.getElementById('fechaDesdeAdmin').value = '';
+    cargarActasAdmin();
+}
+
+function exportarActasExcel() {
+    showInfoToast('Función exportar Excel en desarrollo');
+}
+
 function loadGestionarInfracciones() {
     console.log('🔄 Cargando gestión de infracciones para administrador...');
     
@@ -1812,7 +1984,7 @@ function loadGestionarInfracciones() {
 // Funciones auxiliares para gestión de actas
 async function cargarActasAdmin() {
     try {
-        const response = await fetch('dashboard.php?api=actas', {
+        const response = await fetch('dashboard.php?api=actas-admin', {
             method: 'GET',
             credentials: 'same-origin'
         });
@@ -1966,7 +2138,7 @@ function actualizarEstadisticasInfracciones(infracciones) {
 // ==================== GESTIÓN DE CARGA Y PASAJEROS ====================
 
 function loadCargaPasajerosList() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('contentContainer').innerHTML = `
         <div class="content-wrapper">
             <div class="row">
                 <div class="col-12">
@@ -2017,7 +2189,7 @@ function loadCargaPasajerosList() {
 }
 
 function loadCrearCargaPasajero() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('contentContainer').innerHTML = `
         <div class="content-wrapper">
             <div class="row">
                 <div class="col-12">
@@ -2115,7 +2287,7 @@ function loadCrearCargaPasajero() {
 }
 
 function loadEstadisticasCarga() {
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('contentContainer').innerHTML = `
         <div class="content-wrapper">
             <div class="row">
                 <div class="col-12">
@@ -2200,7 +2372,7 @@ function loadEstadisticasCarga() {
 
 async function cargarDatosCargaPasajeros() {
     try {
-        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=carga-pasajeros`);
+        const response = await fetch('api.php?action=carga-pasajeros');
         const data = await response.json();
         
         if (data.success) {
@@ -2251,7 +2423,7 @@ async function cargarDatosCargaPasajeros() {
 
 async function cargarEstadisticasCarga() {
     try {
-        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=carga-pasajeros`);
+        const response = await fetch('api.php?action=carga-pasajeros');
         const data = await response.json();
         
         if (data.success && data.carga_pasajeros) {
