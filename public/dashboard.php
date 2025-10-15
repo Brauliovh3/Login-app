@@ -30,102 +30,33 @@ class DashboardApp {
     }
     
     private function getActasByRole() {
-        // Intenta primero contra 'actas', si falla, reintenta contra 'carga_pasajeros'.
-        $tablesToTry = ['actas', 'carga_pasajeros'];
-        foreach ($tablesToTry as $table) {
-            try {
-                if (!$this->tableExists($table)) { continue; }
-
-                // Selección dinámica segura según columnas existentes
-                $cols = ["id"]; // id siempre
-
-                // Número (alias: informe)
-                if ($this->columnExists($table, 'numero_acta')) {
-                    $cols[] = 'numero_acta AS informe';
-                } elseif ($this->columnExists($table, 'informe')) {
-                    $cols[] = 'informe';
-                } elseif ($this->columnExists($table, 'codigo_infraccion')) {
-                    $cols[] = 'codigo_infraccion AS informe';
-                } else {
-                    $cols[] = 'id AS informe';
-                }
-
-                // Conductor
-                if ($this->columnExists($table, 'conductor')) {
-                    $cols[] = "conductor";
-                } elseif ($this->columnExists($table, 'conductor_nombres') || $this->columnExists($table, 'conductor_apellidos')) {
-                    $cols[] = "CONCAT(IFNULL(conductor_nombres,''),' ',IFNULL(conductor_apellidos,'')) AS conductor";
-                } elseif ($this->columnExists($table, 'nombre_conductor')) {
-                    $cols[] = "nombre_conductor AS conductor";
-                } else {
-                    $cols[] = "'' AS conductor";
-                }
-
-                // Placa
-                if ($this->columnExists($table, 'placa')) {
-                    $cols[] = "placa";
-                } elseif ($this->columnExists($table, 'vehiculo_placa')) {
-                    $cols[] = "vehiculo_placa AS placa";
-                } elseif ($this->columnExists($table, 'placa_vehiculo')) {
-                    $cols[] = "placa_vehiculo AS placa";
-                } else {
-                    $cols[] = "'' AS placa";
-                }
-
-                // Resolución / descripción (no siempre se muestra, pero mantener para compatibilidad)
-                if ($this->columnExists($table, 'resolucion')) {
-                    $cols[] = "resolucion";
-                } elseif ($this->columnExists($table, 'descripcion_infraccion')) {
-                    $cols[] = "descripcion_infraccion AS resolucion";
-                } elseif ($this->columnExists($table, 'descripcion_hechos')) {
-                    $cols[] = "descripcion_hechos AS resolucion";
-                } else {
-                    $cols[] = "'' AS resolucion";
-                }
-
-                // RUC/DNI
-                if ($this->columnExists($table, 'ruc_dni')) {
-                    $cols[] = 'ruc_dni';
-                } else {
-                    $cols[] = "'' AS ruc_dni";
-                }
-
-                // Estado
-                if ($this->columnExists($table, 'estado')) {
-                    $cols[] = 'estado';
-                } else {
-                    $cols[] = "'Pendiente' AS estado";
-                }
-
-                // Fecha
-                if ($this->columnExists($table, 'created_at')) {
-                    $cols[] = "created_at";
-                } elseif ($this->columnExists($table, 'fecha_hora')) {
-                    $cols[] = "fecha_hora AS created_at";
-                } elseif ($this->columnExists($table, 'fecha_intervencion')) {
-                    $cols[] = "fecha_intervencion AS created_at";
-                } else {
-                    $cols[] = "NOW() AS created_at";
-                }
-
-                $select = implode(', ', $cols);
-                $order = $this->columnExists($table, 'created_at') ? 'created_at' : 'id';
-                $sql = "SELECT $select FROM `$table` ORDER BY $order DESC LIMIT 200";
-                $stmt = $this->pdo->query($sql);
-
-                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-                return [
-                    'success' => true,
-                    'actas' => $rows,
-                    'stats' => ['total_actas' => count($rows)]
-                ];
-            } catch (Exception $e) {
-                // probar siguiente tabla
-                continue;
-            }
+        try {
+            $sql = "SELECT 
+                id,
+                numero_acta,
+                placa_vehiculo AS placa,
+                placa_vehiculo,
+                nombre_conductor,
+                nombre_conductor AS conductor_nombre,
+                ruc_dni,
+                'pendiente' AS estado,
+                fecha_intervencion AS created_at,
+                fecha_intervencion AS fecha_acta
+            FROM actas 
+            ORDER BY id DESC 
+            LIMIT 200";
+            
+            $stmt = $this->pdo->query($sql);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            
+            return [
+                'success' => true,
+                'actas' => $rows,
+                'stats' => ['total_actas' => count($rows)]
+            ];
+        } catch (Exception $e) {
+            return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
         }
-        // Si ninguna tabla existe o ambas fallaron, devolver vacío sin error
-        return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
     }
 
     private function columnExists($table, $column) {
