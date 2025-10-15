@@ -1255,12 +1255,21 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'Acceso denegado'];
             }
             
-            // Consulta simple para obtener todas las actas
+            // Consulta para obtener todas las actas
             $query = "
                 SELECT 
-                    cp.*
-                FROM carga_pasajeros cp
-                ORDER BY cp.id DESC 
+                    id,
+                    numero_acta,
+                    placa_vehiculo AS placa,
+                    placa_vehiculo,
+                    nombre_conductor,
+                    nombre_conductor AS conductor_nombre,
+                    ruc_dni,
+                    'pendiente' AS estado,
+                    fecha_intervencion AS created_at,
+                    fecha_intervencion AS fecha_acta
+                FROM actas 
+                ORDER BY id DESC 
                 LIMIT 200
             ";
             
@@ -1268,7 +1277,7 @@ class DashboardApp {
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             // Estadísticas básicas
-            $statsQuery = "SELECT COUNT(*) as total_actas FROM carga_pasajeros";
+            $statsQuery = "SELECT COUNT(*) as total_actas FROM actas";
             
             $statsStmt = $this->pdo->query($statsQuery);
             $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
@@ -2661,7 +2670,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <i class="fas fa-users"></i> Gestión de Usuarios
                     <i class="fas fa-chevron-down sidebar-arrow"></i>
                 </a>
-                <ul class="sidebar-submenu" id="submenu-usuarios" style="display: none !important;">
+                <ul class="sidebar-submenu" id="submenu-usuarios" style="display: none;">
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadUsuariosList()" data-section="listar-usuarios">
                             <i class="fas fa-list"></i> Lista de Usuarios
@@ -2679,7 +2688,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <i class="fas fa-file-invoice"></i> Gestión de Actas
                     <i class="fas fa-chevron-down sidebar-arrow"></i>
                 </a>
-                <ul class="sidebar-submenu" id="submenu-actas" style="display: none !important;">
+                <ul class="sidebar-submenu" id="submenu-actas" style="display: none;">
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadActasList()">
                             <i class="fas fa-list"></i> Lista de Actas
@@ -2702,7 +2711,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <i class="fas fa-users-cog"></i> Gestión de Carga y Pasajeros
                     <i class="fas fa-chevron-down sidebar-arrow"></i>
                 </a>
-                <ul class="sidebar-submenu" id="submenu-carga-pasajeros" style="display: none !important;">
+                <ul class="sidebar-submenu" id="submenu-carga-pasajeros" style="display: none;">
                     <li class="sidebar-subitem">
                         <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadCargaPasajerosList()">
                             <i class="fas fa-list"></i> Lista de Registros

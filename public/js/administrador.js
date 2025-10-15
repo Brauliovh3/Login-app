@@ -1788,14 +1788,11 @@ async function cargarActasAdmin() {
                     tbody.innerHTML = actas.map(acta => `
                         <tr>
                             <td><strong>#${acta.id || 'N/A'}</strong></td>
-                            <td><span class="badge bg-info">${acta.informe || 'N/A'}</span></td>
-                            <td>
-                                <strong>${acta.conductor || 'No especificado'}</strong>
-                                <br><small class="text-muted">${acta.resolucion || ''}</small>
-                            </td>
-                            <td><code>${acta.placa || 'N/A'}</code></td>
-                            <td><span class="badge bg-secondary">Pendiente</span></td>
-                            <td>Hoy</td>
+                            <td><span class="badge bg-info">${acta.numero_acta || 'N/A'}</span></td>
+                            <td>${acta.nombre_conductor || 'N/A'}</td>
+                            <td><small class="text-muted">${acta.ruc_dni || 'N/A'}</small></td>
+                            <td><span class="badge ${getEstadoBadge(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
+                            <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
                             <td>
                                 <button class="btn btn-sm btn-info" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
                                     <i class="fas fa-eye"></i>
@@ -2477,6 +2474,31 @@ console.log('- loadAprobarUsuarios:', typeof window.loadAprobarUsuarios);
 console.log('- loadCargaPasajerosList:', typeof window.loadCargaPasajerosList);
 console.log('- loadCrearCargaPasajero:', typeof window.loadCrearCargaPasajero);
 console.log('- loadEstadisticasCarga:', typeof window.loadEstadisticasCarga);
+
+// Funciones auxiliares para actas
+function getEstadoBadge(estado) {
+    switch(estado?.toLowerCase()) {
+        case 'pendiente': return 'bg-warning';
+        case 'procesada': case 'procesado': return 'bg-primary';
+        case 'aprobada': case 'aprobado': return 'bg-success';
+        case 'anulada': case 'anulado': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+    } catch (error) {
+        return 'N/A';
+    }
+}
 
 console.log('✅ Módulo administrador cargado completamente');
 
