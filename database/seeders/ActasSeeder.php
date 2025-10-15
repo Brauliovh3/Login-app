@@ -10,6 +10,10 @@ class ActasSeeder extends Seeder
 {
     public function run(): void
     {
+        // Check if data already exists to avoid duplicates
+        if (DB::table('actas')->count() > 0) {
+            return; // Skip seeding if data already exists
+        }
 
         $actas = [
             [

@@ -1769,66 +1769,43 @@ async function cargarActasAdmin() {
             console.log('📊 Estadísticas:', stats);
             
             // Actualizar estadísticas
-            document.getElementById('totalActasAdmin').textContent = stats.total_actas || 0;
-            document.getElementById('actasPendientes').textContent = stats.pendientes || 0;
-            document.getElementById('actasProcesadas').textContent = stats.procesadas || 0;
-            document.getElementById('actasAprobadas').textContent = stats.aprobadas || 0;
-            document.getElementById('totalFiscalizadores').textContent = '0'; // Sin fiscalizadores por ahora
+            const totalActasEl = document.getElementById('totalActasAdmin');
+            if (totalActasEl) totalActasEl.textContent = stats.total_actas || 0;
+            
+            const actasPendientesEl = document.getElementById('actasPendientes');
+            if (actasPendientesEl) actasPendientesEl.textContent = '0';
+            
+            const actasProcesadasEl = document.getElementById('actasProcesadas');
+            if (actasProcesadasEl) actasProcesadasEl.textContent = '0';
+            
+            const actasAprobadasEl = document.getElementById('actasAprobadas');
+            if (actasAprobadasEl) actasAprobadasEl.textContent = '0';
             
             // Poblar tabla
             const tbody = document.getElementById('actas-admin-list');
-            if (actas.length > 0) {
-                tbody.innerHTML = actas.map(acta => `
-                    <tr>
-                        <td>
-                            <strong>#${acta.id}</strong>
-                        </td>
-                        <td>
-                            <span class="badge badge-info">${acta.informe || 'N/A'}</span>
-                        </td>
-                        <td>
-                            <div>
+            if (tbody) {
+                if (actas.length > 0) {
+                    tbody.innerHTML = actas.map(acta => `
+                        <tr>
+                            <td><strong>#${acta.id || 'N/A'}</strong></td>
+                            <td><span class="badge bg-info">${acta.informe || 'N/A'}</span></td>
+                            <td>
                                 <strong>${acta.conductor || 'No especificado'}</strong>
-                                <br>
-                                <small class="text-muted">${acta.resolucion || ''}</small>
-                            </div>
-                        </td>
-                        <td>
-                            <code>${acta.licencia_conductor || 'N/A'}</code>
-                        </td>
-                        <td>
-                            <span class="badge badge-${getEstadoBadgeClassActa(acta.estado)}">
-                                ${(acta.estado || 'Pendiente').charAt(0).toUpperCase() + (acta.estado || 'pendiente').slice(1)}
-                            </span>
-                        </td>
-                        <td>
-                            <div>
-                                ${acta.created_at ? new Date(acta.created_at).toLocaleDateString() : 'N/A'}
-                                <br>
-                                <small class="text-muted">${acta.created_at ? new Date(acta.created_at).toLocaleTimeString() : ''}</small>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-info" onclick="verDetalleActaAdmin(${acta.id})" title="Ver detalle">
+                                <br><small class="text-muted">${acta.resolucion || ''}</small>
+                            </td>
+                            <td><code>${acta.placa || 'N/A'}</code></td>
+                            <td><span class="badge bg-secondary">Pendiente</span></td>
+                            <td>Hoy</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-warning" onclick="editarActaAdmin(${acta.id})" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-success" onclick="aprobarActaAdmin(${acta.id})" title="Aprobar">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="rechazarActaAdmin(${acta.id})" title="Rechazar">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
-                
-            } else {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay actas registradas en el sistema</td></tr>';
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay actas registradas en el sistema</td></tr>';
+                }
             }
             
         } else {

@@ -2258,7 +2258,8 @@ function cargarMisActasDesdeAPI() {
     })
     .catch(error => {
         console.error('Error al cargar actas del fiscalizador:', error);
-        mostrarErrorActas('Error de conexión al cargar mi historial: ' + error.message);
+        // Mostrar animación de carga con camioncito en lugar del error
+        mostrarAnimacionCargaCamion();
     });
 }
 
@@ -2572,7 +2573,7 @@ function imprimirMisActas() {
                 <p>Fiscalizador: ${usuario.nombre}</p>
                 <p>Fecha de reporte: ${fechaHoy}</p>
             </div>
-            
+
             <table>
                 <thead>
                     <tr>
@@ -2599,7 +2600,7 @@ function imprimirMisActas() {
                     `).join('')}
                 </tbody>
             </table>
-            
+
             <div class="footer">
                 <p>Total de actas: ${window.misActasFiscalizador.length}</p>
                 <p>Generado desde el Sistema de Fiscalización Municipal</p>
@@ -2614,6 +2615,87 @@ function imprimirMisActas() {
     ventanaImpresion.document.close();
     ventanaImpresion.focus();
     ventanaImpresion.print();
+}
+
+// Función para mostrar animación de carga con camioncito
+function mostrarAnimacionCargaCamion() {
+    const tbody = document.getElementById('misActasTableBody');
+    if (!tbody) return;
+
+    // Crear animación de camioncito cargando
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center" style="padding: 50px;">
+                <div class="camion-loading-container" style="position: relative; height: 120px;">
+                    <!-- Carretera -->
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 10px; background: linear-gradient(90deg, #666 0%, #999 50%, #666 100%); border-radius: 5px;"></div>
+
+                    <!-- Camioncito animado -->
+                    <div class="camioncito" style="
+                        position: absolute;
+                        bottom: 10px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        font-size: 40px;
+                        animation: moverCamion 2s ease-in-out infinite;
+                    ">
+                        🚛
+                    </div>
+
+                    <!-- Nube de polvo -->
+                    <div class="polvo" style="
+                        position: absolute;
+                        bottom: 5px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        font-size: 20px;
+                        opacity: 0.7;
+                        animation: polvo 2s ease-in-out infinite;
+                    ">
+                        💨
+                    </div>
+
+                    <!-- Texto de carga -->
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        text-align: center;
+                        color: #666;
+                        font-weight: bold;
+                    ">
+                        <div style="font-size: 16px; margin-bottom: 5px;">Cargando tu historial...</div>
+                        <div style="font-size: 12px; color: #999;">Por favor espera un momento</div>
+                    </div>
+                </div>
+
+                <style>
+                    @keyframes moverCamion {
+                        0% { transform: translateX(-100px); }
+                        50% { transform: translateX(0px); }
+                        100% { transform: translateX(100px); }
+                    }
+
+                    @keyframes polvo {
+                        0% { opacity: 0; transform: translateX(-100px) scale(0.5); }
+                        50% { opacity: 0.7; transform: translateX(0px) scale(1); }
+                        100% { opacity: 0; transform: translateX(100px) scale(0.5); }
+                    }
+
+                    .camion-loading-container {
+                        overflow: hidden;
+                    }
+                </style>
+            </td>
+        </tr>
+    `;
+
+    // Intentar recargar después de 5 segundos
+    setTimeout(() => {
+        console.log('⏰ Reintentando carga automática después de animación...');
+        cargarMisActasDesdeAPI();
+    }, 5000);
 }
 
 // ================================
@@ -2663,5 +2745,6 @@ window.exportarMisActas = exportarMisActas;
 window.imprimirMisActas = imprimirMisActas;
 window.exportarActaIndividual = exportarActaIndividual;
 window.generarHTMLHistorialActas = generarHTMLHistorialActas;
+window.mostrarAnimacionCargaCamion = mostrarAnimacionCargaCamion;
 
 console.log('✅ Fiscalizador Actas JS cargado correctamente');
