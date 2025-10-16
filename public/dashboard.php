@@ -209,6 +209,24 @@ class DashboardApp {
                     }
                     break;
                     
+                case 'eliminar_acta':
+                    if ($method === 'DELETE' || $method === 'POST') {
+                        $data = json_decode(file_get_contents('php://input'), true);
+                        if (!$data) {
+                            $data = $_POST;
+                        }
+                        $actaId = $data['id'] ?? null;
+                        if (!$actaId) {
+                            echo json_encode(['success' => false, 'message' => 'ID de acta requerido']);
+                        } else {
+                            echo json_encode($this->deleteActa($actaId));
+                        }
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
                 case 'notifications':
                     echo json_encode($this->getUserNotifications());
                     break;

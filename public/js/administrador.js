@@ -1794,8 +1794,14 @@ async function cargarActasAdmin() {
                             <td><span class="badge ${getEstadoBadge(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
                             <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
                             <td>
-                                <button class="btn btn-sm btn-info" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
+                                <button class="btn btn-sm btn-info me-1" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
                                     <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary me-1" onclick="duplicarActaAdmin(${acta.id})" title="Duplicar">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminarActaAdmin(${acta.id})" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </td>
                         </tr>
@@ -1837,6 +1843,10 @@ function verDetalleActaAdmin(id) {
     showInfoToast('Función ver detalle de acta en desarrollo');
 }
 
+function duplicarActaAdmin(id) {
+    showInfoToast('Función duplicar acta en desarrollo');
+}
+
 function editarActaAdmin(id) {
     showInfoToast('Función editar acta en desarrollo');
 }
@@ -1857,8 +1867,94 @@ function limpiarFiltrosActasAdmin() {
     cargarActasAdmin();
 }
 
+async function eliminarActaAdmin(actaId) {
+    showConfirmModal({
+        title: 'Eliminar Acta',
+        message: '¿Estás seguro de que deseas eliminar esta acta? Esta acción no se puede deshacer.',
+        type: 'danger',
+        confirmText: 'Sí, Eliminar',
+        cancelText: 'Cancelar',
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`${window.location.origin}${window.location.pathname}?api=eliminar_acta`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: actaId }),
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccessToast('Acta eliminada correctamente: ' + (data.acta_numero || ''));
+                    // Recargar la lista de actas
+                    cargarActasAdmin();
+                } else {
+                    showErrorToast('Error al eliminar: ' + (data.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error al eliminar acta:', error);
+                showErrorToast('Error de conexión al eliminar acta: ' + error.message);
+            }
+        }
+    });
+}
+
 function exportarActasExcel() {
-    showInfoToast('Función exportar Excel en desarrollo');
+    showInfoToast('Preparando exportación a Excel...', 'info');
+    
+    // Obtener las actas actuales desde la tabla
+    const tbody = document.getElementById('actas-admin-list');
+    if (!tbody) {
+        showErrorToast('No se encontró la tabla de actas');
+        return;
+    }
+    
+    // Obtener todas las filas de la tabla
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0 || (rows.length === 1 && rows[0].cells.length === 1)) {
+        showErrorToast('No hay actas para exportar');
+        return;
+    }
+    
+    // Crear el contenido CSV
+    let csvContent = 'ID,Informe,Conductor,Licencia,Estado,Fecha\n';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 1) {
+            const rowData = [
+                cells[0].textContent.trim(), // ID
+                cells[1].textContent.trim(), // Informe
+                cells[2].textContent.trim(), // Conductor
+                cells[3].textContent.trim(), // Licencia
+                cells[4].textContent.trim(), // Estado
+                cells[5].textContent.trim()  // Fecha
+            ];
+            csvContent += rowData.map(cell => `"${cell}"`).join(',') + '\n';
+        }
+    });
+    
+    // Crear el archivo y descargarlo
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `actas_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSuccessToast('Archivo Excel exportado correctamente');
 }
 
 function loadGestionarInfracciones() {
