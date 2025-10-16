@@ -2368,24 +2368,26 @@ function loadEstadisticasCarga() {
 
 async function cargarDatosCargaPasajeros() {
     try {
-        const response = await fetch('api.php?action=carga-pasajeros');
+        const response = await fetch('dashboard.php?api=carga-pasajeros', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
         const data = await response.json();
         
         if (data.success) {
             const tbody = document.getElementById('carga-pasajeros-list');
             if (data.carga_pasajeros && data.carga_pasajeros.length > 0) {
+                // Map columns from carga_pasajeros table: id, informe, resolucion, conductor, licencia_conductor, estado, created_at
                 tbody.innerHTML = data.carga_pasajeros.map(registro => `
                     <tr>
                         <td>${registro.id}</td>
-                        <td>
-                            <span class="badge badge-${registro.tipo === 'carga' ? 'primary' : 'info'}">
-                                ${registro.tipo.charAt(0).toUpperCase() + registro.tipo.slice(1)}
-                            </span>
-                        </td>
-                        <td>${registro.descripcion || 'N/A'}</td>
-                        <td>${registro.peso_cantidad || 'N/A'}</td>
-                        <td>${registro.origen || 'N/A'}</td>
-                        <td>${registro.destino || 'N/A'}</td>
+                        <td>${registro.informe || 'N/A'}</td>
+                        <td>${registro.resolucion || 'N/A'}</td>
+                        <td>${registro.conductor || 'N/A'}</td>
+                        <td>${registro.licencia_conductor || 'N/A'}</td>
                         <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
                         <td>
                             <span class="badge badge-${getEstadoBadgeClass(registro.estado)}">
@@ -2419,20 +2421,24 @@ async function cargarDatosCargaPasajeros() {
 
 async function cargarEstadisticasCarga() {
     try {
-        const response = await fetch('api.php?action=carga-pasajeros');
+        const response = await fetch('dashboard.php?api=carga-pasajeros', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        });
         const data = await response.json();
         
         if (data.success && data.carga_pasajeros) {
             const registros = data.carga_pasajeros;
             const total = registros.length;
-            const carga = registros.filter(r => r.tipo === 'carga').length;
-            const pasajeros = registros.filter(r => r.tipo === 'pasajero').length;
-            const enTransito = registros.filter(r => r.estado === 'en_transito').length;
-            
-            document.getElementById('totalRegistros').textContent = total;
-            document.getElementById('registrosCarga').textContent = carga;
-            document.getElementById('registrosPasajeros').textContent = pasajeros;
-            document.getElementById('registrosTransito').textContent = enTransito;
+            const pendientes = registros.filter(r => (r.estado || '').toLowerCase() === 'pendiente').length;
+            const procesados = registros.filter(r => (r.estado || '').toLowerCase() === 'procesado' || (r.estado || '').toLowerCase() === 'procesada').length;
+            const aprobados = registros.filter(r => (r.estado || '').toLowerCase() === 'aprobado' || (r.estado || '').toLowerCase() === 'aprobada').length;
+
+            if (document.getElementById('totalRegistros')) document.getElementById('totalRegistros').textContent = total;
+            if (document.getElementById('registrosPendientes')) document.getElementById('registrosPendientes').textContent = pendientes;
+            if (document.getElementById('registrosProcesados')) document.getElementById('registrosProcesados').textContent = procesados;
+            if (document.getElementById('registrosAprobados')) document.getElementById('registrosAprobados').textContent = aprobados;
         }
     } catch (error) {
         console.error('Error al cargar estadísticas:', error);
