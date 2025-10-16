@@ -231,6 +231,19 @@ class DashboardApp {
                     echo json_encode($this->getUserNotifications());
                     break;
                     
+                case 'codigos-infracciones':
+                    echo json_encode($this->getCodigosInfracciones());
+                    break;
+                    
+                case 'anular-acta':
+                    if ($method === 'POST') {
+                        echo json_encode($this->anularActa());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
                 default:
                     http_response_code(404);
                     echo json_encode(['success' => false, 'message' => 'API endpoint no encontrado']);
@@ -1075,6 +1088,8 @@ class DashboardApp {
                 'hora_intervencion' => $data['hora_intervencion'] ?? date('H:i:s'),
                 'inspector_responsable' => $data['inspector_responsable'] ?? null,
                 'codigo_infraccion' => $data['codigo_infraccion'] ?? ($data['informe'] ?? null),
+                'descripcion_infraccion' => $data['descripcion_infraccion'] ?? null,
+                'fiscalizador_id' => $_SESSION['user_id'] ?? null, // ID del usuario que crea el acta
             ];
 
             // Filtrar por columnas existentes
@@ -1086,7 +1101,7 @@ class DashboardApp {
 
             // Satisfacer columnas NOT NULL sin default obligatorias
             $requiredDefaults = [
-                'numero_acta' => function() { return 'ACT-' . date('Ymd-His'); },
+                'numero_acta' => function() { return $this->generarNumeroActaPorAnio(); },
                 'codigo_ds' => function() { return ''; },
                 'placa' => function() use ($mapping) { return $mapping['placa'] ?? ($mapping['placa_vehiculo'] ?? ''); },
                 'fecha_intervencion' => function() use ($mapping) { return $mapping['fecha_intervencion'] ?? date('Y-m-d'); },
@@ -2044,33 +2059,15 @@ class DashboardApp {
             $stmt = $this->pdo->prepare("
                 SELECT a.*, u.name as fiscalizador_nombre 
                 FROM actas a 
-                LEFT JOIN usuarios u ON a.user_id = u.id 
-                WHERE a.user_id = ? 
+                LEFT JOIN usuarios u ON a.fiscalizador_id = u.id 
+                WHERE a.fiscalizador_id = ? 
                 ORDER BY a.created_at DESC
             ");
             
             $stmt->execute([$fiscalizadorId]);
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Convertir estado numérico a texto
-            foreach ($actas as &$acta) {
-                switch((int)$acta['estado']) {
-                    case 0:
-                        $acta['estado'] = 'pendiente';
-                        break;
-                    case 1:
-                        $acta['estado'] = 'procesada';
-                        break;
-                    case 2:
-                        $acta['estado'] = 'anulada';
-                        break;
-                    case 3:
-                        $acta['estado'] = 'pagada';
-                        break;
-                    default:
-                        $acta['estado'] = 'pendiente';
-                }
-            }
+            // El estado ya es ENUM('Pendiente', 'Aprobado', 'Anulado'), no necesita conversión
             
             return [
                 'success' => true, 
@@ -2080,6 +2077,158 @@ class DashboardApp {
             ];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error al obtener actas del fiscalizador: ' . $e->getMessage()];
+        }
+    }
+    
+    private function getCodigosInfracciones() {
+        // Códigos basados en los seeders - sin necesidad de tablas adicionales
+        $codigos = [
+            // F.1 - Muy Grave
+            ['codigo' => 'F.1', 'descripcion' => 'Prestar servicio de transporte sin autorización', 'gravedad' => 'Muy grave'],
+            
+            // F.2 - Muy Grave
+            ['codigo' => 'F.2', 'descripcion' => 'Bloqueo o interrupción del libre tránsito', 'gravedad' => 'Muy grave'],
+            
+            // F.3 - Muy Grave
+            ['codigo' => 'F.3', 'descripcion' => 'Conductor participa en bloqueo de vías', 'gravedad' => 'Muy grave'],
+            
+            // F.4 - Muy Grave (con subcategorías)
+            ['codigo' => 'F.4-a', 'descripcion' => 'Negarse a entregar información o documentación', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.4-b', 'descripcion' => 'Brindar intencionalmente información no conforme', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.4-c', 'descripcion' => 'Actos de simulación o suplantación', 'gravedad' => 'Muy grave'],
+            
+            // F.5 - Muy Grave (con subcategorías)
+            ['codigo' => 'F.5-a', 'descripcion' => 'Contratar transportista no autorizado', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.5-b', 'descripcion' => 'Usar vía pública para carga/descarga habitual', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.5-c', 'descripcion' => 'No exigir autorización especial para carga excedida', 'gravedad' => 'Muy grave'],
+            
+            // F.6 - Muy Grave (con subcategorías)
+            ['codigo' => 'F.6-a', 'descripcion' => 'Conductor niega entregar información', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.6-b', 'descripcion' => 'Conductor brinda información falsa', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.6-c', 'descripcion' => 'Realizar maniobras evasivas con vehículo', 'gravedad' => 'Muy grave'],
+            ['codigo' => 'F.6-d', 'descripcion' => 'Conductor en actos de simulación o suplantación', 'gravedad' => 'Muy grave'],
+            
+            // F.7 - Muy Grave
+            ['codigo' => 'F.7', 'descripcion' => 'Atentar contra integridad del inspector', 'gravedad' => 'Muy grave'],
+            
+            // F.8 - Muy Grave
+            ['codigo' => 'F.8', 'descripcion' => 'Circular en emergencia incumpliendo restricciones', 'gravedad' => 'Muy grave'],
+            
+            // I.1 - Grave (con subcategorías)
+            ['codigo' => 'I.1-a', 'descripcion' => 'No portar manifiesto de usuarios', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.1-b', 'descripcion' => 'No portar hoja de ruta', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.1-c', 'descripcion' => 'No portar guía de remisión del transportista', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.1-d', 'descripcion' => 'No portar documento de habilitación del vehículo', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.1-e', 'descripcion' => 'No portar certificado de Inspección Técnica Vehicular', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.1-f', 'descripcion' => 'No portar certificado SOAT', 'gravedad' => 'Grave'],
+            
+            // I.2 - Grave (con subcategorías)
+            ['codigo' => 'I.2-a', 'descripcion' => 'No exhibir modalidad de servicio y razón social', 'gravedad' => 'Grave'],
+            ['codigo' => 'I.2-b', 'descripcion' => 'No colocar tarifas y ruta visible para usuarios', 'gravedad' => 'Grave'],
+        ];
+        
+        return [
+            'success' => true,
+            'codigos' => $codigos,
+            'total' => count($codigos)
+        ];
+    }
+    
+    private function anularActa() {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (!isset($data['acta_id']) || !isset($data['motivo_anulacion'])) {
+                return ['success' => false, 'message' => 'Datos incompletos'];
+            }
+            
+            $actaId = $data['acta_id'];
+            $motivo = trim($data['motivo_anulacion']);
+            
+            if (strlen($motivo) < 10) {
+                return ['success' => false, 'message' => 'El motivo debe tener al menos 10 caracteres'];
+            }
+            
+            // Verificar que el acta existe
+            $stmt = $this->pdo->prepare("SELECT estado FROM actas WHERE id = ?");
+            $stmt->execute([$actaId]);
+            $acta = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$acta) {
+                return ['success' => false, 'message' => 'Acta no encontrada'];
+            }
+            
+            if ($acta['estado'] === 'Anulado') {
+                return ['success' => false, 'message' => 'El acta ya está anulada'];
+            }
+            
+            // Actualizar acta a estado Anulado
+            $stmt = $this->pdo->prepare("
+                UPDATE actas 
+                SET estado = 'Anulado', 
+                    motivo_anulacion = ?, 
+                    fecha_anulacion = NOW(),
+                    anulado_por = ?
+                WHERE id = ?
+            ");
+            
+            $stmt->execute([
+                $motivo,
+                $_SESSION['user_id'],
+                $actaId
+            ]);
+            
+            return [
+                'success' => true,
+                'message' => 'Acta anulada correctamente'
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al anular acta: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    private function generarNumeroActaPorAnio() {
+        try {
+            $anioActual = date('Y');
+            
+            // Buscar el último número de acta del año actual
+            $stmt = $this->pdo->prepare("
+                SELECT numero_acta 
+                FROM actas 
+                WHERE numero_acta LIKE ? 
+                ORDER BY id DESC 
+                LIMIT 1
+            ");
+            $stmt->execute(["ACT-{$anioActual}-%"]);
+            $ultimaActa = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($ultimaActa && $ultimaActa['numero_acta']) {
+                // Extraer el número secuencial del último registro
+                // Formato: ACT-2025-0001
+                $partes = explode('-', $ultimaActa['numero_acta']);
+                if (count($partes) >= 3) {
+                    $ultimoNumero = intval($partes[2]);
+                    $nuevoNumero = $ultimoNumero + 1;
+                } else {
+                    $nuevoNumero = 1;
+                }
+            } else {
+                // Primer acta del año
+                $nuevoNumero = 1;
+            }
+            
+            // Formatear con 4 dígitos: 0001, 0002, etc.
+            $numeroFormateado = str_pad($nuevoNumero, 4, '0', STR_PAD_LEFT);
+            
+            return "ACT-{$anioActual}-{$numeroFormateado}";
+            
+        } catch (Exception $e) {
+            // Fallback en caso de error
+            return 'ACT-' . date('Ymd-His');
         }
     }
 }
