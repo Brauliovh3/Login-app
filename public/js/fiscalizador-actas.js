@@ -171,7 +171,7 @@ function loadCrearActa() {
 
 // Función específica para mis actas (filtradas por usuario)
 function loadMisActas() {
-    console.log('� Cargando historial de mis actas...');
+    console.log('🛒 Cargando historial de mis actas...');
     
     const contentContainer = validarElemento('contentContainer', 'loadMisActas');
     if (!contentContainer) return;
@@ -348,6 +348,9 @@ function generarHTMLGestionActas() {
                     </button>
                     <button class="btn btn-info" onclick="exportarActas('pdf')">
                         <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                    <button class="btn btn-warning" onclick="exportarActas('pdf-detallado')">
+                        <i class="fas fa-file-pdf"></i> PDF Detallado
                     </button>
                     <button class="btn btn-warning" onclick="imprimirActas()">
                         <i class="fas fa-print"></i> Imprimir
@@ -2334,17 +2337,19 @@ function formatDate(dateString) {
 
 function exportarActas(formato) {
     console.log(`📄 Exportando actas en formato: ${formato}`);
-    
+
     if (!todasLasActas || todasLasActas.length === 0) {
         mostrarErrorActas('No hay actas para exportar');
         return;
     }
-    
+
     try {
         if (formato === 'excel') {
             exportarExcel();
         } else if (formato === 'pdf') {
             exportarPDF();
+        } else if (formato === 'pdf-detallado') {
+            exportarPDFDetallado();
         }
     } catch (error) {
         console.error('Error al exportar:', error);
@@ -2383,36 +2388,176 @@ function exportarExcel() {
 }
 
 function exportarPDF() {
-    // Abrir ventana de impresión con formato PDF
-    const ventanaImpresion = window.open('', '_blank');
-    
-    if (!ventanaImpresion) {
-        mostrarErrorActas('No se pudo abrir la ventana de impresión. Verifique que no esté bloqueada por el navegador.');
-        return;
+    // Verificar si html2pdf está disponible, si no, cargarlo dinámicamente
+    if (typeof html2pdf === 'undefined') {
+        console.log('📚 Cargando html2pdf.js...');
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => {
+            console.log('✅ html2pdf.js cargado, generando PDF...');
+            generarPDFDescarga();
+        };
+        script.onerror = () => {
+            mostrarErrorActas('Error al cargar la librería de PDF. Intente nuevamente.');
+        };
+        document.head.appendChild(script);
+    } else {
+        generarPDFDescarga();
     }
-    
-    const contenidoPDF = generarHTMLParaImpresion();
-    
-    ventanaImpresion.document.write(contenidoPDF);
-    ventanaImpresion.document.close();
-    
-    // Esperar a que se cargue completamente antes de imprimir
-    ventanaImpresion.onload = function() {
-        ventanaImpresion.print();
-    };
-    
-    mostrarInfoActas('Abriendo vista previa de PDF...');
+}
+
+function generarPDFDescarga() {
+    try {
+        // Generar el contenido HTML para el PDF
+        const contenidoHTML = generarHTMLParaImpresion();
+
+        // Configuración para html2pdf
+        const opciones = {
+            margin: 0.5,
+            filename: `reporte_actas_${new Date().toISOString().slice(0,10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true
+            },
+            jsPDF: {
+                unit: 'in',
+                format: 'a4',
+                orientation: 'landscape'
+            }
+        };
+
+        // Crear elemento temporal con el contenido
+        const elementoTemporal = document.createElement('div');
+        elementoTemporal.innerHTML = contenidoHTML;
+        elementoTemporal.style.position = 'absolute';
+        elementoTemporal.style.left = '-9999px';
+        elementoTemporal.style.top = '-9999px';
+        document.body.appendChild(elementoTemporal);
+
+        // Generar y descargar el PDF
+        html2pdf()
+            .set(opciones)
+            .from(elementoTemporal)
+            .save()
+            .then(() => {
+                console.log('✅ PDF generado y descargado exitosamente');
+                mostrarExitoActas('PDF descargado exitosamente');
+                // Limpiar elemento temporal
+                document.body.removeChild(elementoTemporal);
+            })
+            .catch(error => {
+                console.error('❌ Error al generar PDF:', error);
+                mostrarErrorActas('Error al generar el PDF: ' + error.message);
+                document.body.removeChild(elementoTemporal);
+            });
+
+    } catch (error) {
+        console.error('❌ Error en generarPDFDescarga:', error);
+        mostrarErrorActas('Error al preparar el PDF: ' + error.message);
+    }
+}
+
+function exportarPDFDetallado() {
+    // Verificar si html2pdf está disponible, si no, cargarlo dinámicamente
+    if (typeof html2pdf === 'undefined') {
+        console.log('📚 Cargando html2pdf.js...');
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => {
+            console.log('✅ html2pdf.js cargado, generando PDF detallado...');
+            generarPDFDetalladoDescarga();
+        };
+        script.onerror = () => {
+            mostrarErrorActas('Error al cargar la librería de PDF. Intente nuevamente.');
+        };
+        document.head.appendChild(script);
+    } else {
+        generarPDFDetalladoDescarga();
+    }
+}
+
+function generarPDFDetalladoDescarga() {
+    try {
+        // Generar el contenido HTML detallado para el PDF
+        const contenidoHTML = generarHTMLParaImpresionDetallada();
+
+        // Configuración para html2pdf con orientación portrait para más detalles
+        const opciones = {
+            margin: 0.3,
+            filename: `reporte_actas_detallado_${new Date().toISOString().slice(0,10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true
+            },
+            jsPDF: {
+                unit: 'in',
+                format: 'a4',
+                orientation: 'portrait'
+            }
+        };
+
+        // Crear elemento temporal con el contenido
+        const elementoTemporal = document.createElement('div');
+        elementoTemporal.innerHTML = contenidoHTML;
+        elementoTemporal.style.position = 'absolute';
+        elementoTemporal.style.left = '-9999px';
+        elementoTemporal.style.top = '-9999px';
+        document.body.appendChild(elementoTemporal);
+
+        // Generar y descargar el PDF
+        html2pdf()
+            .set(opciones)
+            .from(elementoTemporal)
+            .save()
+            .then(() => {
+                console.log('✅ PDF detallado generado y descargado exitosamente');
+                mostrarExitoActas('PDF detallado descargado exitosamente');
+                // Limpiar elemento temporal
+                document.body.removeChild(elementoTemporal);
+            })
+            .catch(error => {
+                console.error('❌ Error al generar PDF detallado:', error);
+                mostrarErrorActas('Error al generar el PDF detallado: ' + error.message);
+                document.body.removeChild(elementoTemporal);
+            });
+
+    } catch (error) {
+        console.error('❌ Error en generarPDFDetalladoDescarga:', error);
+        mostrarErrorActas('Error al preparar el PDF detallado: ' + error.message);
+    }
 }
 
 function imprimirActas() {
     console.log('🖨️ Preparando impresión de actas...');
-    
+
     if (!todasLasActas || todasLasActas.length === 0) {
         mostrarErrorActas('No hay actas para imprimir');
         return;
     }
-    
-    exportarPDF(); // Usar la misma función que PDF
+
+    // Abrir ventana de impresión con formato de impresión (no PDF)
+    const ventanaImpresion = window.open('', '_blank');
+
+    if (!ventanaImpresion) {
+        mostrarErrorActas('No se pudo abrir la ventana de impresión. Verifique que no esté bloqueada por el navegador.');
+        return;
+    }
+
+    const contenidoImpresion = generarHTMLParaImpresion();
+
+    ventanaImpresion.document.write(contenidoImpresion);
+    ventanaImpresion.document.close();
+
+    // Esperar a que se cargue completamente antes de imprimir
+    ventanaImpresion.onload = function() {
+        ventanaImpresion.print();
+    };
+
+    mostrarInfoActas('Abriendo vista previa de impresión...');
 }
 
 function convertirACSV(datos) {
@@ -2598,6 +2743,227 @@ function generarHTMLParaImpresion() {
         <div class="footer">
             <p><strong>Sistema de Gestión de Actas - DRTC Apurímac</strong></p>
             <p>Generado automáticamente el ${fechaActual} a las ${new Date().toLocaleTimeString('es-PE')}</p>
+        </div>
+    </body>
+    </html>`;
+}
+
+function generarHTMLParaImpresionDetallada() {
+    const fechaActual = new Date().toLocaleDateString('es-PE', {year: 'numeric', month: '2-digit', day: '2-digit'});
+
+    return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Reporte Detallado de Actas de Fiscalización</title>
+        <style>
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; margin: 0; padding: 15px; font-size: 10pt; }
+            .header-logos {
+                width: 100%;
+                margin-bottom: 15px;
+                display: table;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+            }
+            .logo-left, .logo-center, .logo-right {
+                display: table-cell;
+                vertical-align: middle;
+            }
+            .logo-left { width: 15%; text-align: left; }
+            .logo-center { width: 70%; text-align: center; }
+            .logo-right { width: 15%; text-align: right; }
+            .logo-left img, .logo-right img {
+                width: 50px;
+                height: auto;
+            }
+            .logo-center div {
+                font-size: 7pt;
+                line-height: 1.3;
+                font-weight: bold;
+            }
+            .title {
+                text-align: center;
+                margin: 15px 0;
+            }
+            .title h1 {
+                margin: 5px 0;
+                font-size: 14pt;
+                color: #000;
+            }
+            .title p {
+                margin: 3px 0;
+                font-size: 9pt;
+                color: #666;
+            }
+            .acta-detalle {
+                border: 1px solid #000;
+                margin-bottom: 15px;
+                padding: 10px;
+                page-break-inside: avoid;
+            }
+            .acta-header {
+                background-color: #f0f0f0;
+                padding: 5px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #000;
+            }
+            .acta-header h3 {
+                margin: 0;
+                font-size: 12pt;
+                color: #000;
+            }
+            .acta-content {
+                display: table;
+                width: 100%;
+            }
+            .acta-row {
+                display: table-row;
+            }
+            .acta-cell {
+                display: table-cell;
+                padding: 3px;
+                border-bottom: 1px solid #eee;
+                font-size: 9pt;
+            }
+            .acta-label {
+                font-weight: bold;
+                width: 30%;
+                background-color: #f9f9f9;
+            }
+            .acta-value {
+                width: 70%;
+            }
+            .estado-pendiente { color: #ffc107; font-weight: bold; }
+            .estado-aprobado { color: #28a745; font-weight: bold; }
+            .estado-anulado { color: #dc3545; font-weight: bold; }
+            .footer {
+                margin-top: 20px;
+                text-align: center;
+                font-size: 7pt;
+                color: #666;
+                border-top: 1px solid #ccc;
+                padding-top: 10px;
+            }
+            @media print {
+                body { margin: 0; padding: 10px; }
+                @page { margin: 1cm; }
+                .acta-detalle { page-break-inside: avoid; }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Encabezado con logos -->
+        <div class="header-logos">
+            <div class="logo-left">
+                <img src="images/escudo_peru.png" alt="Escudo Perú" />
+            </div>
+            <div class="logo-center">
+                <div>PERÚ</div>
+                <div>GOBIERNO REGIONAL DE APURÍMAC</div>
+                <div>DIRECCIÓN REGIONAL DE TRANSPORTES Y COMUNICACIONES</div>
+                <div>DIRECCIÓN DE CIRCULACIÓN TERRESTRE Y SEGURIDAD VIAL</div>
+            </div>
+            <div class="logo-right">
+                <img src="images/logo.png" alt="Logo" />
+            </div>
+        </div>
+
+        <!-- Título del reporte -->
+        <div class="title">
+            <h1>REPORTE DETALLADO DE ACTAS DE FISCALIZACIÓN</h1>
+            <p>Fecha de generación: ${fechaActual}</p>
+            <p>Total de actas: ${todasLasActas.length}</p>
+        </div>
+
+        <!-- Detalles de cada acta -->
+        ${todasLasActas.map(acta => `
+            <div class="acta-detalle">
+                <div class="acta-header">
+                    <h3>Acta N° ${acta.numero_acta || 'N/A'} - ${acta.placa || acta.placa_vehiculo || 'N/A'}</h3>
+                </div>
+                <div class="acta-content">
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Número de Acta:</div>
+                        <div class="acta-cell acta-value">${acta.numero_acta || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Fecha de Intervención:</div>
+                        <div class="acta-cell acta-value">${acta.fecha_intervencion || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Hora de Intervención:</div>
+                        <div class="acta-cell acta-value">${acta.hora_intervencion || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Placa del Vehículo:</div>
+                        <div class="acta-cell acta-value">${acta.placa || acta.placa_vehiculo || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Conductor:</div>
+                        <div class="acta-cell acta-value">${acta.nombre_conductor || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">RUC/DNI:</div>
+                        <div class="acta-cell acta-value">${acta.ruc_dni || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Razón Social:</div>
+                        <div class="acta-cell acta-value">${acta.razon_social || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Tipo de Agente:</div>
+                        <div class="acta-cell acta-value">${acta.tipo_agente || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Tipo de Servicio:</div>
+                        <div class="acta-cell acta-value">${acta.tipo_servicio || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Licencia del Conductor:</div>
+                        <div class="acta-cell acta-value">${acta.licencia || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Código de Infracción:</div>
+                        <div class="acta-cell acta-value">${acta.codigo_infraccion || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Lugar de Intervención:</div>
+                        <div class="acta-cell acta-value">${acta.lugar_intervencion || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Inspector Responsable:</div>
+                        <div class="acta-cell acta-value">${acta.inspector_responsable || 'N/A'}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Estado:</div>
+                        <div class="acta-cell acta-value estado-${(acta.estado || 'pendiente').toLowerCase()}">${getEstadoDisplayName(acta.estado)}</div>
+                    </div>
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Fecha de Registro:</div>
+                        <div class="acta-cell acta-value">${acta.created_at ? formatDate(acta.created_at) : 'N/A'}</div>
+                    </div>
+                    ${acta.descripcion_infraccion ? `
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Descripción de la Infracción:</div>
+                        <div class="acta-cell acta-value">${acta.descripcion_infraccion}</div>
+                    </div>
+                    ` : ''}
+                    ${acta.motivo_anulacion ? `
+                    <div class="acta-row">
+                        <div class="acta-cell acta-label">Motivo de Anulación:</div>
+                        <div class="acta-cell acta-value">${acta.motivo_anulacion}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('')}
+
+        <!-- Pie de página -->
+        <div class="footer">
+            <p><strong>Sistema de Gestión de Actas - DRTC Apurímac</strong></p>
+            <p>Reporte detallado generado automáticamente el ${fechaActual} a las ${new Date().toLocaleTimeString('es-PE')}</p>
         </div>
     </body>
     </html>`;
@@ -3139,6 +3505,9 @@ window.renderizarActasEnTabla = renderizarActasEnTabla;
 window.exportarActas = exportarActas;
 window.exportarExcel = exportarExcel;
 window.exportarPDF = exportarPDF;
+window.generarPDFDescarga = generarPDFDescarga;
+window.exportarPDFDetallado = exportarPDFDetallado;
+window.generarPDFDetalladoDescarga = generarPDFDetalladoDescarga;
 window.imprimirActas = imprimirActas;
 
 // Nuevas funciones para modal
