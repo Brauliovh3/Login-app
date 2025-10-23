@@ -1,0 +1,471 @@
+/**
+ * ESTILOS ESPECÍFICOS PARA EL PANEL DE VENTANILLA DRTC
+ */
+
+/* ==================== VARIABLES CSS ==================== */
+:root {
+    --ventanilla-primary: #007bff;
+    --ventanilla-secondary: #6c757d;
+    --ventanilla-success: #28a745;
+    --ventanilla-info: #17a2b8;
+    --ventanilla-warning: #ffc107;
+    --ventanilla-danger: #dc3545;
+    --ventanilla-light: #f8f9fa;
+    --ventanilla-dark: #343a40;
+}
+
+/* ==================== CARDS ESPECÍFICAS ==================== */
+.ventanilla-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.ventanilla-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.ventanilla-card .card-header {
+    border-radius: 15px 15px 0 0;
+    border-bottom: none;
+    padding: 20px;
+    font-weight: 600;
+}
+
+.ventanilla-card .card-body {
+    padding: 25px;
+}
+
+/* ==================== BOTONES VENTANILLA ==================== */
+.btn-ventanilla {
+    border-radius: 25px;
+    padding: 12px 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ventanilla::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-ventanilla:hover::before {
+    left: 100%;
+}
+
+.btn-ventanilla:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ==================== TABLA DE RESULTADOS ==================== */
+.ventanilla-table {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.ventanilla-table thead th {
+    background: linear-gradient(135deg, var(--ventanilla-dark), #495057);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 15px;
+    border: none;
+}
+
+.ventanilla-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.ventanilla-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.02);
+}
+
+.ventanilla-table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+/* ==================== BADGES PERSONALIZADOS ==================== */
+.badge-ventanilla {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pendiente {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: #212529;
+}
+
+.badge-completado {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.badge-proceso {
+    background: linear-gradient(135deg, #17a2b8, #007bff);
+    color: white;
+}
+
+/* ==================== COLA DE ESPERA ==================== */
+.cola-item {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border-left: 5px solid var(--ventanilla-primary);
+}
+
+.cola-item:hover {
+    transform: translateX(10px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.cola-item.siguiente {
+    border-left-color: var(--ventanilla-success);
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.cola-item.esperando {
+    border-left-color: var(--ventanilla-warning);
+}
+
+.ticket-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--ventanilla-primary);
+}
+
+/* ==================== FORMULARIOS ==================== */
+.ventanilla-form .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.ventanilla-form .form-control:focus {
+    border-color: var(--ventanilla-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.ventanilla-form .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+}
+
+.ventanilla-form .form-label {
+    font-weight: 600;
+    color: var(--ventanilla-dark);
+    margin-bottom: 8px;
+}
+
+/* ==================== MODALES ==================== */
+.modal-ventanilla .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-ventanilla .modal-header {
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(135deg, var(--ventanilla-primary), #0056b3);
+    color: white;
+    border-bottom: none;
+    padding: 25px;
+}
+
+.modal-ventanilla .modal-body {
+    padding: 30px;
+}
+
+.modal-ventanilla .modal-footer {
+    border-top: none;
+    padding: 20px 30px 30px;
+}
+
+/* ==================== ESTADÍSTICAS ==================== */
+.stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--ventanilla-primary), var(--ventanilla-info));
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--ventanilla-primary);
+    margin: 15px 0;
+}
+
+.stat-label {
+    color: var(--ventanilla-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-icon {
+    font-size: 3rem;
+    color: var(--ventanilla-primary);
+    opacity: 0.7;
+}
+
+/* ==================== BÚSQUEDA ==================== */
+.search-container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.search-input {
+    border-radius: 25px;
+    border: 2px solid #e9ecef;
+    padding: 15px 25px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--ventanilla-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-btn {
+    border-radius: 25px;
+    padding: 15px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==================== ALERTAS PERSONALIZADAS ==================== */
+.alert-ventanilla {
+    border-radius: 15px;
+    border: none;
+    padding: 20px;
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.alert-ventanilla.alert-info {
+    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+    color: #0c5460;
+}
+
+.alert-ventanilla.alert-success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+}
+
+.alert-ventanilla.alert-warning {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    color: #856404;
+}
+
+.alert-ventanilla.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    color: #721c24;
+}
+
+/* ==================== ANIMACIONES ==================== */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-slide-up {
+    animation: slideInUp 0.6s ease-out;
+}
+
+.animate-fade-scale {
+    animation: fadeInScale 0.5s ease-out;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .ventanilla-card {
+        margin-bottom: 15px;
+    }
+    
+    .ventanilla-card .card-body {
+        padding: 20px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .search-container {
+        padding: 20px;
+    }
+    
+    .cola-item {
+        padding: 15px;
+    }
+    
+    .btn-ventanilla {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .ventanilla-table {
+        font-size: 0.9rem;
+    }
+    
+    .ventanilla-table thead th,
+    .ventanilla-table tbody td {
+        padding: 10px;
+    }
+    
+    .modal-ventanilla .modal-body {
+        padding: 20px;
+    }
+    
+    .search-input {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+    
+    .search-btn {
+        padding: 12px 25px;
+    }
+}
+
+/* ==================== UTILIDADES ==================== */
+.text-ventanilla-primary {
+    color: var(--ventanilla-primary) !important;
+}
+
+.bg-ventanilla-primary {
+    background-color: var(--ventanilla-primary) !important;
+}
+
+.border-ventanilla-primary {
+    border-color: var(--ventanilla-primary) !important;
+}
+
+.shadow-ventanilla {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+}
+
+.rounded-ventanilla {
+    border-radius: 15px !important;
+}
+
+/* ==================== LOADING STATES ==================== */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--ventanilla-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==================== PRINT STYLES ==================== */
+@media print {
+    .ventanilla-card,
+    .stat-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .btn-ventanilla {
+        display: none;
+    }
+    
+    .modal-ventanilla {
+        display: none;
+    }
+}
