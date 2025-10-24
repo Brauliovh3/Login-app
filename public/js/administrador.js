@@ -2523,6 +2523,6 @@ function formatDate(dateString) {
     }
 }
 
-console.log('✅ Módulo administrador cargado completamente');
+
 
 console.log(' Módulo administrador cargado completamente');
