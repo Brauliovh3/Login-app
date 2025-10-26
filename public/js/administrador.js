@@ -2366,88 +2366,89 @@ function loadEstadisticasCarga() {
     cargarEstadisticasCarga();
 }
 
-async function cargarDatosCargaPasajeros() {
-    try {
-        const response = await fetch('api.php?action=carga-pasajeros');
-        const data = await response.json();
-        
-        if (data.success) {
-            const tbody = document.getElementById('carga-pasajeros-list');
-            if (data.carga_pasajeros && data.carga_pasajeros.length > 0) {
-                tbody.innerHTML = data.carga_pasajeros.map(registro => `
-                    <tr>
-                        <td>${registro.id}</td>
-                        <td>
-                            <span class="badge badge-${registro.tipo === 'carga' ? 'primary' : 'info'}">
-                                ${registro.tipo.charAt(0).toUpperCase() + registro.tipo.slice(1)}
-                            </span>
-                        </td>
-                        <td>${registro.descripcion || 'N/A'}</td>
-                        <td>${registro.peso_cantidad || 'N/A'}</td>
-                        <td>${registro.origen || 'N/A'}</td>
-                        <td>${registro.destino || 'N/A'}</td>
-                        <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
-                        <td>
-                            <span class="badge badge-${getEstadoBadgeClass(registro.estado)}">
-                                ${registro.estado || 'N/A'}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-info" onclick="verDetalleCarga(${registro.id})">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="editarCarga(${registro.id})">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="eliminarCarga(${registro.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay registros disponibles</td></tr>';
-            }
-        } else {
-            showErrorToast('Error al cargar datos: ' + (data.message || 'Error desconocido'));
-        }
-    } catch (error) {
-        console.error('Error al cargar datos de carga y pasajeros:', error);
-        showErrorToast('Error al cargar los datos');
-    }
-}
-
+// --- Sección actualizada: normalización de estados y badges ---
+// Normaliza estados y calcula estadísticas
 async function cargarEstadisticasCarga() {
-    try {
-        const response = await fetch('api.php?action=carga-pasajeros');
-        const data = await response.json();
-        
-        if (data.success && data.carga_pasajeros) {
-            const registros = data.carga_pasajeros;
-            const total = registros.length;
-            const carga = registros.filter(r => r.tipo === 'carga').length;
-            const pasajeros = registros.filter(r => r.tipo === 'pasajero').length;
-            const enTransito = registros.filter(r => r.estado === 'en_transito').length;
-            
-            document.getElementById('totalRegistros').textContent = total;
-            document.getElementById('registrosCarga').textContent = carga;
-            document.getElementById('registrosPasajeros').textContent = pasajeros;
-            document.getElementById('registrosTransito').textContent = enTransito;
-        }
-    } catch (error) {
-        console.error('Error al cargar estadísticas:', error);
-        showErrorToast('Error al cargar estadísticas');
+  try {
+    const response = await fetch('dashboard.php?api=carga-pasajeros', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    });
+    const data = await response.json();
+
+    if (data.success && data.carga_pasajeros) {
+      const registros = data.carga_pasajeros;
+
+      // Normalizar una sola vez cada estado por registro
+      const registrosNormalizados = registros.map(r => ({
+        ...r,
+        estado_norm: (r.estado || '').toLowerCase().trim()
+      }));
+
+      const total = registrosNormalizados.length;
+      const pendientes = registrosNormalizados.filter(r => r.estado_norm === 'pendiente').length;
+      const procesados = registrosNormalizados.filter(r => ['procesado', 'procesada'].includes(r.estado_norm)).length;
+      const aprobados = registrosNormalizados.filter(r => ['aprobado', 'aprobada'].includes(r.estado_norm)).length;
+
+      if (document.getElementById('totalRegistros')) document.getElementById('totalRegistros').textContent = total;
+      if (document.getElementById('registrosPendientes')) document.getElementById('registrosPendientes').textContent = pendientes;
+      if (document.getElementById('registrosProcesados')) document.getElementById('registrosProcesados').textContent = procesados;
+      if (document.getElementById('registrosAprobados')) document.getElementById('registrosAprobados').textContent = aprobados;
     }
+  } catch (error) {
+    console.error('Error al cargar estadísticas:', error);
+  }
 }
 
-function getEstadoBadgeClass(estado) {
-    switch(estado) {
-        case 'entregado': return 'success';
-        case 'en_transito': return 'primary';
-        case 'pendiente': return 'warning';
-        case 'cancelado': return 'danger';
-        default: return 'secondary';
+// Función que devuelve la clase del badge (devuelve la parte final: 'warning','info','success','secondary')
+function getEstadoBadgeClass(estadoRaw) {
+  const estado = (estadoRaw || '').toLowerCase().trim();
+
+  if (estado === 'pendiente') return 'warning';
+  if (estado === 'procesado' || estado === 'procesada') return 'info';
+  if (estado === 'aprobado' || estado === 'aprobada') return 'success';
+  if (estado === 'en_transito' || estado === 'en tránsito' || estado === 'en-transito') return 'secondary';
+
+  // fallback
+  return 'secondary';
+}
+
+// Renderizado/lectura de la lista (reemplaza la función antigua cargarDatosCargaPasajeros si existe)
+async function cargarDatosCargaPasajeros() {
+  try {
+    const response = await fetch('dashboard.php?api=carga-pasajeros', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      credentials: 'same-origin'
+    });
+    const data = await response.json();
+
+    if (data.success && data.carga_pasajeros && data.carga_pasajeros.length > 0) {
+      // Normaliza antes de trabajar con la lista
+      const registros = data.carga_pasajeros.map(r => ({ ...r, estado_norm: (r.estado || '').toLowerCase().trim() }));
+
+      const tbody = document.getElementById('carga-pasajeros-list');
+      if (!tbody) return;
+
+      tbody.innerHTML = registros.map(registro => `
+        <tr>
+          <td>${registro.id}</td>
+          <td>${registro.informe || 'N/A'}</td>
+          <td>${registro.resolucion || 'N/A'}</td>
+          <td>${registro.conductor || 'N/A'}</td>
+          <td>${registro.licencia_conductor || 'N/A'}</td>
+          <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
+          <td><span class="badge badge-${getEstadoBadgeClass(registro.estado || registro.estado_norm)}">${registro.estado || registro.estado_norm}</span></td>
+        </tr>
+      `).join('');
+    } else {
+      const tbody = document.getElementById('carga-pasajeros-list');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7">No hay registros</td></tr>';
     }
+  } catch (error) {
+    console.error('Error al cargar datos de carga/pasajeros:', error);
+  }
 }
 
 function verDetalleCarga(id) {
@@ -2522,6 +2523,6 @@ function formatDate(dateString) {
     }
 }
 
-console.log('✅ Módulo administrador cargado completamente');
+
 
 console.log(' Módulo administrador cargado completamente');
