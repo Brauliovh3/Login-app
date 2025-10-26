@@ -1565,7 +1565,6 @@ function loadActasList() {
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
                                             <th>Informe</th>
                                             <th>Conductor</th>
                                             <th>Licencia</th>
@@ -1576,7 +1575,7 @@ function loadActasList() {
                                     </thead>
                                     <tbody id="actas-admin-list">
                                         <tr>
-                                            <td colspan="7" class="text-center">
+                                            <td colspan="6" class="text-center">
                                                 <div class="spinner-border" role="status">
                                                     <span class="sr-only">Cargando actas...</span>
                                                 </div>
@@ -1787,7 +1786,6 @@ async function cargarActasAdmin() {
                 if (actas.length > 0) {
                     tbody.innerHTML = actas.map(acta => `
                         <tr>
-                            <td><strong>#${acta.id || 'N/A'}</strong></td>
                             <td><span class="badge bg-info">${acta.numero_acta || 'N/A'}</span></td>
                             <td>${acta.nombre_conductor || 'N/A'}</td>
                             <td><small class="text-muted">${acta.ruc_dni || 'N/A'}</small></td>
@@ -1807,7 +1805,7 @@ async function cargarActasAdmin() {
                         </tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay actas registradas en el sistema</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay actas registradas en el sistema</td></tr>';
                 }
             }
             
@@ -1924,18 +1922,17 @@ function exportarActasExcel() {
     }
     
     // Crear el contenido CSV
-    let csvContent = 'ID,Informe,Conductor,Licencia,Estado,Fecha\n';
+    let csvContent = 'Informe,Conductor,Licencia,Estado,Fecha\n';
     
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         if (cells.length > 1) {
-            const rowData = [
-                cells[0].textContent.trim(), // ID
-                cells[1].textContent.trim(), // Informe
-                cells[2].textContent.trim(), // Conductor
-                cells[3].textContent.trim(), // Licencia
-                cells[4].textContent.trim(), // Estado
-                cells[5].textContent.trim()  // Fecha
+                const rowData = [
+                cells[0].textContent.trim(), // Informe
+                cells[1].textContent.trim(), // Conductor
+                cells[2].textContent.trim(), // Licencia
+                cells[3].textContent.trim(), // Estado
+                cells[4].textContent.trim()  // Fecha
             ];
             csvContent += rowData.map(cell => `"${cell}"`).join(',') + '\n';
         }
