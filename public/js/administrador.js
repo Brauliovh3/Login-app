@@ -2149,12 +2149,10 @@ function loadCargaPasajerosList() {
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Tipo</th>
-                                            <th>Descripción</th>
-                                            <th>Peso/Cantidad</th>
-                                            <th>Origen</th>
-                                            <th>Destino</th>
+                                            <th>Informe</th>
+                                            <th>Resolución</th>
+                                            <th>Conductor</th>
+                                            <th>Licencia</th>
                                             <th>Fecha</th>
                                             <th>Estado</th>
                                             <th>Acciones</th>
@@ -2162,7 +2160,7 @@ function loadCargaPasajerosList() {
                                     </thead>
                                     <tbody id="carga-pasajeros-list">
                                         <tr>
-                                            <td colspan="9" class="text-center">
+                                            <td colspan="7" class="text-center">
                                                 <div class="spinner-border" role="status">
                                                     <span class="sr-only">Cargando...</span>
                                                 </div>
@@ -2425,20 +2423,26 @@ async function cargarDatosCargaPasajeros() {
       // Normaliza antes de trabajar con la lista
       const registros = data.carga_pasajeros.map(r => ({ ...r, estado_norm: (r.estado || '').toLowerCase().trim() }));
 
-      const tbody = document.getElementById('carga-pasajeros-list');
-      if (!tbody) return;
+            const tbody = document.getElementById('carga-pasajeros-list');
+            if (!tbody) return;
 
-      tbody.innerHTML = registros.map(registro => `
-        <tr>
-          <td>${registro.id}</td>
-          <td>${registro.informe || 'N/A'}</td>
-          <td>${registro.resolucion || 'N/A'}</td>
-          <td>${registro.conductor || 'N/A'}</td>
-          <td>${registro.licencia_conductor || 'N/A'}</td>
-          <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
-          <td><span class="badge badge-${getEstadoBadgeClass(registro.estado || registro.estado_norm)}">${registro.estado || registro.estado_norm}</span></td>
-        </tr>
-      `).join('');
+            tbody.innerHTML = registros.map(registro => `
+                <tr>
+                    <td><strong>${registro.informe || 'N/A'}</strong></td>
+                    <td>${registro.resolucion || 'N/A'}</td>
+                    <td>${registro.conductor || 'N/A'}</td>
+                    <td>${registro.licencia_conductor || 'N/A'}</td>
+                    <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="badge bg-${getEstadoBadgeClass(registro.estado || registro.estado_norm)}">${registro.estado || registro.estado_norm}</span></td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-primary" onclick="verDetalleCarga(${registro.id})" title="Ver"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-outline-secondary" onclick="editarCarga(${registro.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-outline-danger" onclick="eliminarCarga(${registro.id})" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
     } else {
       const tbody = document.getElementById('carga-pasajeros-list');
       if (tbody) tbody.innerHTML = '<tr><td colspan="7">No hay registros</td></tr>';
