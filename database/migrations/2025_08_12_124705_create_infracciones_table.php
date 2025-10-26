@@ -3,22 +3,16 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Crear sistema completo de infracciones
+     * Esta migración reemplaza todas las migraciones problemáticas anteriores
      */
     public function up(): void
     {
-        // Deshabilitar verificación de claves foráneas temporalmente
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        
-        // Eliminar tabla existente  
-        Schema::dropIfExists('infracciones');
-        
-        // Crear nueva tabla con estructura completa y final
+        // Crear tabla infracciones con estructura EXACTA de la migración original
         Schema::create('infracciones', function (Blueprint $table) {
             $table->id();
             $table->string('codigo_infraccion')->unique(); // Código (F.1, F.2, etc.)
@@ -39,12 +33,8 @@ return new class extends Migration
             $table->index('codigo_infraccion');
             $table->index('aplica_sobre');
             $table->index('gravedad');
-            $table->index('clase_pago');
             $table->index('estado');
         });
-        
-        // Restaurar verificación de claves foráneas
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     /**
@@ -52,7 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Esta migración no es reversible
-        throw new Exception('Esta migración no se puede revertir.');
+        Schema::dropIfExists('infracciones');
     }
 };

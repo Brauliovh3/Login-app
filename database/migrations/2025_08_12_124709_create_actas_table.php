@@ -46,9 +46,8 @@ return new class extends Migration
             $table->unsignedBigInteger('conductor_id')->nullable();
             $table->foreign('conductor_id')->references('id')->on('conductores')->onDelete('set null');
 
-            // Nueva columna para relacion con infracciones
+            // Nueva columna para relacion con infracciones (FK se agrega después)
             $table->unsignedBigInteger('infraccion_id')->nullable();
-            $table->foreign('infraccion_id')->references('id')->on('infracciones')->onDelete('set null');
 
             // Relación con inspector (usada por seeders y controladores)
             // La columna se crea aquí; no añadimos una FK rígida para evitar
@@ -57,6 +56,10 @@ return new class extends Migration
 
             // Relación con vehículo - FK se creará después por orden de migraciones
             $table->unsignedBigInteger('vehiculo_id')->nullable();
+
+            // Campos específicos para infracciones
+            $table->string('codigo_infraccion', 20)->nullable();
+            $table->text('descripcion_infraccion')->nullable();
 
             // Descripción de hechos e infracciones
             $table->text('descripcion_hechos');
@@ -82,6 +85,7 @@ return new class extends Migration
             $table->index(['fecha_intervencion', 'estado']);
             $table->index(['ruc_dni']);
             $table->index(['placa']);
+            $table->index('codigo_infraccion');
         });
     }
 
