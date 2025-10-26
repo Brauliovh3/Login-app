@@ -1316,7 +1316,21 @@ class DashboardApp {
     
     private function getCargaPasajeros() {
         try {
-            $stmt = $this->pdo->query("SELECT * FROM carga_pasajeros ORDER BY created_at DESC LIMIT 100");
+            $stmt = $this->pdo->query("
+                SELECT 
+                    id,
+                    informe as tipo,
+                    resolucion as descripcion,
+                    conductor as peso_cantidad,
+                    licencia_conductor as origen,
+                    'N/A' as destino,
+                    DATE(created_at) as fecha,
+                    estado,
+                    created_at
+                FROM carga_pasajeros 
+                ORDER BY created_at DESC 
+                LIMIT 100
+            ");
             $cargaPasajeros = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             return ['success' => true, 'carga_pasajeros' => $cargaPasajeros];

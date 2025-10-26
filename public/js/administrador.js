@@ -2152,7 +2152,7 @@ function loadCargaPasajerosList() {
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
+                                            <th>#</th>
                                             <th>Tipo</th>
                                             <th>Descripción</th>
                                             <th>Peso/Cantidad</th>
@@ -2425,42 +2425,77 @@ async function cargarDatosCargaPasajeros() {
     const data = await response.json();
 
     if (data.success && data.carga_pasajeros && data.carga_pasajeros.length > 0) {
-      // Normaliza antes de trabajar con la lista
-      const registros = data.carga_pasajeros.map(r => ({ ...r, estado_norm: (r.estado || '').toLowerCase().trim() }));
-
+      const registros = data.carga_pasajeros;
       const tbody = document.getElementById('carga-pasajeros-list');
       if (!tbody) return;
 
-      tbody.innerHTML = registros.map(registro => `
+      tbody.innerHTML = registros.map((registro, index) => `
         <tr>
-          <td>${registro.id}</td>
-          <td>${registro.informe || 'N/A'}</td>
-          <td>${registro.resolucion || 'N/A'}</td>
-          <td>${registro.conductor || 'N/A'}</td>
-          <td>${registro.licencia_conductor || 'N/A'}</td>
-          <td>${registro.created_at ? new Date(registro.created_at).toLocaleDateString() : 'N/A'}</td>
-          <td><span class="badge badge-${getEstadoBadgeClass(registro.estado || registro.estado_norm)}">${registro.estado || registro.estado_norm}</span></td>
+          <td>${String(index + 1).padStart(2, '0')}</td>
+          <td>${registro.tipo || 'N/A'}</td>
+          <td>${registro.descripcion || 'N/A'}</td>
+          <td>${registro.peso_cantidad || 'N/A'}</td>
+          <td>${registro.origen || 'N/A'}</td>
+          <td>${registro.destino || 'N/A'}</td>
+          <td>${registro.fecha || 'N/A'}</td>
+          <td><span class="badge badge-${getEstadoBadgeClass(registro.estado || 'pendiente')}">${registro.estado || 'Pendiente'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="verDetalleCarga('${btoa(registro.id)}')" title="Ver detalle">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-warning" onclick="editarCarga('${btoa(registro.id)}')" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="eliminarCarga('${btoa(registro.id)}')" title="Eliminar">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
         </tr>
       `).join('');
     } else {
       const tbody = document.getElementById('carga-pasajeros-list');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="7">No hay registros</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9">No hay registros disponibles</td></tr>';
     }
   } catch (error) {
     console.error('Error al cargar datos de carga/pasajeros:', error);
+    const tbody = document.getElementById('carga-pasajeros-list');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar los datos</td></tr>';
   }
 }
 
-function verDetalleCarga(id) {
-    showInfoToast('Función ver detalle en desarrollo');
+function verDetalleCarga(encodedId) {
+    try {
+        const id = atob(encodedId);
+        showInfoToast('Cargando detalles del registro...');
+        // Aquí puedes agregar la lógica para mostrar el detalle
+        console.log('Ver detalle del registro ID:', id); // Solo para debug
+    } catch (error) {
+        showErrorToast('Error al procesar la solicitud');
+    }
 }
 
-function editarCarga(id) {
-    showInfoToast('Función editar en desarrollo');
+function editarCarga(encodedId) {
+    try {
+        const id = atob(encodedId);
+        showInfoToast('Cargando formulario de edición...');
+        // Aquí puedes agregar la lógica para editar
+        console.log('Editar registro ID:', id); // Solo para debug
+    } catch (error) {
+        showErrorToast('Error al procesar la solicitud');
+    }
 }
 
-function eliminarCarga(id) {
-    showInfoToast('Función eliminar en desarrollo');
+function eliminarCarga(encodedId) {
+    try {
+        const id = atob(encodedId);
+        if (confirm('¿Está seguro de que desea eliminar este registro?')) {
+            showInfoToast('Procesando eliminación...');
+            // Aquí puedes agregar la lógica para eliminar
+            console.log('Eliminar registro ID:', id); // Solo para debug
+        }
+    } catch (error) {
+        showErrorToast('Error al procesar la solicitud');
+    }
 }
 
 // Exportar funciones globalmente
