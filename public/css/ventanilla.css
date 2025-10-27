@@ -1,26 +1,26 @@
-/**
- * ESTILOS ESPECÍFICOS PARA EL PANEL DE VENTANILLA DRTC
- */
+/* ==================== VENTANILLA.CSS ====================
+   Estilos específicos para el módulo de ventanilla DRTC
+   ======================================================== */
 
-/* ==================== VARIABLES CSS ==================== */
+/* ==================== VARIABLES CSS ====================*/
 :root {
-    --ventanilla-primary: #007bff;
+    --ventanilla-primary: #17a2b8;
     --ventanilla-secondary: #6c757d;
     --ventanilla-success: #28a745;
-    --ventanilla-info: #17a2b8;
     --ventanilla-warning: #ffc107;
     --ventanilla-danger: #dc3545;
+    --ventanilla-info: #17a2b8;
     --ventanilla-light: #f8f9fa;
     --ventanilla-dark: #343a40;
 }
 
-/* ==================== CARDS ESPECÍFICAS ==================== */
+/* ==================== CARDS ESPECÍFICAS ====================*/
 .ventanilla-card {
     border: none;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
-    margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .ventanilla-card:hover {
@@ -29,42 +29,137 @@
 }
 
 .ventanilla-card .card-header {
-    border-radius: 15px 15px 0 0;
-    border-bottom: none;
-    padding: 20px;
+    border: none;
     font-weight: 600;
+    padding: 1.25rem 1.5rem;
 }
 
 .ventanilla-card .card-body {
-    padding: 25px;
+    padding: 1.5rem;
 }
 
-/* ==================== BOTONES VENTANILLA ==================== */
+/* ==================== STATS CARDS VENTANILLA ====================*/
+.stats-card-ventanilla {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border: none;
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card-ventanilla::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--ventanilla-primary), var(--ventanilla-success));
+}
+
+.stats-card-ventanilla:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.stats-card-ventanilla .stats-icon {
+    font-size: 3rem;
+    color: var(--ventanilla-primary);
+    margin-bottom: 1rem;
+}
+
+.stats-card-ventanilla .stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--ventanilla-dark);
+    margin-bottom: 0.5rem;
+}
+
+.stats-card-ventanilla .stats-label {
+    font-size: 1rem;
+    color: var(--ventanilla-secondary);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card-ventanilla .stats-trend {
+    font-size: 0.875rem;
+    color: var(--ventanilla-success);
+    font-weight: 500;
+}
+
+/* ==================== COLA DE ESPERA ====================*/
+.cola-espera-container {
+    background: #fff;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.ticket-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ventanilla-primary);
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.tiempo-espera {
+    font-size: 0.875rem;
+    color: var(--ventanilla-warning);
+    font-weight: 600;
+}
+
+.cliente-info {
+    background: var(--ventanilla-light);
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 0.5rem 0;
+}
+
+/* ==================== FORMULARIOS VENTANILLA ====================*/
+.form-ventanilla {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.form-ventanilla .form-label {
+    font-weight: 600;
+    color: var(--ventanilla-dark);
+    margin-bottom: 0.5rem;
+}
+
+.form-ventanilla .form-control,
+.form-ventanilla .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-ventanilla .form-control:focus,
+.form-ventanilla .form-select:focus {
+    border-color: var(--ventanilla-primary);
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+}
+
+/* ==================== BOTONES VENTANILLA ====================*/
 .btn-ventanilla {
     border-radius: 25px;
-    padding: 12px 25px;
+    padding: 0.75rem 2rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
     border: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-ventanilla::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-}
-
-.btn-ventanilla:hover::before {
-    left: 100%;
 }
 
 .btn-ventanilla:hover {
@@ -72,251 +167,270 @@
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
-/* ==================== TABLA DE RESULTADOS ==================== */
-.ventanilla-table {
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+.btn-ventanilla-primary {
+    background: linear-gradient(135deg, var(--ventanilla-primary), #138496);
+    color: white;
 }
 
-.ventanilla-table thead th {
+.btn-ventanilla-success {
+    background: linear-gradient(135deg, var(--ventanilla-success), #1e7e34);
+    color: white;
+}
+
+.btn-ventanilla-warning {
+    background: linear-gradient(135deg, var(--ventanilla-warning), #e0a800);
+    color: var(--ventanilla-dark);
+}
+
+.btn-ventanilla-info {
+    background: linear-gradient(135deg, var(--ventanilla-info), #117a8b);
+    color: white;
+}
+
+/* ==================== TABLAS VENTANILLA ====================*/
+.table-ventanilla {
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.table-ventanilla thead th {
     background: linear-gradient(135deg, var(--ventanilla-dark), #495057);
     color: white;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 15px;
     border: none;
+    padding: 1rem;
 }
 
-.ventanilla-table tbody tr {
+.table-ventanilla tbody tr {
     transition: all 0.3s ease;
 }
 
-.ventanilla-table tbody tr:hover {
-    background-color: #f8f9fa;
-    transform: scale(1.02);
+.table-ventanilla tbody tr:hover {
+    background-color: rgba(23, 162, 184, 0.05);
+    transform: scale(1.01);
 }
 
-.ventanilla-table tbody td {
-    padding: 15px;
+.table-ventanilla tbody td {
+    padding: 1rem;
     vertical-align: middle;
     border-color: #e9ecef;
 }
 
-/* ==================== BADGES PERSONALIZADOS ==================== */
+/* ==================== BADGES PERSONALIZADOS ====================*/
 .badge-ventanilla {
-    padding: 8px 15px;
+    padding: 0.5rem 1rem;
     border-radius: 20px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.badge-pendiente {
-    background: linear-gradient(135deg, #ffc107, #fd7e14);
-    color: #212529;
-}
-
-.badge-completado {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-}
-
-.badge-proceso {
-    background: linear-gradient(135deg, #17a2b8, #007bff);
-    color: white;
-}
-
-/* ==================== COLA DE ESPERA ==================== */
-.cola-item {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    border-left: 5px solid var(--ventanilla-primary);
-}
-
-.cola-item:hover {
-    transform: translateX(10px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.cola-item.siguiente {
-    border-left-color: var(--ventanilla-success);
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
-}
-
-.cola-item.esperando {
-    border-left-color: var(--ventanilla-warning);
-}
-
-.ticket-number {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--ventanilla-primary);
-}
-
-/* ==================== FORMULARIOS ==================== */
-.ventanilla-form .form-control {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 12px 15px;
-    transition: all 0.3s ease;
-}
-
-.ventanilla-form .form-control:focus {
-    border-color: var(--ventanilla-primary);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    transform: translateY(-2px);
-}
-
-.ventanilla-form .form-select {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 12px 15px;
-}
-
-.ventanilla-form .form-label {
-    font-weight: 600;
-    color: var(--ventanilla-dark);
-    margin-bottom: 8px;
-}
-
-/* ==================== MODALES ==================== */
-.modal-ventanilla .modal-content {
-    border-radius: 20px;
-    border: none;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-}
-
-.modal-ventanilla .modal-header {
-    border-radius: 20px 20px 0 0;
-    background: linear-gradient(135deg, var(--ventanilla-primary), #0056b3);
-    color: white;
-    border-bottom: none;
-    padding: 25px;
-}
-
-.modal-ventanilla .modal-body {
-    padding: 30px;
-}
-
-.modal-ventanilla .modal-footer {
-    border-top: none;
-    padding: 20px 30px 30px;
-}
-
-/* ==================== ESTADÍSTICAS ==================== */
-.stat-card {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, var(--ventanilla-primary), var(--ventanilla-info));
-}
-
-.stat-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-}
-
-.stat-number {
-    font-size: 3rem;
-    font-weight: bold;
-    color: var(--ventanilla-primary);
-    margin: 15px 0;
-}
-
-.stat-label {
-    color: var(--ventanilla-secondary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.stat-icon {
-    font-size: 3rem;
-    color: var(--ventanilla-primary);
-    opacity: 0.7;
-}
-
-/* ==================== BÚSQUEDA ==================== */
-.search-container {
-    background: white;
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.search-input {
-    border-radius: 25px;
-    border: 2px solid #e9ecef;
-    padding: 15px 25px;
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-}
-
-.search-input:focus {
-    border-color: var(--ventanilla-primary);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.search-btn {
-    border-radius: 25px;
-    padding: 15px 30px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ==================== ALERTAS PERSONALIZADAS ==================== */
-.alert-ventanilla {
-    border-radius: 15px;
-    border: none;
-    padding: 20px;
-    font-weight: 500;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.alert-ventanilla.alert-info {
-    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-    color: #0c5460;
-}
-
-.alert-ventanilla.alert-success {
-    background: linear-gradient(135deg, #d4edda, #c3e6cb);
-    color: #155724;
-}
-
-.alert-ventanilla.alert-warning {
+.badge-esperando {
     background: linear-gradient(135deg, #fff3cd, #ffeaa7);
     color: #856404;
 }
 
-.alert-ventanilla.alert-danger {
-    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-    color: #721c24;
+.badge-atendiendo {
+    background: linear-gradient(135deg, #d1ecf1, #74b9ff);
+    color: #0c5460;
 }
 
-/* ==================== ANIMACIONES ==================== */
-@keyframes slideInUp {
+.badge-completado {
+    background: linear-gradient(135deg, #d4edda, #00b894);
+    color: #155724;
+}
+
+.badge-pendiente {
+    background: linear-gradient(135deg, #fff3cd, #fdcb6e);
+    color: #856404;
+}
+
+/* ==================== CONSULTAS PÚBLICAS ====================*/
+.consulta-card {
+    border: none;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    height: 100%;
+    cursor: pointer;
+}
+
+.consulta-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.consulta-card .card-body {
+    padding: 2rem;
+    text-align: center;
+}
+
+.consulta-card .consulta-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.consulta-card:hover .consulta-icon {
+    transform: scale(1.1);
+}
+
+.consulta-card h5 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--ventanilla-dark);
+}
+
+.consulta-card p {
+    color: var(--ventanilla-secondary);
+    margin-bottom: 1.5rem;
+}
+
+/* ==================== INFORMACIÓN DRTC ====================*/
+.info-drtc-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.info-drtc-card .card-header {
+    border: none;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}
+
+.info-drtc-card .card-body {
+    padding: 1.5rem;
+}
+
+.info-drtc-card .card-body p {
+    margin-bottom: 0.75rem;
+}
+
+.info-drtc-card .card-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* ==================== ALERTAS PERSONALIZADAS ====================*/
+.alert-ventanilla {
+    border: none;
+    border-radius: 15px;
+    padding: 1.25rem 1.5rem;
+    font-weight: 500;
+}
+
+.alert-ventanilla-info {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #0277bd;
+}
+
+.alert-ventanilla-success {
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    color: #2e7d32;
+}
+
+.alert-ventanilla-warning {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    color: #f57f17;
+}
+
+.alert-ventanilla-danger {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    color: #c62828;
+}
+
+/* ==================== LOADING STATES ====================*/
+.loading-ventanilla {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: var(--ventanilla-secondary);
+}
+
+.loading-ventanilla .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+    color: var(--ventanilla-primary);
+}
+
+.loading-ventanilla p {
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* ==================== RESPONSIVE DESIGN ====================*/
+@media (max-width: 768px) {
+    .stats-card-ventanilla {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card-ventanilla .stats-number {
+        font-size: 2rem;
+    }
+    
+    .stats-card-ventanilla .stats-icon {
+        font-size: 2.5rem;
+    }
+    
+    .form-ventanilla {
+        padding: 1.5rem;
+    }
+    
+    .btn-ventanilla {
+        padding: 0.625rem 1.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .consulta-card .consulta-icon {
+        font-size: 3rem;
+    }
+    
+    .consulta-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .table-responsive {
+        border-radius: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-card-ventanilla {
+        padding: 1rem;
+    }
+    
+    .stats-card-ventanilla .stats-number {
+        font-size: 1.75rem;
+    }
+    
+    .form-ventanilla {
+        padding: 1rem;
+    }
+    
+    .info-drtc-card .card-body {
+        padding: 1rem;
+    }
+    
+    .consulta-card .card-body {
+        padding: 1rem;
+    }
+    
+    .consulta-card .consulta-icon {
+        font-size: 2.5rem;
+    }
+}
+
+/* ==================== ANIMACIONES ====================*/
+@keyframes fadeInUp {
     from {
         opacity: 0;
         transform: translateY(30px);
@@ -327,89 +441,52 @@
     }
 }
 
-@keyframes fadeInScale {
+@keyframes slideInRight {
     from {
         opacity: 0;
-        transform: scale(0.9);
+        transform: translateX(30px);
     }
     to {
         opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
         transform: scale(1);
     }
 }
 
-.animate-slide-up {
-    animation: slideInUp 0.6s ease-out;
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
 }
 
-.animate-fade-scale {
-    animation: fadeInScale 0.5s ease-out;
+.slide-in-right {
+    animation: slideInRight 0.6s ease-out;
 }
 
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 768px) {
-    .ventanilla-card {
-        margin-bottom: 15px;
-    }
-    
-    .ventanilla-card .card-body {
-        padding: 20px;
-    }
-    
-    .stat-card {
-        padding: 20px;
-        margin-bottom: 15px;
-    }
-    
-    .stat-number {
-        font-size: 2rem;
-    }
-    
-    .search-container {
-        padding: 20px;
-    }
-    
-    .cola-item {
-        padding: 15px;
-    }
-    
-    .btn-ventanilla {
-        padding: 10px 20px;
-        font-size: 0.9rem;
-    }
+.pulse-animation {
+    animation: pulse 2s infinite;
 }
 
-@media (max-width: 576px) {
-    .ventanilla-table {
-        font-size: 0.9rem;
-    }
-    
-    .ventanilla-table thead th,
-    .ventanilla-table tbody td {
-        padding: 10px;
-    }
-    
-    .modal-ventanilla .modal-body {
-        padding: 20px;
-    }
-    
-    .search-input {
-        padding: 12px 20px;
-        font-size: 1rem;
-    }
-    
-    .search-btn {
-        padding: 12px 25px;
-    }
-}
-
-/* ==================== UTILIDADES ==================== */
+/* ==================== UTILIDADES ESPECÍFICAS ====================*/
 .text-ventanilla-primary {
     color: var(--ventanilla-primary) !important;
 }
 
-.bg-ventanilla-primary {
-    background-color: var(--ventanilla-primary) !important;
+.text-ventanilla-secondary {
+    color: var(--ventanilla-secondary) !important;
+}
+
+.bg-ventanilla-light {
+    background-color: var(--ventanilla-light) !important;
 }
 
 .border-ventanilla-primary {
@@ -417,55 +494,80 @@
 }
 
 .shadow-ventanilla {
-    box-shadow: 0 8px 30px rgba(0,0,0,0.1) !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08) !important;
 }
 
 .rounded-ventanilla {
     border-radius: 15px !important;
 }
 
-/* ==================== LOADING STATES ==================== */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255,255,255,0.9);
+/* ==================== ICONOS ESPECÍFICOS ====================*/
+.icon-ventanilla {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 15px;
-    z-index: 1000;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    color: white;
 }
 
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--ventanilla-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+.icon-ventanilla-primary {
+    background: linear-gradient(135deg, var(--ventanilla-primary), #138496);
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.icon-ventanilla-success {
+    background: linear-gradient(135deg, var(--ventanilla-success), #1e7e34);
 }
 
-/* ==================== PRINT STYLES ==================== */
+.icon-ventanilla-warning {
+    background: linear-gradient(135deg, var(--ventanilla-warning), #e0a800);
+}
+
+.icon-ventanilla-info {
+    background: linear-gradient(135deg, var(--ventanilla-info), #117a8b);
+}
+
+/* ==================== EFECTOS HOVER ====================*/
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.hover-scale {
+    transition: all 0.3s ease;
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+/* ==================== PRINT STYLES ====================*/
 @media print {
     .ventanilla-card,
-    .stat-card {
-        box-shadow: none;
-        border: 1px solid #ddd;
+    .stats-card-ventanilla,
+    .table-ventanilla {
+        box-shadow: none !important;
+        border: 1px solid #dee2e6 !important;
     }
     
     .btn-ventanilla {
-        display: none;
+        display: none !important;
     }
     
-    .modal-ventanilla {
-        display: none;
+    .sidebar,
+    .navbar {
+        display: none !important;
+    }
+    
+    .main-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }

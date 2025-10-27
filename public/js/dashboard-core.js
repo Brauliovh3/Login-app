@@ -1382,11 +1382,251 @@ function loadProfileData() {
     console.log('Cargando datos del perfil...');
 }
 
+// ================================
+// FUNCIONES ESPECÍFICAS DE VENTANILLA
+// ================================
+
+// Función para cargar nueva atención (ventanilla)
+function loadNuevaAtencion() {
+    console.log('📝 Cargando Nueva Atención...');
+    hideAllSections();
+    
+    // Verificar si la función específica de ventanilla está disponible
+    if (typeof window.loadNuevaAtencion === 'function' && window.loadNuevaAtencion !== loadNuevaAtencion) {
+        window.loadNuevaAtencion();
+        return;
+    }
+    
+    // Fallback si el módulo ventanilla no está cargado
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <h2><i class="fas fa-user-tie"></i> Nueva Atención al Cliente</h2>
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-plus-circle"></i> Registrar Nueva Atención</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="nuevaAtencionForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo de Consulta *</label>
+                                        <select class="form-select" name="tipo_consulta" required>
+                                            <option value="">Seleccione...</option>
+                                            <option value="consulta_acta">Consulta de Acta</option>
+                                            <option value="consulta_vehiculo">Consulta de Vehículo</option>
+                                            <option value="consulta_conductor">Consulta de Conductor</option>
+                                            <option value="tramite_licencia">Trámite de Licencia</option>
+                                            <option value="tramite_vehicular">Trámite Vehicular</option>
+                                            <option value="reclamo">Reclamo</option>
+                                            <option value="informacion_general">Información General</option>
+                                            <option value="otros">Otros</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Documento del Cliente *</label>
+                                        <input type="text" class="form-control" name="documento" placeholder="DNI/RUC" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre Completo *</label>
+                                        <input type="text" class="form-control" name="nombre" placeholder="Nombres y apellidos" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Teléfono</label>
+                                        <input type="tel" class="form-control" name="telefono" placeholder="Número de contacto">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Descripción de la Consulta *</label>
+                                <textarea class="form-control" name="descripcion" rows="4" placeholder="Detalle la consulta o solicitud del cliente..." required></textarea>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="loadSection('dashboard')">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Registrar Atención
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Configurar el formulario
+        document.getElementById('nuevaAtencionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            fetch('dashboard.php?api=registrar-atencion', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', 'Atención registrada correctamente');
+                    e.target.reset();
+                } else {
+                    showAlert('error', 'Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error al registrar atención');
+            });
+        });
+    }
+}
+
+// Función para cargar cola de espera
+function loadColaEspera() {
+    console.log('⏳ Cargando Cola de Espera...');
+    hideAllSections();
+    
+    // Verificar si la función específica de ventanilla está disponible
+    if (typeof window.loadColaEspera === 'function' && window.loadColaEspera !== loadColaEspera) {
+        window.loadColaEspera();
+        return;
+    }
+    
+    // Fallback
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <h2><i class="fas fa-hourglass-half"></i> Cola de Espera</h2>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Gestión de cola de espera para atención al cliente
+                </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-hourglass-half fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay clientes en cola de espera</p>
+                    <button class="btn btn-primary" onclick="loadNuevaAtencion()">
+                        <i class="fas fa-plus"></i> Agregar Cliente
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Función para cargar consultas
+function loadConsultas() {
+    console.log('🔍 Cargando Consultas...');
+    hideAllSections();
+    
+    // Verificar si la función específica de ventanilla está disponible
+    if (typeof window.loadConsultas === 'function' && window.loadConsultas !== loadConsultas) {
+        window.loadConsultas();
+        return;
+    }
+    
+    // Fallback
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <h2><i class="fas fa-question-circle"></i> Consultas Públicas</h2>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Portal de consultas para el público
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                <h5>Consultar Actas</h5>
+                                <p class="text-muted">Buscar actas de infracción</p>
+                                <button class="btn btn-primary">Consultar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-car fa-3x text-success mb-3"></i>
+                                <h5>Consultar Vehículos</h5>
+                                <p class="text-muted">Información de vehículos</p>
+                                <button class="btn btn-success">Consultar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-id-card fa-3x text-warning mb-3"></i>
+                                <h5>Consultar Conductores</h5>
+                                <p class="text-muted">Información de licencias</p>
+                                <button class="btn btn-warning">Consultar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Función para cargar trámites
+function loadTramites() {
+    console.log('📋 Cargando Trámites...');
+    hideAllSections();
+    
+    // Verificar si la función específica de ventanilla está disponible
+    if (typeof window.loadTramites === 'function' && window.loadTramites !== loadTramites) {
+        window.loadTramites();
+        return;
+    }
+    
+    // Fallback
+    const contentContainer = document.getElementById('contentContainer');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="content-section active">
+                <h2><i class="fas fa-folder-open"></i> Trámites DRTC</h2>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Gestión de trámites vehiculares
+                </div>
+                <div class="text-center py-4">
+                    <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Funcionalidad de trámites disponible</p>
+                    <button class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nuevo Trámite
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
 // Exponer las nuevas funciones globalmente
 window.loadActas = loadActas;
 window.loadConductores = loadConductores;
 window.loadVehiculos = loadVehiculos;
 window.loadInfracciones = loadInfracciones;
 window.loadPerfil = loadPerfil;
+window.loadNuevaAtencion = loadNuevaAtencion;
+window.loadColaEspera = loadColaEspera;
+window.loadConsultas = loadConsultas;
+window.loadTramites = loadTramites;
 
 console.log('✅ Dashboard Core cargado correctamente');

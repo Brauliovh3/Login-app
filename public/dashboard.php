@@ -193,7 +193,11 @@ class DashboardApp {
                     break;
 
                 case 'dashboard-stats':
-                    echo json_encode($this->getDashboardStats());
+                    if ($this->userRole === 'ventanilla') {
+                        echo json_encode($this->getDashboardStatsVentanilla());
+                    } else {
+                        echo json_encode($this->getDashboardStats());
+                    }
                     break;
 
                 case 'actas-admin':
@@ -249,6 +253,37 @@ class DashboardApp {
                         $input = json_decode(file_get_contents('php://input'), true);
                         $documento = $input['documento'] ?? null;
                         echo json_encode($this->consultarDocumento($documento));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'consultar-actas':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        echo json_encode($this->consultarActasPorCriterio($input));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'consultar-vehiculo':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        $placa = $input['placa'] ?? null;
+                        echo json_encode($this->consultarVehiculoPorPlaca($placa));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'consultar-conductor':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        echo json_encode($this->consultarConductorPorDocumento($input));
                     } else {
                         http_response_code(405);
                         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
@@ -1639,32 +1674,14 @@ class DashboardApp {
     private function registrarAtencion() {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (!$data) {
-                $data = $_POST;
-            }
+            if (!$data) { $data = $_POST; }
             
             // Crear tabla de atenciones si no existe
-            if (!$this->tableExists('atenciones')) {
-                $this->pdo->exec("
-                    CREATE TABLE IF NOT EXISTS `atenciones` (
-                        `id` INT NOT NULL AUTO_INCREMENT,
-                        `tipo_consulta` VARCHAR(100) NULL,
-                        `documento_cliente` VARCHAR(20) NULL,
-                        `nombre_cliente` VARCHAR(150) NULL,
-                        `telefono_cliente` VARCHAR(20) NULL,
-                        `descripcion` TEXT NULL,
-                        `atendido_por` VARCHAR(100) NULL,
-                        `fecha_atencion` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                        `estado` ENUM('pendiente', 'atendido', 'cerrado') DEFAULT 'pendiente',
-                        PRIMARY KEY (`id`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                ");
-            }
+            $this->createAtencionesTables();
             
             $stmt = $this->pdo->prepare("
-                INSERT INTO atenciones (tipo_consulta, documento_cliente, nombre_cliente, telefono_cliente, descripcion, atendido_por, fecha_atencion) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
+                INSERT INTO atenciones (tipo_consulta, documento_cliente, nombre_cliente, telefono_cliente, descripcion, atendido_por, fecha_atencion, estado) 
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), 'pendiente')
             ");
             
             $result = $stmt->execute([
@@ -1677,6 +1694,8 @@ class DashboardApp {
             ]);
             
             if ($result) {
+                // Actualizar estadísticas
+                $this->updateDailyStats('atenciones');
                 return ['success' => true, 'message' => 'Atención registrada correctamente', 'id' => $this->pdo->lastInsertId()];
             } else {
                 return ['success' => false, 'message' => 'Error al registrar atención'];
@@ -1688,25 +1707,28 @@ class DashboardApp {
     
     private function getColaEspera() {
         try {
-            // Crear tabla de cola de espera si no existe
-            if (!$this->tableExists('cola_espera')) {
-                $this->pdo->exec("
-                    CREATE TABLE IF NOT EXISTS `cola_espera` (
-                        `id` INT NOT NULL AUTO_INCREMENT,
-                        `numero_ticket` VARCHAR(20) NULL,
-                        `nombre_cliente` VARCHAR(150) NULL,
-                        `documento_cliente` VARCHAR(20) NULL,
-                        `tipo_consulta` VARCHAR(100) NULL,
-                        `hora_llegada` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                        `estado` ENUM('esperando', 'atendiendo', 'atendido') DEFAULT 'esperando',
-                        `ventanilla` VARCHAR(50) NULL,
-                        PRIMARY KEY (`id`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                ");
-            }
+            $this->createAtencionesTables();
             
-            $stmt = $this->pdo->query("SELECT * FROM cola_espera WHERE estado IN ('esperando', 'atendiendo') ORDER BY hora_llegada ASC");
+            $stmt = $this->pdo->query("
+                SELECT *, 
+                       TIMESTAMPDIFF(MINUTE, hora_llegada, NOW()) as tiempo_espera_min
+                FROM cola_espera 
+                WHERE estado IN ('esperando', 'atendiendo') 
+                ORDER BY hora_llegada ASC
+            ");
             $cola = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Agregar información de tiempo de espera formateada
+            foreach ($cola as &$cliente) {
+                $minutos = $cliente['tiempo_espera_min'];
+                if ($minutos >= 60) {
+                    $horas = floor($minutos / 60);
+                    $mins = $minutos % 60;
+                    $cliente['tiempo_espera_texto'] = "{$horas}h {$mins}m";
+                } else {
+                    $cliente['tiempo_espera_texto'] = "{$minutos}m";
+                }
+            }
             
             return ['success' => true, 'cola' => $cola, 'total' => count($cola)];
         } catch (Exception $e) {
@@ -1717,29 +1739,40 @@ class DashboardApp {
     private function agregarColaEspera() {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) { $data = $_POST; }
             
-            if (!$data) {
-                $data = $_POST;
-            }
+            $this->createAtencionesTables();
             
-            // Generar número de ticket
-            $stmt = $this->pdo->query("SELECT COUNT(*) + 1 as siguiente FROM cola_espera WHERE DATE(hora_llegada) = CURDATE()");
-            $numeroTicket = 'T' . date('Ymd') . '-' . str_pad($stmt->fetch()['siguiente'], 3, '0', STR_PAD_LEFT);
+            // Generar número de ticket más inteligente
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) + 1 as siguiente 
+                FROM cola_espera 
+                WHERE DATE(hora_llegada) = CURDATE()
+            ");
+            $siguiente = $stmt->fetch()['siguiente'];
+            $numeroTicket = 'V' . date('ymd') . str_pad($siguiente, 3, '0', STR_PAD_LEFT);
             
             $stmt = $this->pdo->prepare("
-                INSERT INTO cola_espera (numero_ticket, nombre_cliente, documento_cliente, tipo_consulta, hora_llegada) 
-                VALUES (?, ?, ?, ?, NOW())
+                INSERT INTO cola_espera (numero_ticket, nombre_cliente, documento_cliente, tipo_consulta, hora_llegada, estado, ventanilla) 
+                VALUES (?, ?, ?, ?, NOW(), 'esperando', ?)
             ");
             
             $result = $stmt->execute([
                 $numeroTicket,
                 $data['nombre'] ?? '',
                 $data['documento'] ?? '',
-                $data['tipo_consulta'] ?? ''
+                $data['tipo_consulta'] ?? '',
+                $this->userName
             ]);
             
             if ($result) {
-                return ['success' => true, 'message' => 'Cliente agregado a la cola', 'ticket' => $numeroTicket];
+                return [
+                    'success' => true, 
+                    'message' => 'Cliente agregado a la cola', 
+                    'ticket' => $numeroTicket,
+                    'posicion' => $siguiente,
+                    'tiempo_estimado' => $siguiente * 15 . ' minutos'
+                ];
             } else {
                 return ['success' => false, 'message' => 'Error al agregar cliente a la cola'];
             }
@@ -1750,29 +1783,49 @@ class DashboardApp {
     
     private function getTramites() {
         try {
-            // Crear tabla de trámites si no existe
-            if (!$this->tableExists('tramites')) {
-                $this->pdo->exec("
-                    CREATE TABLE IF NOT EXISTS `tramites` (
-                        `id` INT NOT NULL AUTO_INCREMENT,
-                        `numero_tramite` VARCHAR(20) NULL,
-                        `tipo_tramite` VARCHAR(100) NULL,
-                        `documento_solicitante` VARCHAR(20) NULL,
-                        `nombre_solicitante` VARCHAR(150) NULL,
-                        `telefono_solicitante` VARCHAR(20) NULL,
-                        `observaciones` TEXT NULL,
-                        `estado` ENUM('pendiente', 'proceso', 'completado', 'rechazado') DEFAULT 'pendiente',
-                        `fecha_registro` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                        `registrado_por` VARCHAR(100) NULL,
-                        PRIMARY KEY (`id`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-                ");
-            }
+            $this->createAtencionesTables();
             
-            $stmt = $this->pdo->query("SELECT * FROM tramites ORDER BY fecha_registro DESC LIMIT 50");
+            // Obtener trámites con información adicional
+            $stmt = $this->pdo->query("
+                SELECT *, 
+                       DATEDIFF(NOW(), fecha_registro) as dias_transcurridos,
+                       CASE 
+                           WHEN estado = 'completado' THEN 'Completado'
+                           WHEN estado = 'proceso' THEN 'En Proceso'
+                           WHEN estado = 'rechazado' THEN 'Rechazado'
+                           ELSE 'Pendiente'
+                       END as estado_texto
+                FROM tramites 
+                ORDER BY 
+                    CASE estado 
+                        WHEN 'pendiente' THEN 1
+                        WHEN 'proceso' THEN 2
+                        WHEN 'completado' THEN 3
+                        WHEN 'rechazado' THEN 4
+                    END,
+                    fecha_registro DESC 
+                LIMIT 100
+            ");
             $tramites = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            return ['success' => true, 'tramites' => $tramites, 'total' => count($tramites)];
+            // Obtener estadísticas
+            $statsStmt = $this->pdo->query("
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+                    SUM(CASE WHEN estado = 'proceso' THEN 1 ELSE 0 END) as en_proceso,
+                    SUM(CASE WHEN estado = 'completado' THEN 1 ELSE 0 END) as completados,
+                    SUM(CASE WHEN DATE(fecha_registro) = CURDATE() THEN 1 ELSE 0 END) as hoy
+                FROM tramites
+            ");
+            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true, 
+                'tramites' => $tramites, 
+                'total' => count($tramites),
+                'stats' => $stats
+            ];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -1781,18 +1834,29 @@ class DashboardApp {
     private function registrarTramite() {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) { $data = $_POST; }
             
-            if (!$data) {
-                $data = $_POST;
-            }
+            $this->createAtencionesTables();
             
-            // Generar número de trámite
-            $stmt = $this->pdo->query("SELECT COUNT(*) + 1 as siguiente FROM tramites WHERE YEAR(fecha_registro) = YEAR(CURDATE())");
-            $numeroTramite = 'TR-' . date('Y') . '-' . str_pad($stmt->fetch()['siguiente'], 4, '0', STR_PAD_LEFT);
+            // Generar número de trámite más inteligente
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) + 1 as siguiente 
+                FROM tramites 
+                WHERE YEAR(fecha_registro) = YEAR(CURDATE())
+            ");
+            $siguiente = $stmt->fetch()['siguiente'];
+            $numeroTramite = 'DRTC-' . date('Y') . '-' . str_pad($siguiente, 5, '0', STR_PAD_LEFT);
+            
+            // Calcular fecha estimada de finalización
+            $diasEstimados = $this->getDiasEstimadosTramite($data['tipo_tramite'] ?? '');
+            $fechaEstimada = date('Y-m-d', strtotime("+{$diasEstimados} days"));
             
             $stmt = $this->pdo->prepare("
-                INSERT INTO tramites (numero_tramite, tipo_tramite, documento_solicitante, nombre_solicitante, telefono_solicitante, observaciones, registrado_por, fecha_registro) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                INSERT INTO tramites (
+                    numero_tramite, tipo_tramite, documento_solicitante, nombre_solicitante, 
+                    telefono_solicitante, observaciones, registrado_por, fecha_registro, 
+                    fecha_estimada_finalizacion, estado
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'pendiente')
             ");
             
             $result = $stmt->execute([
@@ -1802,11 +1866,21 @@ class DashboardApp {
                 $data['nombre'] ?? '',
                 $data['telefono'] ?? '',
                 $data['observaciones'] ?? '',
-                $this->userName
+                $this->userName,
+                $fechaEstimada
             ]);
             
             if ($result) {
-                return ['success' => true, 'message' => 'Trámite registrado correctamente', 'numero' => $numeroTramite];
+                // Actualizar estadísticas
+                $this->updateDailyStats('tramites');
+                
+                return [
+                    'success' => true, 
+                    'message' => 'Trámite registrado correctamente', 
+                    'numero' => $numeroTramite,
+                    'fecha_estimada' => $fechaEstimada,
+                    'dias_estimados' => $diasEstimados
+                ];
             } else {
                 return ['success' => false, 'message' => 'Error al registrar trámite'];
             }
@@ -2458,6 +2532,354 @@ class DashboardApp {
             return 'ACT-' . date('Ymd-His');
         }
     }
+    
+    // ==================== MÉTODOS PARA VENTANILLA ====================
+    
+    private function consultarDocumento($documento) {
+        try {
+            if (!$documento) {
+                return ['success' => false, 'message' => 'Documento requerido'];
+            }
+            
+            // Buscar en conductores
+            $stmt = $this->pdo->prepare("SELECT * FROM conductores WHERE dni = ? OR numero_licencia = ?");
+            $stmt->execute([$documento, $documento]);
+            $conductor = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Buscar actas relacionadas
+            $stmt = $this->pdo->prepare("SELECT * FROM actas WHERE ruc_dni = ? ORDER BY fecha_intervencion DESC LIMIT 10");
+            $stmt->execute([$documento]);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true,
+                'conductor' => $conductor,
+                'actas' => $actas,
+                'total_actas' => count($actas)
+            ];
+            
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function consultarActasPorCriterio($criterios) {
+        try {
+            $tipo = $criterios['tipo_busqueda'] ?? '';
+            $valor = $criterios['valor_busqueda'] ?? '';
+            
+            if (!$tipo || !$valor) {
+                return ['success' => false, 'message' => 'Criterios de búsqueda incompletos'];
+            }
+            
+            $sql = "SELECT * FROM actas WHERE ";
+            $params = [];
+            
+            switch ($tipo) {
+                case 'numero_acta':
+                    $sql .= "numero_acta LIKE ?";
+                    $params[] = "%{$valor}%";
+                    break;
+                case 'placa':
+                    $sql .= "(placa LIKE ? OR placa_vehiculo LIKE ?)";
+                    $params[] = "%{$valor}%";
+                    $params[] = "%{$valor}%";
+                    break;
+                case 'documento':
+                    $sql .= "ruc_dni LIKE ?";
+                    $params[] = "%{$valor}%";
+                    break;
+                default:
+                    return ['success' => false, 'message' => 'Tipo de búsqueda no válido'];
+            }
+            
+            $sql .= " ORDER BY fecha_intervencion DESC LIMIT 50";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true,
+                'actas' => $actas,
+                'total' => count($actas),
+                'criterio' => $tipo,
+                'valor' => $valor
+            ];
+            
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function consultarVehiculoPorPlaca($placa) {
+        try {
+            if (!$placa) {
+                return ['success' => false, 'message' => 'Placa requerida'];
+            }
+            
+            // Buscar vehículo
+            $stmt = $this->pdo->prepare("SELECT * FROM vehiculos WHERE placa LIKE ?");
+            $stmt->execute(["%{$placa}%"]);
+            $vehiculo = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Buscar actas del vehículo
+            $stmt = $this->pdo->prepare("SELECT * FROM actas WHERE placa LIKE ? OR placa_vehiculo LIKE ? ORDER BY fecha_intervencion DESC LIMIT 10");
+            $stmt->execute(["%{$placa}%", "%{$placa}%"]);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true,
+                'vehiculo' => $vehiculo,
+                'actas' => $actas,
+                'total_actas' => count($actas)
+            ];
+            
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function consultarConductorPorDocumento($criterios) {
+        try {
+            $tipo = $criterios['tipo_busqueda'] ?? '';
+            $valor = $criterios['valor_busqueda'] ?? '';
+            
+            if (!$tipo || !$valor) {
+                return ['success' => false, 'message' => 'Criterios de búsqueda incompletos'];
+            }
+            
+            $sql = "SELECT * FROM conductores WHERE ";
+            $params = [];
+            
+            switch ($tipo) {
+                case 'dni':
+                    $sql .= "dni LIKE ?";
+                    $params[] = "%{$valor}%";
+                    break;
+                case 'licencia':
+                    $sql .= "numero_licencia LIKE ?";
+                    $params[] = "%{$valor}%";
+                    break;
+                default:
+                    return ['success' => false, 'message' => 'Tipo de búsqueda no válido'];
+            }
+            
+            $sql .= " LIMIT 10";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $conductores = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Si encontramos conductores, buscar sus actas
+            $actasRelacionadas = [];
+            if (!empty($conductores)) {
+                foreach ($conductores as $conductor) {
+                    $stmt = $this->pdo->prepare("SELECT * FROM actas WHERE ruc_dni = ? OR licencia = ? ORDER BY fecha_intervencion DESC LIMIT 5");
+                    $stmt->execute([$conductor['dni'], $conductor['numero_licencia']]);
+                    $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $actasRelacionadas[$conductor['id']] = $actas;
+                }
+            }
+            
+            return [
+                'success' => true,
+                'conductores' => $conductores,
+                'actas_relacionadas' => $actasRelacionadas,
+                'total' => count($conductores)
+            ];
+            
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    // ==================== FUNCIONES AUXILIARES PARA VENTANILLA ====================
+    
+    private function createAtencionesTables() {
+        // Crear tabla de atenciones
+        if (!$this->tableExists('atenciones')) {
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `atenciones` (
+                    `id` INT NOT NULL AUTO_INCREMENT,
+                    `tipo_consulta` VARCHAR(100) NULL,
+                    `documento_cliente` VARCHAR(20) NULL,
+                    `nombre_cliente` VARCHAR(150) NULL,
+                    `telefono_cliente` VARCHAR(20) NULL,
+                    `descripcion` TEXT NULL,
+                    `atendido_por` VARCHAR(100) NULL,
+                    `fecha_atencion` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    `estado` ENUM('pendiente', 'atendido', 'cerrado') DEFAULT 'pendiente',
+                    `tiempo_atencion` INT NULL COMMENT 'Tiempo en minutos',
+                    PRIMARY KEY (`id`),
+                    INDEX `idx_fecha` (`fecha_atencion`),
+                    INDEX `idx_estado` (`estado`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+        }
+        
+        // Crear tabla de cola de espera
+        if (!$this->tableExists('cola_espera')) {
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `cola_espera` (
+                    `id` INT NOT NULL AUTO_INCREMENT,
+                    `numero_ticket` VARCHAR(20) NULL,
+                    `nombre_cliente` VARCHAR(150) NULL,
+                    `documento_cliente` VARCHAR(20) NULL,
+                    `tipo_consulta` VARCHAR(100) NULL,
+                    `hora_llegada` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    `hora_atencion` TIMESTAMP NULL,
+                    `estado` ENUM('esperando', 'atendiendo', 'atendido', 'cancelado') DEFAULT 'esperando',
+                    `ventanilla` VARCHAR(50) NULL,
+                    `prioridad` ENUM('normal', 'alta', 'urgente') DEFAULT 'normal',
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_ticket` (`numero_ticket`),
+                    INDEX `idx_estado` (`estado`),
+                    INDEX `idx_fecha` (`hora_llegada`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+        }
+        
+        // Crear tabla de trámites
+        if (!$this->tableExists('tramites')) {
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `tramites` (
+                    `id` INT NOT NULL AUTO_INCREMENT,
+                    `numero_tramite` VARCHAR(30) NULL,
+                    `tipo_tramite` VARCHAR(100) NULL,
+                    `documento_solicitante` VARCHAR(20) NULL,
+                    `nombre_solicitante` VARCHAR(150) NULL,
+                    `telefono_solicitante` VARCHAR(20) NULL,
+                    `observaciones` TEXT NULL,
+                    `estado` ENUM('pendiente', 'proceso', 'completado', 'rechazado', 'suspendido') DEFAULT 'pendiente',
+                    `fecha_registro` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    `fecha_estimada_finalizacion` DATE NULL,
+                    `fecha_finalizacion` TIMESTAMP NULL,
+                    `registrado_por` VARCHAR(100) NULL,
+                    `procesado_por` VARCHAR(100) NULL,
+                    `costo` DECIMAL(10,2) NULL DEFAULT 0.00,
+                    `documentos_requeridos` JSON NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_numero` (`numero_tramite`),
+                    INDEX `idx_estado` (`estado`),
+                    INDEX `idx_fecha` (`fecha_registro`),
+                    INDEX `idx_tipo` (`tipo_tramite`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+        }
+        
+        // Crear tabla de estadísticas diarias
+        if (!$this->tableExists('estadisticas_diarias')) {
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `estadisticas_diarias` (
+                    `id` INT NOT NULL AUTO_INCREMENT,
+                    `fecha` DATE NOT NULL,
+                    `tipo` VARCHAR(50) NOT NULL,
+                    `cantidad` INT NOT NULL DEFAULT 0,
+                    `usuario` VARCHAR(100) NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_fecha_tipo_usuario` (`fecha`, `tipo`, `usuario`),
+                    INDEX `idx_fecha` (`fecha`),
+                    INDEX `idx_tipo` (`tipo`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ");
+        }
+    }
+    
+    private function getDiasEstimadosTramite($tipoTramite) {
+        $diasEstimados = [
+            'licencia_conducir' => 15,
+            'renovacion_licencia' => 7,
+            'duplicado_licencia' => 5,
+            'tarjeta_propiedad' => 10,
+            'cambio_propietario' => 12,
+            'placa_vehicular' => 8,
+            'revision_tecnica' => 3,
+            'certificado_no_adeudo' => 2
+        ];
+        
+        return $diasEstimados[$tipoTramite] ?? 10;
+    }
+    
+    private function updateDailyStats($tipo) {
+        try {
+            $fecha = date('Y-m-d');
+            $usuario = $this->userName;
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO estadisticas_diarias (fecha, tipo, cantidad, usuario) 
+                VALUES (?, ?, 1, ?) 
+                ON DUPLICATE KEY UPDATE cantidad = cantidad + 1
+            ");
+            
+            $stmt->execute([$fecha, $tipo, $usuario]);
+        } catch (Exception $e) {
+            // Log error but don't fail the main operation
+            error_log('Error updating daily stats: ' . $e->getMessage());
+        }
+    }
+    
+    private function getDashboardStatsVentanilla() {
+        try {
+            $fecha = date('Y-m-d');
+            
+            // Atenciones de hoy
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as count 
+                FROM atenciones 
+                WHERE DATE(fecha_atencion) = ?
+            ");
+            $stmt->execute([$fecha]);
+            $atencionesHoy = $stmt->fetch()['count'];
+            
+            // Cola de espera actual
+            $stmt = $this->pdo->query("
+                SELECT COUNT(*) as count 
+                FROM cola_espera 
+                WHERE estado IN ('esperando', 'atendiendo')
+            ");
+            $colaEspera = $stmt->fetch()['count'];
+            
+            // Trámites completados hoy
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as count 
+                FROM tramites 
+                WHERE DATE(fecha_registro) = ? AND estado = 'completado'
+            ");
+            $stmt->execute([$fecha]);
+            $tramitesCompletados = $stmt->fetch()['count'];
+            
+            // Tiempo promedio de atención
+            $stmt = $this->pdo->prepare("
+                SELECT AVG(tiempo_atencion) as promedio 
+                FROM atenciones 
+                WHERE DATE(fecha_atencion) = ? AND tiempo_atencion IS NOT NULL
+            ");
+            $stmt->execute([$fecha]);
+            $tiempoPromedio = round($stmt->fetch()['promedio'] ?? 15);
+            
+            return [
+                'success' => true,
+                'stats' => [
+                    'atenciones_hoy' => $atencionesHoy,
+                    'cola_espera' => $colaEspera,
+                    'tramites_completados' => $tramitesCompletados,
+                    'tiempo_promedio' => $tiempoPromedio
+                ]
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => true,
+                'stats' => [
+                    'atenciones_hoy' => 0,
+                    'cola_espera' => 0,
+                    'tramites_completados' => 0,
+                    'tiempo_promedio' => 15
+                ]
+            ];
+        }
+    }
 }
 
 // Inicializar la aplicación
@@ -2483,7 +2905,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="css/dashboard.css" rel="stylesheet">
     <?php if ($rol === 'ventanilla'): ?>
-    <link href="css/ventanilla.css" rel="stylesheet">
+    <link href="css/ventanilla-simple.css" rel="stylesheet">
     <?php endif; ?>
     <style>
         :root {
@@ -3235,80 +3657,70 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
             <?php endif; ?>
 
             <?php if ($rol === 'ventanilla'): ?>
-            <!-- Menú para Ventanilla DRTC -->
+            <!-- Menú Híbrido para Ventanilla -->
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('atencion', event); return false;">
-                    <i class="fas fa-user-tie"></i> Atención al Cliente
-                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                <a class="sidebar-link" href="javascript:void(0)" onclick="loadNuevaAtencion()">
+                    <i class="fas fa-plus-circle"></i> Nueva Atención
                 </a>
-                <ul class="sidebar-submenu" id="submenu-atencion" style="display: none;">
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadNuevaAtencion()" data-section="nueva-atencion">
-                            <i class="fas fa-plus"></i> Nueva Atención
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadColaEspera()" data-section="cola-espera">
-                            <i class="fas fa-hourglass-half"></i> Cola de Espera
-                        </a>
-                    </li>
-                    <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadConsultas()" data-section="consultas-publico">
-                            <i class="fas fa-question-circle"></i> Consultas Públicas
-                        </a>
-                    </li>
-                </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('tramites', event); return false;">
-                    <i class="fas fa-folder-open"></i> Trámites DRTC
-                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                <a class="sidebar-link" href="javascript:void(0)" onclick="loadColaEspera()">
+                    <i class="fas fa-clock"></i> Cola de Espera
                 </a>
-                <ul class="sidebar-submenu" id="submenu-tramites" style="display: none;">
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('tramites', event)">
+                    <i class="fas fa-folder-open"></i> Trámites
+                </a>
+                <ul class="sidebar-submenu" id="submenu-tramites">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadTramites()" data-section="nuevo-tramite">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadTramites()">
                             <i class="fas fa-plus"></i> Nuevo Trámite
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="tramitesPendientes()" data-section="tramites-pendientes">
-                            <i class="fas fa-clock"></i> Pendientes
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="tramitesPendientes()">
+                            <i class="fas fa-list"></i> Pendientes
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="historialTramites()" data-section="historial-tramites">
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="historialTramites()">
                             <i class="fas fa-history"></i> Historial
                         </a>
                     </li>
                 </ul>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenuAlt('consultas-drtc', event); return false;">
-                    <i class="fas fa-search"></i> Consultas DRTC
-                    <i class="fas fa-chevron-down sidebar-arrow"></i>
+                <a class="sidebar-link sidebar-toggle" href="#" onclick="toggleSubmenu('consultas', event)">
+                    <i class="fas fa-search"></i> Consultas
                 </a>
-                <ul class="sidebar-submenu" id="submenu-consultas-drtc" style="display: none;">
+                <ul class="sidebar-submenu" id="submenu-consultas">
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadConsultasActas()" data-section="consultas-actas">
-                            <i class="fas fa-file-alt"></i> Consultar Actas
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadConsultas()">
+                            <i class="fas fa-globe"></i> Portal Público
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="consultarVehiculos()" data-section="consultas-vehiculos">
-                            <i class="fas fa-car"></i> Consultar Vehículos
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="loadConsultasActas()">
+                            <i class="fas fa-file-alt"></i> Actas
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="consultarConductores()" data-section="consultas-conductores">
-                            <i class="fas fa-id-card"></i> Consultar Conductores
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="consultarVehiculos()">
+                            <i class="fas fa-car"></i> Vehículos
                         </a>
                     </li>
                     <li class="sidebar-subitem">
-                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="mostrarInfoDRTC()" data-section="info-drtc">
-                            <i class="fas fa-info-circle"></i> Información DRTC
+                        <a class="sidebar-sublink" href="javascript:void(0)" onclick="consultarConductores()">
+                            <i class="fas fa-id-card"></i> Conductores
                         </a>
                     </li>
                 </ul>
+            </li>
+            <li class="sidebar-item">
+                <a class="sidebar-link" href="javascript:void(0)" onclick="mostrarInfoDRTC()">
+                    <i class="fas fa-info-circle"></i> Información DRTC
+                </a>
             </li>
             <?php endif; ?>
 
@@ -3544,7 +3956,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     
     <?php if ($rol === 'ventanilla'): ?>
     <!-- JavaScript específico para ventanilla -->
-    <script src="js/ventanilla.js"></script>
+    <script src="js/ventanilla-simple.js"></script>
     <?php endif; ?>
     
     <?php if ($rol === 'inspector'): ?>
