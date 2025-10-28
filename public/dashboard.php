@@ -23,7 +23,7 @@ class DashboardApp {
             }
 
             $this->handleApiRequest();
-            exit;
+            exit; // CRÍTICO: Salir inmediatamente después de manejar API
         }
         
         $this->authenticateUser();
@@ -34,14 +34,22 @@ class DashboardApp {
             $sql = "SELECT 
                 id,
                 numero_acta,
-                placa_vehiculo AS placa,
                 placa_vehiculo,
-                nombre_conductor,
-                nombre_conductor AS conductor_nombre,
+                CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor,
+                nombres_conductor,
+                apellidos_conductor,
                 ruc_dni,
-                'pendiente' AS estado,
+                COALESCE(codigo_infraccion, 'N/A') as codigo_infraccion,
+                CASE 
+                    WHEN estado = 0 THEN 'pendiente'
+                    WHEN estado = 1 THEN 'procesada' 
+                    WHEN estado = 2 THEN 'anulada'
+                    WHEN estado = 3 THEN 'pagada'
+                    ELSE 'pendiente'
+                END AS estado,
                 fecha_intervencion AS created_at,
-                fecha_intervencion AS fecha_acta
+                fecha_intervencion AS fecha_acta,
+                fiscalizador_id
             FROM actas 
             ORDER BY id DESC 
             LIMIT 200";
@@ -55,6 +63,7 @@ class DashboardApp {
                 'stats' => ['total_actas' => count($rows)]
             ];
         } catch (Exception $e) {
+            error_log('Error en getActasByRole: ' . $e->getMessage());
             return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
         }
     }
@@ -97,7 +106,7 @@ class DashboardApp {
         if (!isset($_SESSION['user_id'])) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => 'No autenticado']);
-            return;
+            exit; // Salir inmediatamente
         }
         
         // Obtener datos del usuario para las APIs
@@ -248,6 +257,35 @@ class DashboardApp {
                     }
                     break;
                     
+                case 'acta-details':
+                    if ($method === 'GET') {
+                        $actaId = $_GET['id'] ?? null;
+                        if (!$actaId) {
+                            echo json_encode(['success' => false, 'message' => 'ID de acta requerido']);
+                        } else {
+                            echo json_encode($this->getActaDetails($actaId));
+                        }
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'update-acta':
+                    if ($method === 'POST') {
+                        $data = json_decode(file_get_contents('php://input'), true);
+                        $actaId = $data['acta_id'] ?? null;
+                        if (!$actaId) {
+                            echo json_encode(['success' => false, 'message' => 'ID de acta requerido']);
+                        } else {
+                            echo json_encode($this->updateActa($actaId));
+                        }
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
                 case 'consultar-documento':
                     if ($method === 'POST') {
                         $input = json_decode(file_get_contents('php://input'), true);
@@ -330,6 +368,7 @@ class DashboardApp {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
         }
+        exit; // Asegurar que siempre salga después de manejar API
     }
 
     // Devuelve usuarios con estado pendiente
@@ -1068,37 +1107,36 @@ class DashboardApp {
     private function getActaDetails($actaId) {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT a.*, u.name as user_name, 
-                       c.nombres as conductor_nombres, c.apellidos as conductor_apellidos,
-                       v.marca, v.modelo, v.año as vehiculo_año,
-                       i.descripcion as infraccion_descripcion
+                SELECT a.*, 
+                       u.name as user_name,
+                       CASE 
+                           WHEN a.estado = 0 THEN 'pendiente'
+                           WHEN a.estado = 1 THEN 'procesada' 
+                           WHEN a.estado = 2 THEN 'anulada'
+                           WHEN a.estado = 3 THEN 'pagada'
+                           ELSE 'pendiente'
+                       END AS estado_texto
                 FROM actas a 
-                LEFT JOIN usuarios u ON a.user_id = u.id
-                LEFT JOIN conductores c ON a.licencia = c.numero_licencia
-                LEFT JOIN vehiculos v ON a.placa = v.placa
-                LEFT JOIN infracciones i ON a.numero_acta = i.codigo_infraccion
+                LEFT JOIN usuarios u ON a.fiscalizador_id = u.id
                 WHERE a.id = ?
             ");
             $stmt->execute([$actaId]);
             $acta = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($acta) {
-                // Convertir estado numérico a texto
-                switch((int)$acta['estado']) {
-                    case 0:
-                        $acta['estado'] = 'pendiente';
-                        break;
-                    case 1:
-                        $acta['estado'] = 'procesada';
-                        break;
-                    case 2:
-                        $acta['estado'] = 'anulada';
-                        break;
-                    case 3:
-                        $acta['estado'] = 'pagada';
-                        break;
-                    default:
-                        $acta['estado'] = 'pendiente';
+                // Usar el estado convertido a texto
+                $acta['estado'] = $acta['estado_texto'];
+                
+                // Asegurar campos necesarios para la vista
+                $acta['placa'] = $acta['placa'] ?? $acta['placa_vehiculo'] ?? 'N/A';
+                $acta['conductor_nombre'] = trim(($acta['nombres_conductor'] ?? '') . ' ' . ($acta['apellidos_conductor'] ?? '')) ?: 'N/A';
+                $acta['nombre_conductor'] = $acta['conductor_nombre'];
+                $acta['descripcion'] = $acta['descripcion_infraccion'] ?? $acta['descripcion_hechos'] ?? 'Sin descripción';
+                $acta['monto'] = $acta['monto_multa'] ?? '0.00';
+                
+                // Asegurar que el código de infracción esté disponible
+                if (empty($acta['codigo_infraccion'])) {
+                    $acta['codigo_infraccion'] = 'N/A';
                 }
                 
                 return ['success' => true, 'acta' => $acta];
@@ -1152,6 +1190,9 @@ class DashboardApp {
             $colsArr = array_map(fn($r) => $r['Field'], $colsMeta);
             $colsSet = array_flip($colsArr);
 
+            // Generar número de acta
+            $actaInfo = $this->generarNumeroActa();
+            
             // Mapeo fijo formulario -> columnas de 'actas'
             $mapping = [
                 'ruc_dni' => $data['ruc_dni'] ?? null,
@@ -1160,15 +1201,21 @@ class DashboardApp {
                 'placa' => $data['placa'] ?? ($data['placa_vehiculo'] ?? null),
                 'tipo_agente' => $data['tipo_agente'] ?? null,
                 'tipo_servicio' => $data['tipo_servicio'] ?? null,
-                'nombre_conductor' => $data['nombre_conductor'] ?? null,
+                'apellidos_conductor' => $data['apellidos_conductor'] ?? null,
+                'nombres_conductor' => $data['nombres_conductor'] ?? null,
                 'licencia' => $data['licencia_conductor'] ?? ($data['licencia'] ?? null),
                 'lugar_intervencion' => $data['lugar_intervencion'] ?? null,
+                'provincia' => $data['provincia'] ?? null,
+                'distrito' => $data['distrito'] ?? null,
                 'fecha_intervencion' => $data['fecha_intervencion'] ?? date('Y-m-d'),
                 'hora_intervencion' => $data['hora_intervencion'] ?? date('H:i:s'),
                 'inspector_responsable' => $data['inspector_responsable'] ?? null,
                 'codigo_infraccion' => $data['codigo_infraccion'] ?? ($data['informe'] ?? null),
                 'descripcion_infraccion' => $data['descripcion_infraccion'] ?? null,
+                'numero_acta' => $actaInfo['numero_acta'],
+                'anio_acta' => $actaInfo['anio_acta'],
                 'fiscalizador_id' => $_SESSION['user_id'] ?? null, // ID del usuario que crea el acta
+                'user_id' => $_SESSION['user_id'] ?? null, // Mantener compatibilidad
             ];
 
             // Filtrar por columnas existentes
@@ -1180,7 +1227,8 @@ class DashboardApp {
 
             // Satisfacer columnas NOT NULL sin default obligatorias
             $requiredDefaults = [
-                'numero_acta' => function() { return $this->generarNumeroActaPorAnio(); },
+                'numero_acta' => function() use ($mapping) { return $mapping['numero_acta'] ?? $this->generarNumeroActa()['numero_acta']; },
+                'anio_acta' => function() use ($mapping) { return $mapping['anio_acta'] ?? date('Y'); },
                 'codigo_ds' => function() { return ''; },
                 'placa' => function() use ($mapping) { return $mapping['placa'] ?? ($mapping['placa_vehiculo'] ?? ''); },
                 'fecha_intervencion' => function() use ($mapping) { return $mapping['fecha_intervencion'] ?? date('Y-m-d'); },
@@ -1191,7 +1239,8 @@ class DashboardApp {
                 'inspector_responsable' => function() use ($mapping) { return $mapping['inspector_responsable'] ?? ''; },
                 'razon_social' => function() use ($mapping) { return $mapping['razon_social'] ?? ''; },
                 'ruc_dni' => function() use ($mapping) { return $mapping['ruc_dni'] ?? ''; },
-                'nombre_conductor' => function() use ($mapping) { return $mapping['nombre_conductor'] ?? ''; },
+                'nombres_conductor' => function() use ($mapping) { return $mapping['nombres_conductor'] ?? ''; },
+                'apellidos_conductor' => function() use ($mapping) { return $mapping['apellidos_conductor'] ?? ''; },
                 'licencia' => function() use ($mapping) { return $mapping['licencia'] ?? ''; },
                 'codigo_infraccion' => function() use ($mapping) { return $mapping['codigo_infraccion'] ?? ''; },
                 'created_at' => function() { return date('Y-m-d H:i:s'); },
@@ -1237,43 +1286,90 @@ class DashboardApp {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
             
-            $sql = "UPDATE actas SET 
-                lugar_intervencion = ?, fecha_intervencion = ?, hora_intervencion = ?,
-                inspector_responsable = ?, tipo_servicio = ?, tipo_agente = ?,
-                placa = ?, placa_vehiculo = ?, razon_social = ?, ruc_dni = ?,
-                licencia = ?, nombre_conductor = ?, clase_licencia = ?,
-                monto_multa = ?, updated_at = NOW()
-                WHERE id = ? AND (user_id = ? OR ? IN ('administrador', 'superadmin'))";
+            if (!$data) {
+                return ['success' => false, 'message' => 'Datos no válidos'];
+            }
+            
+            // Construir la consulta dinámicamente basada en los campos disponibles
+            $updateFields = [];
+            $params = [];
+            
+            // Mapear campos del formulario a columnas de la base de datos
+            $fieldMapping = [
+                'placa' => 'placa',
+                'placa_vehiculo' => 'placa_vehiculo', 
+                'conductor_nombre' => 'nombres_conductor',
+                'nombres_conductor' => 'nombres_conductor',
+                'apellidos_conductor' => 'apellidos_conductor',
+                'ruc_dni' => 'ruc_dni',
+                'monto' => 'monto_multa',
+                'monto_multa' => 'monto_multa',
+                'descripcion' => 'descripcion_infraccion',
+                'descripcion_hechos' => 'descripcion_hechos',
+                'lugar_intervencion' => 'lugar_intervencion',
+                'fecha_intervencion' => 'fecha_intervencion',
+                'hora_intervencion' => 'hora_intervencion',
+                'inspector_responsable' => 'inspector_responsable',
+                'tipo_servicio' => 'tipo_servicio',
+                'tipo_agente' => 'tipo_agente',
+                'razon_social' => 'razon_social',
+                'licencia' => 'licencia',
+                'codigo_infraccion' => 'codigo_infraccion'
+            ];
+            
+            foreach ($fieldMapping as $inputField => $dbField) {
+                if (isset($data[$inputField])) {
+                    $updateFields[] = "$dbField = ?";
+                    $params[] = $data[$inputField];
+                }
+            }
+            
+            // Manejar el estado por separado (convertir texto a número)
+            if (isset($data['estado'])) {
+                $estadoNumerico = $this->convertirEstadoANumero($data['estado']);
+                $updateFields[] = "estado = ?";
+                $params[] = $estadoNumerico;
+            }
+            
+            if (empty($updateFields)) {
+                return ['success' => false, 'message' => 'No hay campos para actualizar'];
+            }
+            
+            // Agregar timestamp de actualización si la columna existe
+            if ($this->columnExists('actas', 'updated_at')) {
+                $updateFields[] = "updated_at = NOW()";
+            }
+            
+            $params[] = $actaId;
+            
+            $sql = "UPDATE actas SET " . implode(', ', $updateFields) . " WHERE id = ?";
             
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([
-                $data['lugar_intervencion'] ?? null,
-                $data['fecha_intervencion'],
-                $data['hora_intervencion'],
-                $data['inspector_responsable'] ?? $this->userName,
-                $data['tipo_servicio'] ?? null,
-                $data['tipo_agente'],
-                $data['placa'],
-                $data['placa_vehiculo'] ?? $data['placa'],
-                $data['razon_social'],
-                $data['ruc_dni'],
-                $data['licencia_conductor'] ?? $data['licencia'] ?? null,
-                $data['nombre_conductor'] ?? null,
-                $data['clase_licencia'] ?? null,
-                $data['monto_multa'] ?? null,
-                $actaId,
-                $this->user['id'],
-                $this->userRole
-            ]);
+            $result = $stmt->execute($params);
             
-            if ($result) {
+            if ($result && $stmt->rowCount() > 0) {
                 return ['success' => true, 'message' => 'Acta actualizada correctamente'];
             } else {
-                return ['success' => false, 'message' => 'No se pudo actualizar el acta'];
+                return ['success' => false, 'message' => 'No se pudo actualizar el acta o no se encontró'];
             }
         } catch (Exception $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
+            return ['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()];
         }
+    }
+    
+    private function convertirEstadoANumero($estadoTexto) {
+        $estados = [
+            'pendiente' => 0,
+            'procesada' => 1,
+            'procesado' => 1,
+            'anulada' => 2,
+            'anulado' => 2,
+            'pagada' => 3,
+            'pagado' => 3
+        ];
+        
+        $estadoLower = strtolower($estadoTexto);
+        return $estados[$estadoLower] ?? 0;
     }
     
     private function getConductores() {
@@ -1340,12 +1436,63 @@ class DashboardApp {
     
     private function getInfracciones() {
         try {
+            // Verificar si la tabla existe, si no, crearla
+            if (!$this->tableExists('infracciones')) {
+                $this->createInfraccionesTable();
+            }
+            
             $stmt = $this->pdo->query("SELECT * FROM infracciones ORDER BY codigo_infraccion LIMIT 100");
             $infracciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             return ['success' => true, 'infracciones' => $infracciones];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+    
+    private function createInfraccionesTable() {
+        try {
+            // Ejecutar el script SQL para crear la tabla
+            $sqlFile = __DIR__ . '/../database/migrations/create_infracciones_table.sql';
+            if (file_exists($sqlFile)) {
+                $sql = file_get_contents($sqlFile);
+                $this->pdo->exec($sql);
+            } else {
+                // Crear tabla básica si no existe el archivo
+                $this->pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `infracciones` (
+                        `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                        `codigo_infraccion` varchar(255) NOT NULL,
+                        `aplica_sobre` varchar(255) NOT NULL,
+                        `reglamento` varchar(255) NOT NULL,
+                        `norma_modificatoria` varchar(255) NOT NULL,
+                        `infraccion` text NOT NULL,
+                        `clase_pago` enum('Pecuniaria','No pecuniaria') NOT NULL,
+                        `sancion` varchar(255) NOT NULL,
+                        `tipo` enum('Infracción') NOT NULL DEFAULT 'Infracción',
+                        `medida_preventiva` text,
+                        `gravedad` enum('Leve','Grave','Muy grave') NOT NULL,
+                        `otros_responsables_otros_beneficios` text,
+                        `estado` varchar(255) NOT NULL DEFAULT 'activo',
+                        `created_at` timestamp NULL DEFAULT NULL,
+                        `updated_at` timestamp NULL DEFAULT NULL,
+                        PRIMARY KEY (`id`),
+                        UNIQUE KEY `infracciones_codigo_infraccion_unique` (`codigo_infraccion`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+                
+                // Insertar datos básicos
+                $this->pdo->exec("
+                    INSERT IGNORE INTO `infracciones` (`codigo_infraccion`, `aplica_sobre`, `reglamento`, `norma_modificatoria`, `infraccion`, `clase_pago`, `sancion`, `medida_preventiva`, `gravedad`) VALUES
+                    ('F.1', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio de transporte público sin contar con autorización', 'Pecuniaria', '1 UIT', 'Internamiento del vehículo', 'Muy grave'),
+                    ('F.2', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio fuera del ámbito autorizado', 'Pecuniaria', '0.5 UIT', NULL, 'Grave'),
+                    ('F.3', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Conducir sin licencia de conducir', 'Pecuniaria', '1 UIT', 'Retención del vehículo', 'Muy grave'),
+                    ('F.4', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Exceder los límites de velocidad', 'Pecuniaria', '0.25 UIT', NULL, 'Leve'),
+                    ('F.5', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No contar con SOAT vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave')
+                ");
+            }
+        } catch (Exception $e) {
+            error_log('Error creating infracciones table: ' . $e->getMessage());
         }
     }
     
@@ -1381,30 +1528,37 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'Acceso denegado'];
             }
             
-            // Consulta para obtener todas las actas
+            // Consulta para obtener todas las actas con campos correctos
             $query = "
                 SELECT 
                     id,
                     numero_acta,
-                    placa_vehiculo AS placa,
                     placa_vehiculo,
-                    nombre_conductor,
-                    nombre_conductor AS conductor_nombre,
+                    CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor,
+                    nombres_conductor,
+                    apellidos_conductor,
                     ruc_dni,
-                    'pendiente' AS estado,
+                    COALESCE(codigo_infraccion, 'N/A') as codigo_infraccion,
+                    CASE 
+                        WHEN estado = 0 THEN 'pendiente'
+                        WHEN estado = 1 THEN 'procesada' 
+                        WHEN estado = 2 THEN 'anulada'
+                        WHEN estado = 3 THEN 'pagada'
+                        ELSE 'pendiente'
+                    END AS estado,
                     fecha_intervencion AS created_at,
-                    fecha_intervencion AS fecha_acta
+                    fecha_intervencion AS fecha_acta,
+                    fiscalizador_id
                 FROM actas 
                 ORDER BY id DESC 
                 LIMIT 200
             ";
             
             $stmt = $this->pdo->query($query);
-            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $actas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             
             // Estadísticas básicas
             $statsQuery = "SELECT COUNT(*) as total_actas FROM actas";
-            
             $statsStmt = $this->pdo->query($statsQuery);
             $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             
@@ -1415,6 +1569,7 @@ class DashboardApp {
             ];
             
         } catch (Exception $e) {
+            error_log('Error en getActasAdmin: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -2459,25 +2614,38 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'Acta no encontrada'];
             }
             
-            if ($acta['estado'] === 'Anulado') {
+            // Verificar si ya está anulada (estado = 2)
+            if ($acta['estado'] == 2) {
                 return ['success' => false, 'message' => 'El acta ya está anulada'];
             }
             
-            // Actualizar acta a estado Anulado
-            $stmt = $this->pdo->prepare("
-                UPDATE actas 
-                SET estado = 'Anulado', 
-                    motivo_anulacion = ?, 
-                    fecha_anulacion = NOW(),
-                    anulado_por = ?
-                WHERE id = ?
-            ");
+            // Actualizar acta a estado Anulado (2)
+            $updateFields = ['estado = ?'];
+            $params = [2]; // 2 = anulada
             
-            $stmt->execute([
-                $motivo,
-                $_SESSION['user_id'],
-                $actaId
-            ]);
+            // Agregar motivo de anulación si la columna existe
+            if ($this->columnExists('actas', 'motivo_anulacion')) {
+                $updateFields[] = 'motivo_anulacion = ?';
+                $params[] = $motivo;
+            }
+            
+            // Agregar campos adicionales si existen en la tabla
+            if ($this->columnExists('actas', 'fecha_anulacion')) {
+                $updateFields[] = 'fecha_anulacion = NOW()';
+            }
+            if ($this->columnExists('actas', 'anulado_por')) {
+                $updateFields[] = 'anulado_por = ?';
+                $params[] = $_SESSION['user_id'];
+            }
+            if ($this->columnExists('actas', 'updated_at')) {
+                $updateFields[] = 'updated_at = NOW()';
+            }
+            
+            $params[] = $actaId;
+            
+            $sql = "UPDATE actas SET " . implode(', ', $updateFields) . " WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
             
             return [
                 'success' => true,
@@ -2492,44 +2660,46 @@ class DashboardApp {
         }
     }
     
-    private function generarNumeroActaPorAnio() {
+    private function getNextActaNumber() {
         try {
             $anioActual = date('Y');
             
             // Buscar el último número de acta del año actual
             $stmt = $this->pdo->prepare("
-                SELECT numero_acta 
+                SELECT MAX(CAST(numero_acta AS UNSIGNED)) as ultimo_numero 
                 FROM actas 
-                WHERE numero_acta LIKE ? 
-                ORDER BY id DESC 
-                LIMIT 1
+                WHERE anio_acta = ?
             ");
-            $stmt->execute(["ACT-{$anioActual}-%"]);
-            $ultimaActa = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->execute([$anioActual]);
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($ultimaActa && $ultimaActa['numero_acta']) {
-                // Extraer el número secuencial del último registro
-                // Formato: ACT-2025-0001
-                $partes = explode('-', $ultimaActa['numero_acta']);
-                if (count($partes) >= 3) {
-                    $ultimoNumero = intval($partes[2]);
-                    $nuevoNumero = $ultimoNumero + 1;
-                } else {
-                    $nuevoNumero = 1;
-                }
-            } else {
-                // Primer acta del año
-                $nuevoNumero = 1;
-            }
+            $ultimoNumero = $resultado['ultimo_numero'] ?? 0;
+            return $ultimoNumero + 1;
+            
+        } catch (Exception $e) {
+            return 1;
+        }
+    }
+    
+    private function generarNumeroActa() {
+        try {
+            $anioActual = date('Y');
+            $numeroActa = $this->getNextActaNumber();
             
             // Formatear con 4 dígitos: 0001, 0002, etc.
-            $numeroFormateado = str_pad($nuevoNumero, 4, '0', STR_PAD_LEFT);
+            $numeroFormateado = str_pad($numeroActa, 4, '0', STR_PAD_LEFT);
             
-            return "ACT-{$anioActual}-{$numeroFormateado}";
+            return [
+                'numero_acta' => $numeroFormateado,
+                'anio_acta' => $anioActual
+            ];
             
         } catch (Exception $e) {
             // Fallback en caso de error
-            return 'ACT-' . date('Ymd-His');
+            return [
+                'numero_acta' => str_pad(1, 4, '0', STR_PAD_LEFT),
+                'anio_acta' => date('Y')
+            ];
         }
     }
     
@@ -2926,7 +3096,9 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
         .logo-container {
             text-align: center;
             margin-bottom: 10px;
-            width: 30%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
 

@@ -220,7 +220,7 @@ function generarHTMLHistorialActas() {
                         <i class="fas fa-print"></i> Imprimir Mi Historial
                     </button>
                     <button class="btn btn-outline-secondary" onclick="cargarMisActasDesdeAPI()">
-                        <i class="fas fa-refresh"></i> Actualizar
+                        <i class="fas fa-sync-alt"></i> Actualizar
                     </button>
                 </div>
             </div>
@@ -344,14 +344,12 @@ function generarHTMLGestionActas() {
                 <h2><i class="fas fa-file-alt"></i> Gestión de Actas</h2>
                 <div class="d-flex gap-2">
                     <button class="btn btn-success" onclick="exportarActas('excel')">
-                        <i class="fas fa-file-excel"></i> Exportar Excel
+                        <i class="fas fa-file-excel"></i> Excel
                     </button>
                     <button class="btn btn-info" onclick="exportarActas('pdf')">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                        <i class="fas fa-file-pdf"></i> PDF
                     </button>
-                    <button class="btn btn-warning" onclick="exportarActas('pdf-detallado')">
-                        <i class="fas fa-file-pdf"></i> PDF Detallado
-                    </button>
+
                     <button class="btn btn-warning" onclick="imprimirActas()">
                         <i class="fas fa-print"></i> Imprimir
                     </button>
@@ -438,6 +436,21 @@ function generarHTMLGestionActas() {
 // ================================
 
 async function cargarActasDesdeAPI() {
+    // Mostrar indicador de carga
+    const tbody = document.getElementById('actasTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Actualizando...</span>
+                    </div>
+                    <p class="mt-2">Actualizando actas...</p>
+                </td>
+            </tr>
+        `;
+    }
+    
     try {
         const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
             method: 'GET',
@@ -458,6 +471,11 @@ async function cargarActasDesdeAPI() {
         if (data.success) {
             todasLasActas = data.actas || [];
             mostrarActas(todasLasActas);
+            if (todasLasActas.length > 0) {
+                mostrarExitoActas(`${todasLasActas.length} actas cargadas correctamente`);
+            } else {
+                mostrarInfoActas('No se encontraron actas en el sistema');
+            }
         } else {
             mostrarErrorActas('Error al cargar actas: ' + (data.message || 'Error desconocido'));
         }
@@ -472,6 +490,22 @@ async function cargarActasDesdeAPI() {
 
 // Función para cargar solo las actas del usuario actual
 async function cargarMisActasDesdeAPI() {
+    const usuario = getCurrentUserData();
+    const tbody = document.getElementById('misActasTableBody');
+    
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando mi historial...</p>
+                </td>
+            </tr>
+        `;
+    }
+    
     try {
         const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
             method: 'GET',
@@ -491,21 +525,26 @@ async function cargarMisActasDesdeAPI() {
         
         if (data.success) {
             const todasActas = data.actas || [];
-            // Filtrar solo las actas del usuario actual
+            // Filtrar actas del fiscalizador actual por múltiples criterios
             const userName = window.dashboardUserName;
-            const misActas = todasActas.filter(acta => 
-                acta.inspector_responsable === userName || 
-                acta.inspector === userName ||
-                acta.user_name === userName
-            );
+            const userId = window.dashboardUserId;
             
-            todasLasActas = misActas;
-            mostrarActas(misActas);
+            const misActas = todasActas.filter(acta => {
+                return acta.inspector_responsable === userName || 
+                       acta.inspector === userName ||
+                       acta.user_name === userName ||
+                       acta.fiscalizador_id == userId ||
+                       acta.user_id == userId;
+            });
             
-            // Actualizar el título para indicar que son "Mis Actas"
-            const titleElement = document.querySelector('.content-section h2');
-            if (titleElement) {
-                titleElement.innerHTML = '<i class="fas fa-user-edit"></i> Mis Actas';
+            window.misActasFiscalizador = misActas;
+            mostrarMisActasEnTabla(misActas);
+            actualizarEstadisticasFiscalizador(misActas);
+            
+            if (misActas.length > 0) {
+                mostrarExitoActas(`Mi historial: ${misActas.length} actas encontradas`);
+            } else {
+                mostrarInfoActas('No tienes actas registradas aún');
             }
         } else {
             mostrarErrorActas('Error al cargar mis actas: ' + (data.message || 'Error desconocido'));
@@ -567,10 +606,13 @@ function mostrarActas(actas) {
                     <h2><i class="fas fa-file-alt"></i> Gestión de Actas</h2>
                     <div class="d-flex gap-2">
                         <button class="btn btn-success" onclick="exportarActas('excel')">
-                            <i class="fas fa-file-excel"></i> Exportar Excel
+                            <i class="fas fa-file-excel"></i> Excel
                         </button>
                         <button class="btn btn-info" onclick="exportarActas('pdf')">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportarActas('pdf-detallado')">
+                            <i class="fas fa-file-pdf"></i> PDF Detallado
                         </button>
                         <button class="btn btn-warning" onclick="imprimirActas()">
                             <i class="fas fa-print"></i> Imprimir
@@ -762,6 +804,9 @@ function renderizarActasEnTabla(tbody, actas) {
                     <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
                         <i class="fas fa-print"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="exportarActaPDF(${acta.id})" title="Exportar PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-danger" onclick="anularActa(${acta.id}, '${acta.numero_acta}')" title="Anular Acta">
                         <i class="fas fa-ban"></i>
                     </button>
@@ -863,16 +908,43 @@ function showCrearActaModal() {
                 </h6>
             </div>
             
-            <div class="col-md-6">
-                <label class="form-label">Nombre del Conductor *</label>
-                <input type="text" class="form-control" name="nombre_conductor" id="nombre_conductor" required
-                       placeholder="Apellidos y Nombres completos">
+            <div class="col-md-3">
+                <label class="form-label">Apellidos del Conductor *</label>
+                <input type="text" class="form-control" name="apellidos_conductor" id="apellidos_conductor" required
+                       placeholder="Ej: García López">
             </div>
             
-            <div class="col-md-6">
+            <div class="col-md-3">
+                <label class="form-label">Nombres del Conductor *</label>
+                <input type="text" class="form-control" name="nombres_conductor" id="nombres_conductor" required
+                       placeholder="Ej: Juan Carlos">
+            </div>
+            
+            <div class="col-md-4">
                 <label class="form-label">N° Licencia</label>
                 <input type="text" class="form-control" name="licencia_conductor" id="licencia_conductor" 
-                       placeholder="Número de licencia">
+                       placeholder="Ej: A12345678">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Provincia *</label>
+                <select class="form-select" name="provincia" id="provincia" required onchange="cargarDistritos()">
+                    <option value="">Seleccione provincia...</option>
+                    <option value="Abancay">Abancay</option>
+                    <option value="Andahuaylas">Andahuaylas</option>
+                    <option value="Antabamba">Antabamba</option>
+                    <option value="Aymaraes">Aymaraes</option>
+                    <option value="Cotabambas">Cotabambas</option>
+                    <option value="Chincheros">Chincheros</option>
+                    <option value="Grau">Grau</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Distrito *</label>
+                <select class="form-select" name="distrito" id="distrito" required>
+                    <option value="">Primero seleccione provincia</option>
+                </select>
             </div>
             
             <!-- Datos de la Intervención -->
@@ -882,29 +954,18 @@ function showCrearActaModal() {
                 </h6>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-12">
                 <label class="form-label">Lugar de Intervención *</label>
                 <input type="text" class="form-control" name="lugar_intervencion" id="lugar_intervencion" required
-                       placeholder="Ubicación donde se realizó la intervención">
+                       placeholder="Ej: Av. Núñez - Abancay, Apurímac">
             </div>
             
-            <div class="col-md-2">
-                <label class="form-label">Fecha</label>
-                <input type="date" class="form-control" name="fecha_intervencion" id="fecha_intervencion" 
-                       value="${new Date().toISOString().split('T')[0]}" readonly>
-            </div>
-            
-            <div class="col-md-2">
-                <label class="form-label">Hora de Inicio</label>
-                <input type="time" class="form-control" name="hora_intervencion" id="hora_intervencion" 
-                       readonly style="background-color: #f8f9fa;">
-            </div>
-            
-            <div class="col-md-4">
-                <label class="form-label">Inspector Responsable</label>
-                <input type="text" class="form-control" name="inspector_responsable" id="inspector_responsable" 
-                       value="${window.dashboardUserName || ''}" readonly>
-            </div>
+            <!-- Campos ocultos automáticos -->
+            <input type="hidden" name="fecha_intervencion" id="fecha_intervencion" 
+                   value="${new Date().toISOString().split('T')[0]}">
+            <input type="hidden" name="hora_intervencion" id="hora_intervencion">
+            <input type="hidden" name="inspector_responsable" id="inspector_responsable" 
+                   value="${window.dashboardUserName || ''}">
             
             <!-- Código de Infracción -->
             <div class="col-12 mt-4">
@@ -921,10 +982,10 @@ function showCrearActaModal() {
             </div>
             
             <div class="col-md-4">
-                <label class="form-label">Subcategoría *</label>
-                <select class="form-select" name="subcategoria" id="subcategoria" required disabled>
-                    <option value="">Primero seleccione código</option>
-                </select>
+                <label class="form-label">Subcategorías *</label>
+                <div id="subcategoria-container" class="border rounded p-2" style="min-height: 100px; max-height: 200px; overflow-y: auto; background-color: #f8f9fa;">
+                    <small class="text-muted">Primero seleccione código base</small>
+                </div>
                 <input type="hidden" name="codigo_infraccion" id="codigo_infraccion">
             </div>
             
@@ -1064,10 +1125,7 @@ async function cargarCodigosInfracciones() {
             // Configurar listeners
             selectBase.addEventListener('change', onCodigoBaseChange);
             
-            const selectSubcat = document.getElementById('subcategoria');
-            if (selectSubcat) {
-                selectSubcat.addEventListener('change', onSubcategoriaChange);
-            }
+            // El listener para checkboxes se configura dinámicamente en onCodigoBaseChange
             
         } else {
             console.error('❌ Error al cargar códigos:', data.message);
@@ -1082,20 +1140,22 @@ async function cargarCodigosInfracciones() {
 
 function onCodigoBaseChange(event) {
     const codigoBase = event.target.value;
-    const selectSubcat = document.getElementById('subcategoria');
+    const containerSubcat = document.getElementById('subcategoria-container');
     const badgeGravedad = document.getElementById('badge_gravedad');
     const textareaDesc = document.getElementById('descripcion_infraccion');
     const hiddenCodigo = document.getElementById('codigo_infraccion');
     
     // Reset
-    selectSubcat.innerHTML = '<option value="">Seleccione...</option>';
-    selectSubcat.disabled = true;
+    containerSubcat.innerHTML = '<small class="text-muted">Seleccione subcategorías...</small>';
     textareaDesc.value = '';
     hiddenCodigo.value = '';
     badgeGravedad.textContent = 'Sin seleccionar';
     badgeGravedad.className = 'badge bg-secondary';
     
-    if (!codigoBase) return;
+    if (!codigoBase) {
+        containerSubcat.innerHTML = '<small class="text-muted">Primero seleccione código base</small>';
+        return;
+    }
     
     // Actualizar badge de gravedad
     const selectedOption = event.target.options[event.target.selectedIndex];
@@ -1111,62 +1171,79 @@ function onCodigoBaseChange(event) {
     
     if (subcategorias.length === 0) {
         console.log('⚠️ No hay subcategorías para', codigoBase);
+        containerSubcat.innerHTML = '<small class="text-muted">No hay subcategorías disponibles</small>';
         return;
     }
     
     if (subcategorias.length === 1 && subcategorias[0].codigo === codigoBase) {
         // Solo hay código base, sin subcategorías
-        selectSubcat.innerHTML = '<option value="general">General</option>';
-        selectSubcat.value = 'general';
-        selectSubcat.disabled = false;
-        textareaDesc.value = subcategorias[0].descripcion;
-        hiddenCodigo.value = codigoBase;
+        containerSubcat.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="general" id="subcat_general" 
+                       data-codigo="${codigoBase}" data-descripcion="${subcategorias[0].descripcion}" 
+                       onchange="onSubcategoriaCheckboxChange()">
+                <label class="form-check-label" for="subcat_general">
+                    General - ${subcategorias[0].descripcion.substring(0, 40)}...
+                </label>
+            </div>
+        `;
         console.log('✅ Código sin subcategorías:', codigoBase);
     } else {
-        // Hay subcategorías
-        subcategorias.forEach(sub => {
+        // Hay subcategorías - crear checkboxes
+        let checkboxesHTML = '';
+        subcategorias.forEach((sub, index) => {
             if (sub.codigo !== codigoBase) { // Excluir el código base si viene solo
-                const option = document.createElement('option');
                 const subcategoria = sub.codigo.split('-')[1] || 'general';
-                option.value = subcategoria;
-                option.textContent = `${subcategoria}) ${sub.descripcion.substring(0, 50)}...`;
-                option.dataset.descripcion = sub.descripcion;
-                option.dataset.codigoCompleto = sub.codigo;
-                selectSubcat.appendChild(option);
+                const checkboxId = `subcat_${subcategoria}_${index}`;
+                checkboxesHTML += `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="${subcategoria}" id="${checkboxId}" 
+                               data-codigo="${sub.codigo}" data-descripcion="${sub.descripcion}" 
+                               onchange="onSubcategoriaCheckboxChange()">
+                        <label class="form-check-label" for="${checkboxId}" style="font-size: 0.9rem;">
+                            <strong>${subcategoria})</strong> ${sub.descripcion.substring(0, 60)}...
+                        </label>
+                    </div>
+                `;
             }
         });
-        selectSubcat.disabled = false;
+        containerSubcat.innerHTML = checkboxesHTML;
         console.log(`✅ ${subcategorias.length} subcategorías cargadas para ${codigoBase}`);
     }
 }
 
-function onSubcategoriaChange(event) {
-    const subcategoria = event.target.value;
-    const codigoBase = document.getElementById('codigo_base').value;
+function onSubcategoriaCheckboxChange() {
+    const checkboxes = document.querySelectorAll('#subcategoria-container input[type="checkbox"]:checked');
     const textareaDesc = document.getElementById('descripcion_infraccion');
     const hiddenCodigo = document.getElementById('codigo_infraccion');
     
-    if (!subcategoria || !codigoBase) return;
-    
-    const selectedOption = event.target.options[event.target.selectedIndex];
-    const descripcion = selectedOption.dataset.descripcion;
-    const codigoCompleto = selectedOption.dataset.codigoCompleto;
-    
-    if (descripcion) {
-        textareaDesc.value = descripcion;
+    if (checkboxes.length === 0) {
+        textareaDesc.value = '';
+        hiddenCodigo.value = '';
+        return;
     }
     
-    if (codigoCompleto) {
-        hiddenCodigo.value = codigoCompleto;
-    } else {
-        hiddenCodigo.value = codigoBase;
-    }
+    // Recopilar códigos y descripciones seleccionados
+    const codigosSeleccionados = [];
+    const descripcionesSeleccionadas = [];
     
-    console.log('✅ Código completo seleccionado:', hiddenCodigo.value);
+    checkboxes.forEach(checkbox => {
+        const codigo = checkbox.dataset.codigo;
+        const descripcion = checkbox.dataset.descripcion;
+        
+        if (codigo) codigosSeleccionados.push(codigo);
+        if (descripcion) descripcionesSeleccionadas.push(descripcion);
+    });
+    
+    // Actualizar campos
+    hiddenCodigo.value = codigosSeleccionados.join(', ');
+    textareaDesc.value = descripcionesSeleccionadas.join('\n\n');
+    
+    console.log('✅ Códigos seleccionados:', codigosSeleccionados);
 }
 
 function configurarValidacionDinamica() {
-    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'lugar_intervencion', 'codigo_base', 'subcategoria'];
+    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'apellidos_conductor', 'nombres_conductor', 'lugar_intervencion', 'provincia', 'distrito', 'codigo_base', 'subcategoria'];
     const botonesAccion = document.getElementById('botonesAccion');
     
     // Función para restringir DNI/RUC a solo números (máx 11 dígitos)
@@ -1283,18 +1360,29 @@ function configurarValidacionDinamica() {
         
         camposRequeridos.forEach(campo => {
             const elemento = form.querySelector(`[name="${campo}"]`);
-            const valor = formData.get(campo)?.trim();
+            let valido = false;
             
-            // Validación especial para selects
-            if (elemento && elemento.tagName === 'SELECT') {
-                if (valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione') {
-                    camposCompletos++;
+            if (campo === 'subcategoria') {
+                // Validación especial para checkboxes de subcategoría - DEBE tener al menos una seleccionada
+                const checkboxes = document.querySelectorAll('#subcategoria-container input[type="checkbox"]:checked');
+                valido = checkboxes.length > 0;
+                if (!valido) {
+                    console.log('⚠️ Validación fallida: No hay subcategorías seleccionadas');
                 }
             } else {
-                // Validación normal para inputs y textareas
-                if (valor && valor.length > 0) {
-                    camposCompletos++;
+                const valor = formData.get(campo)?.trim();
+                
+                // Validación especial para selects
+                if (elemento && elemento.tagName === 'SELECT') {
+                    valido = valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione';
+                } else {
+                    // Validación normal para inputs y textareas
+                    valido = valor && valor.length > 0;
                 }
+            }
+            
+            if (valido) {
+                camposCompletos++;
             }
         });
         
@@ -1310,19 +1398,26 @@ function configurarValidacionDinamica() {
                 const camposFaltantes = [];
                 
                 camposRequeridos.forEach(campo => {
-                    const elemento = form.querySelector(`[name="${campo}"]`);
-                    const valor = formData.get(campo)?.trim();
-                    
                     let valido = false;
-                    if (elemento && elemento.tagName === 'SELECT') {
-                        valido = valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione';
-                    } else {
-                        valido = valor && valor.length > 0;
-                    }
                     
-                    if (!valido) {
-                        const label = elemento ? (elemento.closest('.col-md-6, .col-md-4, .col-md-3, .col-12')?.querySelector('label')?.textContent?.replace('*', '')?.trim() || campo) : campo;
-                        camposFaltantes.push(label);
+                    if (campo === 'subcategoria') {
+                        const checkboxes = document.querySelectorAll('#subcategoria-container input[type="checkbox"]:checked');
+                        valido = checkboxes.length > 0;
+                        if (!valido) camposFaltantes.push('Seleccionar al menos una subcategoría');
+                    } else {
+                        const elemento = form.querySelector(`[name="${campo}"]`);
+                        const valor = formData.get(campo)?.trim();
+                        
+                        if (elemento && elemento.tagName === 'SELECT') {
+                            valido = valor && valor !== '' && valor !== 'Seleccione...' && valor !== 'seleccione';
+                        } else {
+                            valido = valor && valor.length > 0;
+                        }
+                        
+                        if (!valido) {
+                            const label = elemento ? (elemento.closest('.col-md-6, .col-md-4, .col-md-3, .col-12')?.querySelector('label')?.textContent?.replace('*', '')?.trim() || campo) : campo;
+                            camposFaltantes.push(label);
+                        }
                     }
                 });
                 
@@ -1564,6 +1659,42 @@ function configurarTimestampAutomatico() {
     }
 }
 
+// Función para cargar distritos según la provincia seleccionada
+function cargarDistritos() {
+    const provinciaSelect = document.getElementById('provincia');
+    const distritoSelect = document.getElementById('distrito');
+    
+    if (!provinciaSelect || !distritoSelect) return;
+    
+    const provincia = provinciaSelect.value;
+    
+    // Limpiar distritos
+    distritoSelect.innerHTML = '<option value="">Seleccione distrito...</option>';
+    
+    const distritosPorProvincia = {
+        'Abancay': ['Abancay', 'Chacoche', 'Circa', 'Curahuasi', 'Huanipaca', 'Lambrama', 'Pichirhua', 'San Pedro de Cachora', 'Tamburco'],
+        'Andahuaylas': ['Andahuaylas', 'Andarapa', 'Chiara', 'Huancarama', 'Huancaray', 'Huayana', 'Kishuara', 'Pacobamba', 'Pacucha', 'Pampachiri', 'Pomacocha', 'San Antonio de Cachi', 'San Jerónimo', 'San Miguel de Chaccrampa', 'Santa María de Chicmo', 'Talavera', 'Tumay Huaraca', 'Turpo', 'Kaquiabamba', 'José María Arguedas'],
+        'Antabamba': ['Antabamba', 'El Oro', 'Huaquirca', 'Juan Espinoza Medrano', 'Oropesa', 'Pachaconas', 'Sabaino'],
+        'Aymaraes': ['Chalhuanca', 'Capaya', 'Caraybamba', 'Chapimarca', 'Colcabamba', 'Cotaruse', 'Ihuayllo', 'Justo Apu Sahuaraura', 'Lucre', 'Pocohuanca', 'San Juan de Chacña', 'Sañayca', 'Soraya', 'Tapairihua', 'Tintay', 'Toraya', 'Yanaca'],
+        'Cotabambas': ['Tambobamba', 'Cotabambas', 'Coyllurqui', 'Haquira', 'Mara', 'Challhuahuacho'],
+        'Chincheros': ['Chincheros', 'Anco Huallo', 'Cocharcas', 'Huaccana', 'Ocobamba', 'Ongoy', 'Uranmarca', 'Ranracancha', 'Rocchacc', 'El Porvenir', 'Los Chankas'],
+        'Grau': ['Chuquibambilla', 'Curpahuasi', 'Gamarra', 'Huayllati', 'Mamara', 'Micaela Bastidas', 'Pataypampa', 'Progreso', 'San Antonio', 'Santa Rosa', 'Turpay', 'Vilcabamba', 'Virundo', 'Curasco']
+    };
+    
+    if (provincia && distritosPorProvincia[provincia]) {
+        distritosPorProvincia[provincia].forEach(distrito => {
+            const option = document.createElement('option');
+            option.value = distrito;
+            option.textContent = distrito;
+            distritoSelect.appendChild(option);
+        });
+        distritoSelect.disabled = false;
+    } else {
+        distritoSelect.disabled = true;
+        distritoSelect.innerHTML = '<option value="">Primero seleccione provincia</option>';
+    }
+}
+
 async function guardarNuevaActa() {
     console.log('💾 Guardando nueva acta...');
     
@@ -1571,7 +1702,7 @@ async function guardarNuevaActa() {
     const formData = new FormData(form);
     
     // Validar campos requeridos
-    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'nombre_conductor', 'codigo_infraccion', 'lugar_intervencion'];
+    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'apellidos_conductor', 'nombres_conductor', 'lugar_intervencion', 'provincia', 'distrito'];
     const camposFaltantes = [];
 
     camposRequeridos.forEach(campo => {
@@ -1580,8 +1711,20 @@ async function guardarNuevaActa() {
         }
     });
     
+    // Validación especial para subcategorías (checkboxes)
+    const checkboxesSeleccionados = document.querySelectorAll('#subcategoria-container input[type="checkbox"]:checked');
+    if (checkboxesSeleccionados.length === 0) {
+        camposFaltantes.push('subcategorias');
+    }
+    
+    // Validación especial para código base
+    const codigoBase = formData.get('codigo_base')?.trim();
+    if (!codigoBase) {
+        camposFaltantes.push('codigo_base');
+    }
+    
     if (camposFaltantes.length > 0) {
-        mostrarErrorActas('Por favor complete todos los campos obligatorios marcados con *');
+        mostrarErrorActas('Por favor complete todos los campos obligatorios: código base y al menos una subcategoría');
         return;
     }
     
@@ -1594,6 +1737,18 @@ async function guardarNuevaActa() {
     // Agregar campos adicionales para la base de datos
     actaData.placa_vehiculo = actaData.placa; // Usar la misma placa
     actaData.tipo_infraccion = actaData.codigo_infraccion; // Mapear código de infracción
+    
+    // Combinar apellidos y nombres para el campo nombre_conductor
+    if (actaData.apellidos_conductor && actaData.nombres_conductor) {
+        actaData.nombre_conductor = `${actaData.apellidos_conductor}, ${actaData.nombres_conductor}`;
+    } else if (actaData.apellidos_conductor) {
+        actaData.nombre_conductor = actaData.apellidos_conductor;
+    } else if (actaData.nombres_conductor) {
+        actaData.nombre_conductor = actaData.nombres_conductor;
+    }
+    
+    // Agregar año actual para generación de número de acta
+    actaData.anio_acta = new Date().getFullYear();
 
     // Log para debugging
     console.log('📋 Datos a enviar:', actaData);
@@ -1710,6 +1865,9 @@ async function verActa(actaId) {
                             <button type="button" class="btn btn-secondary" onclick="cancelarAccion()">Cerrar</button>
                             <button type="button" class="btn btn-info" onclick="imprimirActa(${acta.id})">
                                 <i class="fas fa-print"></i> Imprimir
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="exportarActaPDF(${acta.id}); limpiarTodosLosModales();">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
                             </button>
                             <button type="button" class="btn btn-primary" onclick="editarActa(${acta.id}); limpiarTodosLosModales();">
                                 <i class="fas fa-edit"></i> Editar
@@ -2111,6 +2269,245 @@ async function imprimirActa(actaId) {
     }
 }
 
+async function exportarActaPDF(actaId) {
+    try {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            throw { status: response.status, text };
+        }
+
+        if (!data.acta) {
+            mostrarErrorActas('Acta no encontrada');
+            return;
+        }
+
+        const acta = data.acta;
+        const aniActual = new Date().getFullYear();
+        
+        const printContent = `
+            <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
+                <!-- Encabezado con logos -->
+                <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 15%; text-align: left; vertical-align: top;">
+                            <img src="images/escudo_peru.png" style="width: 60px; height: auto;" />
+                        </td>
+                        <td style="width: 70%; text-align: center; vertical-align: middle;">
+                            <div style="font-size: 7pt; line-height: 1.2;">
+                                <strong>PERÚ</strong><br>
+                                <strong>GOBIERNO REGIONAL</strong><br>
+                                <strong>DE APURÍMAC</strong><br>
+                                <strong>DIRECCIÓN REGIONAL DE</strong><br>
+                                <strong>TRANSPORTES Y COMUNICACIONES</strong><br>
+                                <strong>DIRECCIÓN DE CIRCULACIÓN</strong><br>
+                                <strong>TERRESTRE Y SEGURIDAD VIAL</strong>
+                            </div>
+                        </td>
+                        <td style="width: 15%; text-align: right; vertical-align: top;">
+                            <img src="images/logo.png" style="width: 60px; height: auto;" />
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Título del acta -->
+                <div style="text-align: center; margin: 10px 0;">
+                    <h3 style="margin: 5px 0; font-size: 11pt;">ACTA DE CONTROL N° ${acta.numero_acta || '000000'} -${aniActual}</h3>
+                    <p style="margin: 3px 0; font-size: 9pt;"><strong>D.S. N° 017-2009-MTC</strong></p>
+                    <p style="margin: 3px 0; font-size: 8pt;">Código de infracciones y/o incumplimiento<br>Tipo infractor</p>
+                </div>
+
+                <!-- Texto introductorio -->
+                <p style="font-size: 7pt; text-align: justify; margin: 10px 0;">
+                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el 
+                    contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:
+                </p>
+
+                <!-- Tabla principal de datos -->
+                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;"><strong>Agente Infractor:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☐ Transportista</td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☐ Operador de Ruta</td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☑ Conductor</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Placa:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Razón Social/Nombre:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.razon_social || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>RUC /DNI:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.ruc_dni || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora Inicio:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora de fin:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Nombre de Conductor:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.nombre_conductor || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>N° Licencia DNI del conductor:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">N°: ${acta.licencia || 'N/A'}</td>
+                        <td colspan="2" style="border: 1px solid #000; padding: 3px;">Clase y Categoría:</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Dirección:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>N° Km. De la red Vial Nacional Prov. /Dpto.</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.lugar_intervencion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Origen del viaje (Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Destino Viaje: (Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Tipo de Servicio que presta:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">☐ Personas</td>
+                        <td style="border: 1px solid #000; padding: 3px;">☐ mercancía</td>
+                        <td style="border: 1px solid #000; padding: 3px;">☐ mixto</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Inspector:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.inspector_responsable || 'N/A'}</td>
+                    </tr>
+                </table>
+
+                <!-- Descripción de hechos -->
+                <div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-size: 8pt;"><strong>Descripción de los hechos:</strong></p>
+                    <p style="margin: 5px 0; font-size: 8pt; min-height: 60px;">${acta.descripcion_infraccion || ''}</p>
+                </div>
+
+                <!-- Medidas y calificación -->
+                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"><strong>Medios probatorios:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Calificación de la Infracción:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">${acta.codigo_infraccion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Medida(s) Administrativa(s):</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Sanción:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Observaciones del intervenido:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; min-height: 40px;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="border: 1px solid #000; padding: 3px; min-height: 40px;"><strong>Observaciones del inspector:</strong></td>
+                    </tr>
+                </table>
+
+                <!-- Texto legal -->
+                <p style="font-size: 6pt; text-align: justify; margin: 10px 0;">
+                    La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado 
+                    penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
+                </p>
+
+                <!-- Firmas -->
+                <table style="width: 100%; margin-top: 20px; font-size: 8pt;">
+                    <tr>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Intervenido</strong></p>
+                                <p style="margin: 2px 0;">Nom Ap.:</p>
+                                <p style="margin: 2px 0;">DNI:</p>
+                            </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Representante PNP</strong></p>
+                                <p style="margin: 2px 0;">Nom Ap.:</p>
+                                <p style="margin: 2px 0;">CIP:</p>
+                            </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Inspector</strong></p>
+                                <p style="margin: 2px 0;">Nombre Ap.:</p>
+                                <p style="margin: 2px 0;">DNI:</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Texto final -->
+                <p style="font-size: 6pt; text-align: justify; margin-top: 15px;">
+                    De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días 
+                    hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento 
+                    Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, 
+                    aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante
+                    Ordenanza Regional N°...
+                </p>
+            </div>
+        `;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Exportar Acta - ${acta.numero_acta}</title>
+                    <style>
+                        body { margin: 0; padding: 0; }
+                        @media print {
+                            body { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+
+        mostrarExitoActas('Vista previa abierta - Use Ctrl+P para guardar como PDF');
+
+    } catch (error) {
+        if (error.text) {
+            mostrarErrorActas('Respuesta inesperada del servidor');
+        } else {
+            mostrarErrorActas('Error al generar PDF: ' + error.message);
+        }
+    }
+}
+
 async function anularActa(actaId, numeroActa) {
     // Crear modal para solicitar motivo de anulación
     const modal = document.getElementById('generalModal');
@@ -2171,7 +2568,12 @@ async function anularActa(actaId, numeroActa) {
             if (data.success) {
                 mostrarExitoActas('Acta anulada correctamente');
                 bsModal.hide();
-                cargarActasDesdeAPI(); // Recargar la lista
+                
+                // Actualizar el estado visualmente de inmediato
+                actualizarEstadoActaEnTabla(actaId, 'anulada');
+                
+                // Recargar la lista completa
+                cargarActasDesdeAPI();
             } else {
                 mostrarErrorActas('Error al anular acta: ' + (data.message || 'Error desconocido'));
             }
@@ -2219,17 +2621,56 @@ function filtrarActas() {
     mostrarActas(actasFiltradas);
 }
 
-function limpiarFiltrosActas() {
-    document.getElementById('searchActas').value = '';
-    document.getElementById('filterEstado').value = '';
-    document.getElementById('filterFechaDesde').value = '';
-    document.getElementById('filterFechaHasta').value = '';
+function limpiarFiltros() {
+    const searchInput = document.getElementById('searchActas');
+    const estadoSelect = document.getElementById('filterEstado');
+    const fechaDesde = document.getElementById('filterFechaDesde');
+    const fechaHasta = document.getElementById('filterFechaHasta');
+    
+    if (searchInput) searchInput.value = '';
+    if (estadoSelect) estadoSelect.value = '';
+    if (fechaDesde) fechaDesde.value = '';
+    if (fechaHasta) fechaHasta.value = '';
+    
     mostrarActas(todasLasActas);
+    mostrarInfoActas('Filtros limpiados');
+}
+
+function limpiarFiltrosActas() {
+    limpiarFiltros();
 }
 
 // ================================
 // FUNCIONES AUXILIARES - ACTAS
 // ================================
+
+// Función para actualizar el estado de un acta en la tabla sin recargar
+function actualizarEstadoActaEnTabla(actaId, nuevoEstado) {
+    // Buscar la fila del acta en la tabla
+    const tabla = document.getElementById('actasTable');
+    if (!tabla) return;
+    
+    const filas = tabla.querySelectorAll('tbody tr');
+    filas.forEach(fila => {
+        const botones = fila.querySelectorAll('button[onclick*="anularActa(' + actaId + '"]');
+        if (botones.length > 0) {
+            // Encontramos la fila correcta, actualizar el badge de estado
+            const estadoBadge = fila.querySelector('.badge');
+            if (estadoBadge && estadoBadge.textContent.toLowerCase().includes('pendiente')) {
+                estadoBadge.className = `badge ${getEstadoBadgeClass(nuevoEstado)}`;
+                estadoBadge.textContent = getEstadoDisplayName(nuevoEstado);
+                
+                // Actualizar también en el array global
+                const actaIndex = todasLasActas.findIndex(a => a.id == actaId);
+                if (actaIndex !== -1) {
+                    todasLasActas[actaIndex].estado = nuevoEstado;
+                }
+                
+                console.log(`✅ Estado actualizado visualmente para acta ${actaId}: ${nuevoEstado}`);
+            }
+        }
+    });
+}
 
 function getEstadoBadgeClass(estado) {
     const estadoNormalizado = estado ? estado.toLowerCase() : '';
@@ -2285,6 +2726,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
         document.body.appendChild(container);
     }
     
+    // Limpiar notificaciones anteriores para evitar duplicados
+    container.innerHTML = '';
+    
     // Crear notificación
     const notificacion = document.createElement('div');
     const iconos = {
@@ -2311,12 +2755,12 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     // Agregar al contenedor
     container.appendChild(notificacion);
     
-    // Auto-remover después de 5 segundos
+    // Auto-remover después de 4 segundos
     setTimeout(() => {
         if (notificacion.parentNode) {
             notificacion.remove();
         }
-    }, 5000);
+    }, 4000);
 }
 
 function formatDate(dateString) {
@@ -2358,33 +2802,53 @@ function exportarActas(formato) {
 }
 
 function exportarExcel() {
-    // Preparar datos para Excel con formato oficial
-    const datosExcel = todasLasActas.map(acta => ({
-        'N° Acta': acta.numero_acta || '',
-        'Placa': acta.placa || acta.placa_vehiculo || '',
-        'Conductor': acta.nombre_conductor || '',
-        'RUC/DNI': acta.ruc_dni || '',
-        'Razón Social': acta.razon_social || '',
-        'Licencia': acta.licencia || '',
-        'Tipo Agente': acta.tipo_agente || '',
-        'Tipo Servicio': acta.tipo_servicio || '',
-        'Código Infracción': acta.codigo_infraccion || '',
-        'Descripción Infracción': (acta.descripcion_infraccion || '').replace(/[\n\r]/g, ' '),
-        'Lugar Intervención': acta.lugar_intervencion || '',
-        'Fecha Intervención': acta.fecha_intervencion || '',
-        'Hora Intervención': acta.hora_intervencion || '',
-        'Inspector': acta.inspector_responsable || '',
-        'Estado': acta.estado || 'Pendiente',
-        'Motivo Anulación': acta.motivo_anulacion || '',
-        'Fecha Registro': acta.created_at ? formatDate(acta.created_at) : ''
-    }));
+    // Preparar datos para Excel con formato mejorado
+    const datosExcel = todasLasActas.map(acta => {
+        // Formatear fecha de manera más legible
+        const fechaIntervencion = acta.fecha_intervencion ? 
+            new Date(acta.fecha_intervencion).toLocaleDateString('es-PE', {
+                year: 'numeric',
+                month: '2-digit', 
+                day: '2-digit'
+            }) : '';
+        
+        // Formatear fecha de registro
+        const fechaRegistro = acta.created_at ? 
+            new Date(acta.created_at).toLocaleDateString('es-PE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : '';
+        
+        return {
+            'N° Acta': acta.numero_acta || 'Sin número',
+            'Placa': acta.placa || acta.placa_vehiculo || 'Sin placa',
+            'Conductor': acta.nombre_conductor || 'Sin especificar',
+            'RUC/DNI': acta.ruc_dni || 'Sin documento',
+            'Razón Social': acta.razon_social || 'Sin razón social',
+            'Licencia': acta.licencia || 'Sin licencia',
+            'Tipo Agente': acta.tipo_agente || 'Sin especificar',
+            'Tipo Servicio': acta.tipo_servicio || 'Sin especificar',
+            'Código Infracción': acta.codigo_infraccion || 'Sin código',
+            'Descripción Infracción': (acta.descripcion_infraccion || 'Sin descripción').replace(/[\n\r]/g, ' ').substring(0, 100),
+            'Lugar Intervención': acta.lugar_intervencion || 'Sin especificar',
+            'Fecha Intervención': fechaIntervencion,
+            'Hora Intervención': acta.hora_intervencion || 'Sin hora',
+            'Inspector': acta.inspector_responsable || 'Sin asignar',
+            'Estado': getEstadoDisplayName(acta.estado),
+            'Motivo Anulación': acta.motivo_anulacion || '',
+            'Fecha Registro': fechaRegistro
+        };
+    });
     
-    // Crear CSV y descargarlo
-    const csv = '\uFEFF' + convertirACSV(datosExcel); // BOM para UTF-8
+    // Crear CSV mejorado con BOM para UTF-8
+    const csv = '\uFEFF' + convertirACSVMejorado(datosExcel);
     const fechaExport = new Date().toISOString().slice(0,10);
     descargarArchivo(csv, `Reporte_Actas_${fechaExport}.csv`, 'text/csv;charset=utf-8');
     
-    mostrarExitoActas(`✅ Exportadas ${datosExcel.length} actas a Excel (CSV)`);
+    mostrarExitoActas(`✅ Exportadas ${datosExcel.length} actas a Excel con formato mejorado`);
 }
 
 function exportarPDF() {
@@ -2577,20 +3041,65 @@ function convertirACSV(datos) {
     return csvContent;
 }
 
+function convertirACSVMejorado(datos) {
+    if (!datos || datos.length === 0) return '';
+    
+    // Obtener cabeceras
+    const cabeceras = Object.keys(datos[0]);
+    
+    // Función para escapar y formatear valores
+    const formatearValor = (valor) => {
+        if (valor === null || valor === undefined) {
+            return '""';
+        }
+        
+        const valorStr = valor.toString().trim();
+        
+        // Si contiene comas, saltos de línea o comillas, envolver en comillas
+        if (valorStr.includes(',') || valorStr.includes('"') || valorStr.includes('\n') || valorStr.includes('\r')) {
+            return `"${valorStr.replace(/"/g, '""')}"`;
+        }
+        
+        return valorStr;
+    };
+    
+    // Crear contenido CSV
+    const csvContent = [
+        // Cabeceras con formato
+        cabeceras.map(cabecera => `"${cabecera}"`).join(','),
+        // Datos formateados
+        ...datos.map(fila => 
+            cabeceras.map(campo => formatearValor(fila[campo])).join(',')
+        )
+    ].join('\n');
+    
+    return csvContent;
+}
+
 function descargarArchivo(contenido, nombreArchivo, tipoMIME) {
-    const blob = new Blob([contenido], { type: tipoMIME });
-    const url = window.URL.createObjectURL(blob);
-    
-    const enlaceDescarga = document.createElement('a');
-    enlaceDescarga.href = url;
-    enlaceDescarga.download = nombreArchivo;
-    enlaceDescarga.style.display = 'none';
-    
-    document.body.appendChild(enlaceDescarga);
-    enlaceDescarga.click();
-    document.body.removeChild(enlaceDescarga);
-    
-    window.URL.revokeObjectURL(url);
+    try {
+        const blob = new Blob([contenido], { type: tipoMIME });
+        const url = window.URL.createObjectURL(blob);
+        
+        const enlaceDescarga = document.createElement('a');
+        enlaceDescarga.href = url;
+        enlaceDescarga.download = nombreArchivo;
+        enlaceDescarga.style.display = 'none';
+        
+        document.body.appendChild(enlaceDescarga);
+        enlaceDescarga.click();
+        document.body.removeChild(enlaceDescarga);
+        
+        // Limpiar URL después de un breve delay
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log(`✅ Archivo descargado: ${nombreArchivo}`);
+    } catch (error) {
+        console.error('❌ Error al descargar archivo:', error);
+        mostrarErrorActas('Error al descargar el archivo: ' + error.message);
+    }
 }
 
 function generarHTMLParaImpresion() {
@@ -2973,67 +3482,7 @@ function generarHTMLParaImpresionDetallada() {
 // FUNCIONES PARA HISTORIAL DEL FISCALIZADOR
 // ================================
 
-// Función para cargar las actas del fiscalizador desde la API
-function cargarMisActasDesdeAPI() {
-    const usuario = getCurrentUserData();
-    if (!usuario || !usuario.id) {
-        mostrarErrorActas('No se pudo obtener la información del usuario');
-        return;
-    }
 
-    // Mostrar indicador de carga
-    const tbody = document.getElementById('misActasTableBody');
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-2">Actualizando mi historial...</p>
-                </td>
-            </tr>
-        `;
-    }
-
-    // Cargar actas del fiscalizador
-    console.log('Enviando solicitud para fiscalizador ID:', usuario.id);
-    
-    fetch('dashboard.php?api=obtener_actas_fiscalizador', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            fiscalizador_id: usuario.id
-        })
-    })
-    .then(response => {
-        console.log('Respuesta HTTP status:', response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Datos recibidos:', data);
-        if (data.success) {
-            window.misActasFiscalizador = data.actas || [];
-            mostrarMisActasEnTabla(window.misActasFiscalizador);
-            actualizarEstadisticasFiscalizador(window.misActasFiscalizador);
-            console.log('Actas cargadas exitosamente:', window.misActasFiscalizador.length);
-        } else {
-            console.error('Error en respuesta:', data.message);
-            mostrarErrorActas('Error al cargar mi historial: ' + (data.message || 'Error desconocido'));
-        }
-    })
-    .catch(error => {
-        console.error('Error al cargar actas del fiscalizador:', error);
-        // Mostrar animación de carga con camioncito en lugar del error
-        mostrarAnimacionCargaCamion();
-    });
-}
 
 // Función para mostrar las actas del fiscalizador en la tabla
 function mostrarMisActasEnTabla(actas) {
@@ -3044,7 +3493,7 @@ function mostrarMisActasEnTabla(actas) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center">
-                    <i class="fas fa-inbox text-muted"></i>
+                    <i class="fas fa-inbox text-muted" style="font-size: 2rem;"></i>
                     <p class="mt-2 text-muted">No has creado actas aún</p>
                 </td>
             </tr>
@@ -3053,33 +3502,27 @@ function mostrarMisActasEnTabla(actas) {
     }
 
     tbody.innerHTML = actas.map(acta => {
-        const estado = (acta.estado || 'Pendiente').toLowerCase();
-        const estadoClase = {
-            'pendiente': 'warning',
-            'aprobado': 'success',
-            'anulado': 'danger'
-        }[estado] || 'secondary';
-
-        // Usar los nombres de campos correctos de la BD
         const placa = acta.placa || acta.placa_vehiculo || 'N/A';
         const conductor = acta.nombre_conductor || acta.conductor_nombre || 'N/A';
-        const fecha = acta.fecha_intervencion || (acta.created_at ? new Date(acta.created_at).toLocaleDateString('es-PE') : 'N/A');
+        const fecha = acta.fecha_intervencion || (acta.created_at ? formatDate(acta.created_at) : 'N/A');
 
         return `
             <tr>
                 <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
                 <td>${fecha}</td>
-                <td><span class="badge bg-primary">${placa}</span></td>
+                <td><span class="badge bg-info">${placa}</span></td>
                 <td>${conductor}</td>
-                <td><span class="badge bg-${estadoClase}">${getEstadoDisplayName(acta.estado)}</span></td>
-                <td><strong>${acta.codigo_infraccion || 'N/A'}</strong></td>
+                <td><span class="badge ${getEstadoBadgeClass(acta.estado)}">${getEstadoDisplayName(acta.estado)}</span></td>
+                <td><strong>${acta.codigo_infraccion || acta.codigo_base || acta.subcategoria || 'N/A'}</strong></td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="verActa(${acta.id})" title="Ver detalle">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-info me-1" onclick="imprimirActa(${acta.id})" title="Imprimir">
-                        <i class="fas fa-print"></i>
-                    </button>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="verActa(${acta.id})" title="Ver">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
@@ -3089,9 +3532,18 @@ function mostrarMisActasEnTabla(actas) {
 // Función para actualizar estadísticas del fiscalizador
 function actualizarEstadisticasFiscalizador(actas) {
     const total = actas.length;
-    const pendientes = actas.filter(a => (a.estado || '').toLowerCase() === 'pendiente').length;
-    const pagadas = actas.filter(a => (a.estado || '').toLowerCase() === 'aprobado').length;
-    const anuladas = actas.filter(a => (a.estado || '').toLowerCase() === 'anulado').length;
+    const pendientes = actas.filter(a => {
+        const estado = (a.estado || '').toLowerCase();
+        return estado === 'pendiente' || estado === '';
+    }).length;
+    const pagadas = actas.filter(a => {
+        const estado = (a.estado || '').toLowerCase();
+        return estado === 'pagada' || estado === 'aprobado';
+    }).length;
+    const anuladas = actas.filter(a => {
+        const estado = (a.estado || '').toLowerCase();
+        return estado === 'anulada' || estado === 'anulado';
+    }).length;
 
     const totalEl = document.getElementById('totalActasFisca');
     const pendientesEl = document.getElementById('actasPendientesFisca');
@@ -3493,6 +3945,8 @@ window.verActa = verActa;
 window.editarActa = editarActa;
 window.anularActa = anularActa;
 window.imprimirActa = imprimirActa;
+window.exportarActaPDF = exportarActaPDF;
+
 window.filtrarActas = filtrarActas;
 window.limpiarFiltros = limpiarFiltros;
 window.limpiarTodosLosModales = limpiarTodosLosModales;
@@ -3509,11 +3963,14 @@ window.generarPDFDescarga = generarPDFDescarga;
 window.exportarPDFDetallado = exportarPDFDetallado;
 window.generarPDFDetalladoDescarga = generarPDFDetalladoDescarga;
 window.imprimirActas = imprimirActas;
+window.convertirACSVMejorado = convertirACSVMejorado;
 
 // Nuevas funciones para modal
 window.configurarValidacionDinamica = configurarValidacionDinamica;
 window.exportarActaActual = exportarActaActual;
 window.exportarActaTemporal = exportarActaTemporal;
+window.cargarDistritos = cargarDistritos;
+window.onSubcategoriaCheckboxChange = onSubcategoriaCheckboxChange;
 
 // Funciones para historial del fiscalizador
 window.cargarMisActasDesdeAPI = cargarMisActasDesdeAPI;
@@ -3527,5 +3984,6 @@ window.imprimirMisActas = imprimirMisActas;
 window.exportarActaIndividual = exportarActaIndividual;
 window.generarHTMLHistorialActas = generarHTMLHistorialActas;
 window.mostrarAnimacionCargaCamion = mostrarAnimacionCargaCamion;
+window.actualizarEstadoActaEnTabla = actualizarEstadoActaEnTabla;
 
-console.log('✅ Fiscalizador Actas JS cargado correctamente');
+console.log('✅ Fiscalizador Actas JS cargado correctamente con exportación mejorada');

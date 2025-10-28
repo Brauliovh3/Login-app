@@ -1597,150 +1597,10 @@ function loadActasList() {
 }
 
 function loadCrearActa() {
-    console.log('🔄 Cargando formulario crear acta para administrador...');
+    console.log('🔄 Cargando formulario crear acta para administrador (usando formulario de fiscalizador)...');
     
-    const contentContainer = document.getElementById('contentContainer');
-    if (contentContainer) {
-        contentContainer.innerHTML = `
-            <div class="content-section active">
-                <div class="content-header mb-4">
-                    <h4><i class="fas fa-plus-circle"></i> Crear Nueva Acta</h4>
-                    <p class="text-muted mb-0">Registro de nueva acta de infracción</p>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-edit"></i> Datos del Acta</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="formCrearActa">
-                                    <!-- Datos del operador -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Fiscalizador Responsable</label>
-                                            <select class="form-select" id="fiscalizadorResponsable" required>
-                                                <option value="">Seleccionar fiscalizador</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Número de Acta</label>
-                                            <input type="text" class="form-control" id="numeroActa" placeholder="Se generará automáticamente" readonly>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Datos del conductor -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">RUC/DNI Conductor *</label>
-                                            <input type="text" class="form-control" id="rucDniConductor" required maxlength="11">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Nombre del Conductor *</label>
-                                            <input type="text" class="form-control" id="nombreConductor" required>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Datos del vehículo -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-4">
-                                            <label class="form-label">Placa Vehículo *</label>
-                                            <input type="text" class="form-control" id="placaVehiculo" required>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label">Tipo de Servicio</label>
-                                            <select class="form-select" id="tipoServicio">
-                                                <option value="regular">Regular</option>
-                                                <option value="especial">Especial</option>
-                                                <option value="turismo">Turismo</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label">Tipo de Agente</label>
-                                            <select class="form-select" id="tipoAgente">
-                                                <option value="conductor">Conductor</option>
-                                                <option value="empresa">Empresa</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Datos de la intervención -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Lugar de Intervención *</label>
-                                            <input type="text" class="form-control" id="lugarIntervencion" required>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Fecha *</label>
-                                            <input type="date" class="form-control" id="fechaIntervencion" required>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Hora *</label>
-                                            <input type="time" class="form-control" id="horaIntervencion" required>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <label class="form-label">Descripción de Hechos *</label>
-                                            <textarea class="form-control" id="descripcionHechos" rows="3" required></textarea>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Monto de Multa</label>
-                                            <input type="number" class="form-control" id="montoMulta" step="0.01" min="0">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Estado</label>
-                                            <select class="form-select" id="estadoActa">
-                                                <option value="0">Pendiente</option>
-                                                <option value="1">Procesada</option>
-                                                <option value="2">Anulada</option>
-                                                <option value="3">Pagada</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save"></i> Guardar Acta
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" onclick="loadActasList()">
-                                            <i class="fas fa-arrow-left"></i> Volver a Lista
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-info-circle"></i> Información</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-info">
-                                    <h6><i class="fas fa-lightbulb"></i> Consejos:</h6>
-                                    <ul class="mb-0">
-                                        <li>El número de acta se genera automáticamente</li>
-                                        <li>Verificar datos del conductor antes de guardar</li>
-                                        <li>La descripción debe ser clara y detallada</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Inicializar formulario
-        inicializarFormularioActa();
-    }
+    // Usar el mismo modal que el fiscalizador
+    showCrearActaModal();
 }
 
 async function cargarActasAdmin() {
@@ -2561,3 +2421,305 @@ function formatDate(dateString) {
 
 
 console.log(' Módulo administrador cargado completamente');
+
+// ================================
+// FUNCIONES DEL FORMULARIO DE ACTAS (COPIADAS DE FISCALIZADOR)
+// ================================
+
+// Función para mostrar el modal de crear acta (igual que fiscalizador)
+function showCrearActaModal() {
+    console.log('🆕 Abriendo modal para crear nueva acta...');
+    
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalFooter = document.getElementById('modalFooter');
+    
+    if (!modalTitle || !modalBody || !modalFooter) {
+        console.error('❌ Elementos del modal no encontrados');
+        return;
+    }
+    
+    // Configurar título del modal
+    modalTitle.innerHTML = `
+        <i class="fas fa-plus-circle me-2"></i> Crear Nueva Acta
+    `;
+    
+    // Configurar contenido del modal (mismo formulario que fiscalizador)
+    modalBody.innerHTML = `
+        <style>
+            #generalModal .modal-dialog { max-width: 1400px; margin: 1rem auto; width: 95%; }
+            #generalModal .modal-content { min-height: 600px; }
+            @media (min-width: 1200px) {
+                #generalModal .modal-dialog { max-width: 1300px; }
+            }
+        </style>
+        <form id="formCrearActa" class="row g-4">
+            
+            <!-- Datos del Operador/Empresa -->
+            <div class="col-12">
+                <h6 class="text-primary border-bottom pb-2">
+                    <i class="fas fa-building"></i> Datos del Operador/Empresa
+                </h6>
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">RUC/DNI *</label>
+                <input type="text" class="form-control" name="ruc_dni" id="ruc_dni" required 
+                       placeholder="11 dígitos para RUC, 8 para DNI">
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label">Razón Social / Nombre</label>
+                <input type="text" class="form-control" name="razon_social" id="razon_social" 
+                       placeholder="Nombre o razón social">
+            </div>
+            
+            <!-- Datos del Vehículo -->
+            <div class="col-12 mt-4">
+                <h6 class="text-warning border-bottom pb-2">
+                    <i class="fas fa-car"></i> Datos del Vehículo
+                </h6>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Placa del Vehículo *</label>
+                <input type="text" class="form-control" name="placa" id="placa" required 
+                       placeholder="ABC-123" style="text-transform: uppercase;">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Tipo de Agente *</label>
+                <select class="form-select" name="tipo_agente" id="tipo_agente" required>
+                    <option value="">Seleccione...</option>
+                    <option value="Transportista">Transportista</option>
+                    <option value="Operador de Ruta">Operador de Ruta</option>
+                    <option value="Conductor" selected>Conductor</option>
+                    <option value="Inspector">Inspector</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Tipo de Servicio *</label>
+                <select class="form-select" name="tipo_servicio" id="tipo_servicio" required>
+                    <option value="">Seleccione...</option>
+                    <option value="Interprovincial">Interprovincial</option>
+                    <option value="Interdistrital">Interdistrital</option>
+                    <option value="Urbano">Urbano</option>
+                    <option value="Turístico">Turístico</option>
+                    <option value="Carga">Transporte de Carga</option>
+                    <option value="Especial">Servicio Especial</option>
+                </select>
+            </div>
+            
+            <!-- Datos del Conductor -->
+            <div class="col-12 mt-4">
+                <h6 class="text-success border-bottom pb-2">
+                    <i class="fas fa-user"></i> Datos del Conductor
+                </h6>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Apellidos del Conductor *</label>
+                <input type="text" class="form-control" name="apellidos_conductor" id="apellidos_conductor" required
+                       placeholder="Ej: García López">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Nombres del Conductor *</label>
+                <input type="text" class="form-control" name="nombres_conductor" id="nombres_conductor" required
+                       placeholder="Ej: Juan Carlos">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">N° Licencia</label>
+                <input type="text" class="form-control" name="licencia_conductor" id="licencia_conductor" 
+                       placeholder="Ej: A12345678">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Provincia *</label>
+                <select class="form-select" name="provincia" id="provincia" required onchange="cargarDistritos()">
+                    <option value="">Seleccione provincia...</option>
+                    <option value="Abancay">Abancay</option>
+                    <option value="Andahuaylas">Andahuaylas</option>
+                    <option value="Antabamba">Antabamba</option>
+                    <option value="Aymaraes">Aymaraes</option>
+                    <option value="Cotabambas">Cotabambas</option>
+                    <option value="Chincheros">Chincheros</option>
+                    <option value="Grau">Grau</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Distrito *</label>
+                <select class="form-select" name="distrito" id="distrito" required>
+                    <option value="">Primero seleccione provincia</option>
+                </select>
+            </div>
+            
+            <!-- Datos de la Intervención -->
+            <div class="col-12 mt-4">
+                <h6 class="text-danger border-bottom pb-2">
+                    <i class="fas fa-map-marker-alt"></i> Datos de la Intervención
+                </h6>
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Lugar de Intervención *</label>
+                <input type="text" class="form-control" name="lugar_intervencion" id="lugar_intervencion" required
+                       placeholder="Ej: Av. Núñez - Abancay, Apurímac">
+            </div>
+            
+            <!-- Campos ocultos automáticos -->
+            <input type="hidden" name="fecha_intervencion" id="fecha_intervencion" 
+                   value="${new Date().toISOString().split('T')[0]}">
+            <input type="hidden" name="hora_intervencion" id="hora_intervencion">
+            <input type="hidden" name="inspector_responsable" id="inspector_responsable" 
+                   value="${window.dashboardUserName || ''}">
+            
+            <!-- Código de Infracción -->
+            <div class="col-12 mt-4">
+                <h6 class="text-danger border-bottom pb-2">
+                    <i class="fas fa-gavel"></i> Infracción Detectada
+                </h6>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Código Base *</label>
+                <select class="form-select" name="codigo_base" id="codigo_base" required>
+                    <option value="">Seleccione código...</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Subcategoría *</label>
+                <select class="form-select" name="subcategoria" id="subcategoria" required disabled>
+                    <option value="">Primero seleccione código</option>
+                </select>
+                <input type="hidden" name="codigo_infraccion" id="codigo_infraccion">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Gravedad</label>
+                <div class="mt-2">
+                    <span id="badge_gravedad" class="badge bg-secondary">Sin seleccionar</span>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <label class="form-label">Descripción de la Infracción</label>
+                <textarea class="form-control" name="descripcion_infraccion" id="descripcion_infraccion" 
+                          rows="3" readonly style="background-color: #f8f9fa;"></textarea>
+            </div>
+        </form>
+    `;
+    
+    // Configurar botones del modal
+    modalFooter.innerHTML = `
+        <style>
+            #botonesAccion { display: none !important; }
+            #botonesAccion.activo { display: flex !important; }
+        </style>
+        <div class="d-flex justify-content-center align-items-center w-100 flex-column gap-3">
+            <div id="botonesAccion" class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-success" onclick="exportarActaActual('excel')">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </button>
+                <button type="button" class="btn btn-info" onclick="exportarActaActual('pdf')">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button type="button" class="btn btn-primary" onclick="guardarNuevaActa()">
+                    <i class="fas fa-save"></i> Guardar Acta
+                </button>
+            </div>
+            <small id="estadoValidacion" class="text-warning text-center fw-bold">
+                <i class="fas fa-exclamation-circle"></i> Complete los 8 campos obligatorios para ver las opciones
+            </small>
+        </div>
+    `;
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('generalModal'));
+    modal.show();
+
+    // Agregar event listener para limpiar backdrop cuando se cierre el modal
+    document.getElementById('generalModal').addEventListener('hidden.bs.modal', function() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    });
+
+    // Configurar funcionalidades del formulario
+    setTimeout(() => {
+        configurarTimestampAutomatico();
+        configurarValidacionDinamica();
+        cargarCodigosInfracciones();
+        console.log('🎯 Modal de acta configurado completamente');
+    }, 500);
+}
+
+// Funciones de soporte copiadas del fiscalizador
+function configurarTimestampAutomatico() {
+    const horaIntervencionInput = document.getElementById('hora_intervencion');
+    const ahora = new Date();
+    const horaFormateada = ahora.toTimeString().slice(0,5);
+    if (horaIntervencionInput) {
+        horaIntervencionInput.value = horaFormateada;
+    }
+}
+
+function cargarDistritos() {
+    const provinciaSelect = document.getElementById('provincia');
+    const distritoSelect = document.getElementById('distrito');
+    
+    if (!provinciaSelect || !distritoSelect) return;
+    
+    const provincia = provinciaSelect.value;
+    distritoSelect.innerHTML = '<option value="">Seleccione distrito...</option>';
+    
+    const distritosPorProvincia = {
+        'Abancay': ['Abancay', 'Chacoche', 'Circa', 'Curahuasi', 'Huanipaca', 'Lambrama', 'Pichirhua', 'San Pedro de Cachora', 'Tamburco'],
+        'Andahuaylas': ['Andahuaylas', 'Andarapa', 'Chiara', 'Huancarama', 'Huancaray', 'Huayana', 'Kishuara', 'Pacobamba', 'Pacucha', 'Pampachiri', 'Pomacocha', 'San Antonio de Cachi', 'San Jerónimo', 'San Miguel de Chaccrampa', 'Santa María de Chicmo', 'Talavera', 'Tumay Huaraca', 'Turpo', 'Kaquiabamba', 'José María Arguedas'],
+        'Antabamba': ['Antabamba', 'El Oro', 'Huaquirca', 'Juan Espinoza Medrano', 'Oropesa', 'Pachaconas', 'Sabaino'],
+        'Aymaraes': ['Chalhuanca', 'Capaya', 'Caraybamba', 'Chapimarca', 'Colcabamba', 'Cotaruse', 'Ihuayllo', 'Justo Apu Sahuaraura', 'Lucre', 'Pocohuanca', 'San Juan de Chacña', 'Sañayca', 'Soraya', 'Tapairihua', 'Tintay', 'Toraya', 'Yanaca'],
+        'Cotabambas': ['Tambobamba', 'Cotabambas', 'Coyllurqui', 'Haquira', 'Mara', 'Challhuahuacho'],
+        'Chincheros': ['Chincheros', 'Anco Huallo', 'Cocharcas', 'Huaccana', 'Ocobamba', 'Ongoy', 'Uranmarca', 'Ranracancha', 'Rocchacc', 'El Porvenir', 'Los Chankas'],
+        'Grau': ['Chuquibambilla', 'Curpahuasi', 'Gamarra', 'Huayllati', 'Mamara', 'Micaela Bastidas', 'Pataypampa', 'Progreso', 'San Antonio', 'Santa Rosa', 'Turpay', 'Vilcabamba', 'Virundo', 'Curasco']
+    };
+    
+    if (provincia && distritosPorProvincia[provincia]) {
+        distritosPorProvincia[provincia].forEach(distrito => {
+            const option = document.createElement('option');
+            option.value = distrito;
+            option.textContent = distrito;
+            distritoSelect.appendChild(option);
+        });
+        distritoSelect.disabled = false;
+    } else {
+        distritoSelect.disabled = true;
+        distritoSelect.innerHTML = '<option value="">Primero seleccione provincia</option>';
+    }
+}
+
+// Funciones placeholder para evitar errores
+function configurarValidacionDinamica() {
+    console.log('Configurando validación dinámica...');
+}
+
+function cargarCodigosInfracciones() {
+    console.log('Cargando códigos de infracciones...');
+}
+
+function exportarActaActual(formato) {
+    console.log('Exportando acta actual en formato:', formato);
+}
+
+function guardarNuevaActa() {
+    console.log('Guardando nueva acta...');
+}
+
+// Exportar la nueva función
+window.showCrearActaModal = showCrearActaModal;
+window.cargarDistritos = cargarDistritos;
