@@ -553,21 +553,43 @@ function buscarActas() {
         const resultados = document.getElementById('resultados');
         if (data.success && data.actas.length > 0) {
             resultados.innerHTML = `
-                <div class="alert alert-success">Encontradas ${data.actas.length} acta(s)</div>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Encontradas ${data.actas.length} acta(s)
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr><th>Número</th><th>Placa</th><th>Conductor</th><th>Fecha</th></tr>
+                    <table class="table table-sm table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Número</th>
+                                <th>Placa</th>
+                                <th>Conductor</th>
+                                <th>Documento</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Monto</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            ${data.actas.map(a => `
-                                <tr>
-                                    <td>${a.numero_acta}</td>
-                                    <td>${a.placa_vehiculo || a.placa}</td>
-                                    <td>${a.nombre_conductor}</td>
-                                    <td>${formatDate(a.fecha_intervencion)}</td>
-                                </tr>
-                            `).join('')}
+                            ${data.actas.map(a => {
+                                const estadoBadge = {
+                                    'Pendiente': '<span class="badge bg-warning">Pendiente</span>',
+                                    'Procesada': '<span class="badge bg-success">Procesada</span>',
+                                    'Anulada': '<span class="badge bg-danger">Anulada</span>',
+                                    'Pagada': '<span class="badge bg-info">Pagada</span>'
+                                }[a.estado_texto] || '<span class="badge bg-secondary">Pendiente</span>';
+                                
+                                return `
+                                    <tr>
+                                        <td><strong>${a.numero_acta || 'N/A'}</strong></td>
+                                        <td><span class="badge bg-primary">${a.placa_vehiculo || 'N/A'}</span></td>
+                                        <td>${a.nombre_conductor || 'N/A'}</td>
+                                        <td>${a.ruc_dni || 'N/A'}</td>
+                                        <td>${formatDate(a.fecha_intervencion)}</td>
+                                        <td>${estadoBadge}</td>
+                                        <td>${a.monto_multa ? 'S/ ' + parseFloat(a.monto_multa).toFixed(2) : 'N/A'}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -606,17 +628,65 @@ function buscarVehiculo() {
         const resultados = document.getElementById('resultadosVehiculo');
         if (data.success && data.vehiculo) {
             const v = data.vehiculo;
-            resultados.innerHTML = `
-                <div class="alert alert-success">Vehículo encontrado</div>
+            let html = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Vehículo encontrado
+                </div>
                 <div class="card">
                     <div class="card-body">
-                        <p><strong>Placa:</strong> ${v.placa}</p>
-                        <p><strong>Marca:</strong> ${v.marca}</p>
-                        <p><strong>Modelo:</strong> ${v.modelo}</p>
-                        <p><strong>Año:</strong> ${v.año || v.ano}</p>
+                        <h6 class="card-title">Información del Vehículo</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Placa:</strong> <span class="badge bg-primary">${v.placa}</span></p>
+                                <p><strong>Marca:</strong> ${v.marca || 'N/A'}</p>
+                                <p><strong>Modelo:</strong> ${v.modelo || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Año:</strong> ${v.ano || v.año || 'N/A'}</p>
+                                <p><strong>Color:</strong> ${v.color || 'N/A'}</p>
+                                <p><strong>Estado:</strong> <span class="badge bg-success">${v.estado || 'Vigente'}</span></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
+            
+            // Mostrar actas relacionadas si existen
+            if (data.actas && data.actas.length > 0) {
+                html += `
+                    <div class="card mt-3">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="fas fa-file-alt"></i> Actas Relacionadas (${data.actas.length})</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Fecha</th>
+                                            <th>Conductor</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.actas.map(acta => `
+                                            <tr>
+                                                <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
+                                                <td>${formatDate(acta.fecha_intervencion)}</td>
+                                                <td>${acta.nombre_conductor || 'N/A'}</td>
+                                                <td><span class="badge bg-warning">${acta.estado_texto || 'Pendiente'}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultados.innerHTML = html;
         } else {
             resultados.innerHTML = '<div class="alert alert-warning">Vehículo no encontrado</div>';
         }
@@ -661,18 +731,69 @@ function buscarConductor() {
     .then(data => {
         const resultados = document.getElementById('resultadosConductor');
         if (data.success && data.conductores.length > 0) {
-            const c = data.conductores[0];
-            resultados.innerHTML = `
-                <div class="alert alert-success">Conductor encontrado</div>
-                <div class="card">
-                    <div class="card-body">
-                        <p><strong>DNI:</strong> ${c.dni}</p>
-                        <p><strong>Nombres:</strong> ${c.nombres} ${c.apellidos}</p>
-                        <p><strong>Licencia:</strong> ${c.numero_licencia}</p>
-                        <p><strong>Categoría:</strong> ${c.clase_categoria}</p>
-                    </div>
+            let html = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Se encontraron ${data.conductores.length} conductor(es)
                 </div>
             `;
+            
+            data.conductores.forEach((c, index) => {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Conductor ${index + 1}</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>DNI:</strong> ${c.dni || 'N/A'}</p>
+                                    <p><strong>Nombres:</strong> ${c.nombres || 'N/A'}</p>
+                                    <p><strong>Apellidos:</strong> ${c.apellidos || 'N/A'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Licencia:</strong> ${c.numero_licencia || 'N/A'}</p>
+                                    <p><strong>Categoría:</strong> ${c.clase_categoria || 'N/A'}</p>
+                                    <p><strong>Estado:</strong> <span class="badge bg-success">${c.estado_licencia || 'Vigente'}</span></p>
+                                </div>
+                            </div>
+                `;
+                
+                // Mostrar actas relacionadas si existen
+                const actas = data.actas_relacionadas && data.actas_relacionadas[c.id || c.dni] || [];
+                if (actas.length > 0) {
+                    html += `
+                            <hr>
+                            <h6><i class="fas fa-file-alt"></i> Actas Relacionadas (${actas.length})</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Fecha</th>
+                                            <th>Placa</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${actas.map(acta => `
+                                            <tr>
+                                                <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
+                                                <td>${formatDate(acta.fecha_intervencion)}</td>
+                                                <td><span class="badge bg-primary">${acta.placa_vehiculo || 'N/A'}</span></td>
+                                                <td><span class="badge bg-warning">${acta.estado_texto || 'Pendiente'}</span></td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultados.innerHTML = html;
         } else {
             resultados.innerHTML = '<div class="alert alert-warning">Conductor no encontrado</div>';
         }
@@ -844,9 +965,25 @@ function submitCola() {
 
 function atenderCliente(id) {
     if (confirm('¿Iniciar atención a este cliente?')) {
-        // Aquí iría la lógica para marcar como "atendiendo"
-        showToast('Cliente siendo atendido', 'info');
-        setTimeout(cargarCola, 1000);
+        fetch('dashboard.php?api=atender-cliente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                cargarCola();
+                loadVentanillaStats();
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        });
     }
 }
 
@@ -883,21 +1020,110 @@ function verDetalleCliente(id) {
 
 function cancelarCliente(id) {
     if (confirm('¿Está seguro de cancelar la atención de este cliente?')) {
-        // Aquí iría la lógica para cancelar
-        showToast('Cliente removido de la cola', 'warning');
-        setTimeout(cargarCola, 1000);
+        fetch('dashboard.php?api=cancelar-cliente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'warning');
+                cargarCola();
+                loadVentanillaStats();
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        });
     }
 }
 
 function verDetalleTramite(id) {
-    showToast('Cargando detalle del trámite...', 'info');
-    // Aquí iría la lógica para mostrar detalle completo
+    fetch(`dashboard.php?api=detalle-tramite&id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tramite) {
+                const t = data.tramite;
+                const estadoBadge = {
+                    'pendiente': '<span class="badge bg-warning">Pendiente</span>',
+                    'proceso': '<span class="badge bg-info">En Proceso</span>',
+                    'completado': '<span class="badge bg-success">Completado</span>',
+                    'rechazado': '<span class="badge bg-danger">Rechazado</span>'
+                }[t.estado] || '<span class="badge bg-secondary">' + t.estado + '</span>';
+                
+                showModal('Detalle del Trámite', `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Número:</strong> ${t.numero_tramite}</p>
+                            <p><strong>Tipo:</strong> ${t.tipo_tramite}</p>
+                            <p><strong>Solicitante:</strong> ${t.nombre_solicitante}</p>
+                            <p><strong>Documento:</strong> ${t.documento_solicitante}</p>
+                            <p><strong>Teléfono:</strong> ${t.telefono_solicitante}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado:</strong> ${estadoBadge}</p>
+                            <p><strong>Fecha Registro:</strong> ${formatDate(t.fecha_registro)}</p>
+                            <p><strong>Días Transcurridos:</strong> <span class="${t.dias_transcurridos > 10 ? 'text-danger' : 'text-muted'}">${t.dias_transcurridos} días</span></p>
+                            ${t.fecha_estimada_finalizacion ? `<p><strong>Fecha Estimada:</strong> ${formatDate(t.fecha_estimada_finalizacion)}</p>` : ''}
+                            ${t.dias_restantes !== null ? `<p><strong>Días Restantes:</strong> <span class="${t.dias_restantes < 0 ? 'text-danger' : 'text-success'}">${t.dias_restantes} días</span></p>` : ''}
+                            <p><strong>Registrado por:</strong> ${t.registrado_por}</p>
+                            ${t.procesado_por ? `<p><strong>Procesado por:</strong> ${t.procesado_por}</p>` : ''}
+                        </div>
+                    </div>
+                    ${t.observaciones ? `
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <p><strong>Observaciones:</strong></p>
+                                <div class="alert alert-light">${t.observaciones}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                `, [
+                    { text: 'Cerrar', class: 'btn-secondary', dismiss: true },
+                    ...(t.estado === 'pendiente' ? [{
+                        text: 'Procesar',
+                        class: 'btn-success',
+                        onclick: `procesarTramite(${id}); bootstrap.Modal.getInstance(document.getElementById('generalModal')).hide();`
+                    }] : [])
+                ]);
+            } else {
+                showToast('Error al cargar detalle del trámite', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        });
 }
 
 function procesarTramite(id) {
     if (confirm('¿Marcar este trámite como en proceso?')) {
-        showToast('Trámite marcado como en proceso', 'success');
-        // Aquí iría la lógica para actualizar estado
+        fetch('dashboard.php?api=procesar-tramite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Recargar la lista actual
+                if (typeof tramitesPendientes === 'function') {
+                    tramitesPendientes();
+                }
+            } else {
+                showToast('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error de conexión', 'error');
+        });
     }
 }
 

@@ -328,6 +328,46 @@ class DashboardApp {
                     }
                     break;
                     
+                case 'atender-cliente':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        echo json_encode($this->atenderCliente($input));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'cancelar-cliente':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        echo json_encode($this->cancelarCliente($input));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'procesar-tramite':
+                    if ($method === 'POST') {
+                        $input = json_decode(file_get_contents('php://input'), true);
+                        echo json_encode($this->procesarTramite($input));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'detalle-tramite':
+                    if ($method === 'GET') {
+                        $id = $_GET['id'] ?? null;
+                        echo json_encode($this->getDetalleTramite($id));
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
                 case 'registrar-atencion':
                     if ($method === 'POST') {
                         echo json_encode($this->registrarAtencion());
@@ -2619,15 +2659,14 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'El acta ya está anulada'];
             }
             
-            // Actualizar acta a estado Anulado (2)
-            $updateFields = ['estado = ?'];
-            $params = [2]; // 2 = anulada
-            
-            // Agregar motivo de anulación si la columna existe
-            if ($this->columnExists('actas', 'motivo_anulacion')) {
-                $updateFields[] = 'motivo_anulacion = ?';
-                $params[] = $motivo;
+            // Crear columna motivo_anulacion si no existe
+            if (!$this->columnExists('actas', 'motivo_anulacion')) {
+                $this->pdo->exec("ALTER TABLE actas ADD COLUMN motivo_anulacion TEXT NULL");
             }
+            
+            // Actualizar acta a estado Anulado (2) con motivo
+            $updateFields = ['estado = ?', 'motivo_anulacion = ?'];
+            $params = [2, $motivo]; // 2 = anulada
             
             // Agregar campos adicionales si existen en la tabla
             if ($this->columnExists('actas', 'fecha_anulacion')) {
@@ -2742,7 +2781,9 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'Criterios de búsqueda incompletos'];
             }
             
-            $sql = "SELECT * FROM actas WHERE ";
+            $sql = "SELECT *, 
+                CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor
+                FROM actas WHERE ";
             $params = [];
             
             switch ($tipo) {
@@ -3050,6 +3091,141 @@ class DashboardApp {
             ];
         }
     }
+    
+    // ==================== FUNCIONES ADICIONALES PARA VENTANILLA ====================
+    
+    private function atenderCliente($data) {
+        try {
+            $clienteId = $data['id'] ?? null;
+            if (!$clienteId) {
+                return ['success' => false, 'message' => 'ID de cliente requerido'];
+            }
+            
+            $this->createAtencionesTables();
+            
+            // Actualizar estado del cliente en cola
+            $stmt = $this->pdo->prepare("
+                UPDATE cola_espera 
+                SET estado = 'atendiendo', 
+                    hora_atencion = NOW(),
+                    ventanilla = ?
+                WHERE id = ?
+            ");
+            
+            $result = $stmt->execute([$this->userName, $clienteId]);
+            
+            if ($result) {
+                // Registrar inicio de atención
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO atenciones (tipo_consulta, documento_cliente, nombre_cliente, atendido_por, fecha_atencion, estado)
+                    SELECT tipo_consulta, documento_cliente, nombre_cliente, ?, NOW(), 'atendido'
+                    FROM cola_espera WHERE id = ?
+                ");
+                $stmt->execute([$this->userName, $clienteId]);
+                
+                return ['success' => true, 'message' => 'Cliente siendo atendido'];
+            } else {
+                return ['success' => false, 'message' => 'Error al actualizar estado del cliente'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function cancelarCliente($data) {
+        try {
+            $clienteId = $data['id'] ?? null;
+            if (!$clienteId) {
+                return ['success' => false, 'message' => 'ID de cliente requerido'];
+            }
+            
+            $this->createAtencionesTables();
+            
+            // Actualizar estado a cancelado
+            $stmt = $this->pdo->prepare("
+                UPDATE cola_espera 
+                SET estado = 'cancelado'
+                WHERE id = ?
+            ");
+            
+            $result = $stmt->execute([$clienteId]);
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'Cliente removido de la cola'];
+            } else {
+                return ['success' => false, 'message' => 'Error al cancelar cliente'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function procesarTramite($data) {
+        try {
+            $tramiteId = $data['id'] ?? null;
+            if (!$tramiteId) {
+                return ['success' => false, 'message' => 'ID de trámite requerido'];
+            }
+            
+            $this->createAtencionesTables();
+            
+            // Actualizar estado del trámite
+            $stmt = $this->pdo->prepare("
+                UPDATE tramites 
+                SET estado = 'proceso',
+                    procesado_por = ?
+                WHERE id = ?
+            ");
+            
+            $result = $stmt->execute([$this->userName, $tramiteId]);
+            
+            if ($result) {
+                return ['success' => true, 'message' => 'Trámite marcado como en proceso'];
+            } else {
+                return ['success' => false, 'message' => 'Error al procesar trámite'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function getDetalleTramite($id) {
+        try {
+            if (!$id) {
+                return ['success' => false, 'message' => 'ID de trámite requerido'];
+            }
+            
+            $this->createAtencionesTables();
+            
+            $stmt = $this->pdo->prepare("
+                SELECT *,
+                       DATEDIFF(NOW(), fecha_registro) as dias_transcurridos,
+                       CASE 
+                           WHEN fecha_estimada_finalizacion IS NOT NULL THEN
+                               DATEDIFF(fecha_estimada_finalizacion, NOW())
+                           ELSE NULL
+                       END as dias_restantes
+                FROM tramites 
+                WHERE id = ?
+            ");
+            
+            $stmt->execute([$id]);
+            $tramite = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($tramite) {
+                return ['success' => true, 'tramite' => $tramite];
+            } else {
+                return ['success' => false, 'message' => 'Trámite no encontrado'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+
+
+    
+
 }
 
 // Inicializar la aplicación
