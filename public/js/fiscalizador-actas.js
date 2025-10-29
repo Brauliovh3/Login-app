@@ -3522,6 +3522,12 @@ function mostrarMisActasEnTabla(actas) {
                         <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
                             <i class="fas fa-print"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportarActaIndividualPDF(${acta.id})" title="Exportar PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="anularActa(${acta.id}, '${acta.numero_acta}')" title="Anular Acta">
+                            <i class="fas fa-ban"></i>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -3728,6 +3734,185 @@ function exportarActaIndividual(actaId) {
     link.click();
 
     mostrarExitoActas('Acta exportada correctamente');
+}
+
+// Función para exportar acta individual como PDF
+async function exportarActaIndividualPDF(actaId) {
+    try {
+        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            throw { status: response.status, text };
+        }
+
+        if (!data.acta) {
+            mostrarErrorActas('Acta no encontrada');
+            return;
+        }
+
+        const acta = data.acta;
+        
+        // Verificar si html2pdf está disponible, si no, cargarlo dinámicamente
+        if (typeof html2pdf === 'undefined') {
+            console.log('📚 Cargando html2pdf.js...');
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            script.onload = () => {
+                console.log('✅ html2pdf.js cargado, generando PDF individual...');
+                generarPDFIndividual(acta);
+            };
+            script.onerror = () => {
+                mostrarErrorActas('Error al cargar la librería de PDF. Intente nuevamente.');
+            };
+            document.head.appendChild(script);
+        } else {
+            generarPDFIndividual(acta);
+        }
+
+    } catch (error) {
+        if (error.text) {
+            mostrarErrorActas('Respuesta inesperada del servidor');
+        } else {
+            mostrarErrorActas('Error al cargar acta: ' + error.message);
+        }
+    }
+}
+
+// Función para generar PDF individual
+function generarPDFIndividual(acta) {
+    try {
+        const aniActual = new Date().getFullYear();
+        
+        const contenidoHTML = `
+            <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
+                <!-- Encabezado con logos -->
+                <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 15%; text-align: left; vertical-align: top;">
+                            <div style="width: 60px; height: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+                        </td>
+                        <td style="width: 70%; text-align: center; vertical-align: middle;">
+                            <div style="font-size: 7pt; line-height: 1.2;">
+                                <strong>PERÚ</strong><br>
+                                <strong>GOBIERNO REGIONAL</strong><br>
+                                <strong>DE APURÍMAC</strong><br>
+                                <strong>DIRECCIÓN REGIONAL DE</strong><br>
+                                <strong>TRANSPORTES Y COMUNICACIONES</strong><br>
+                                <strong>DIRECCIÓN DE CIRCULACIÓN</strong><br>
+                                <strong>TERRESTRE Y SEGURIDAD VIAL</strong>
+                            </div>
+                        </td>
+                        <td style="width: 15%; text-align: right; vertical-align: top;">
+                            <div style="width: 60px; height: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Título del acta -->
+                <div style="text-align: center; margin: 10px 0;">
+                    <h3 style="margin: 5px 0; font-size: 11pt;">ACTA DE CONTROL N° ${acta.numero_acta || '000000'} -${aniActual}</h3>
+                    <p style="margin: 3px 0; font-size: 9pt;"><strong>D.S. N° 017-2009-MTC</strong></p>
+                </div>
+
+                <!-- Tabla principal de datos -->
+                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Placa:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>RUC /DNI:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.ruc_dni || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Nombre de Conductor:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.nombre_conductor || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Lugar:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.lugar_intervencion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Inspector:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.inspector_responsable || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Código Infracción:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.codigo_infraccion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Estado:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${getEstadoDisplayName(acta.estado)}</td>
+                    </tr>
+                </table>
+
+                <!-- Descripción de hechos -->
+                <div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-size: 8pt;"><strong>Descripción de los hechos:</strong></p>
+                    <p style="margin: 5px 0; font-size: 8pt; min-height: 60px;">${acta.descripcion_infraccion || ''}</p>
+                </div>
+            </div>
+        `;
+
+        // Configuración para html2pdf
+        const opciones = {
+            margin: 0.5,
+            filename: `Acta_${acta.numero_acta || acta.id}_${new Date().toISOString().slice(0,10)}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true
+            },
+            jsPDF: {
+                unit: 'in',
+                format: 'a4',
+                orientation: 'portrait'
+            }
+        };
+
+        // Crear elemento temporal con el contenido
+        const elementoTemporal = document.createElement('div');
+        elementoTemporal.innerHTML = contenidoHTML;
+        elementoTemporal.style.position = 'absolute';
+        elementoTemporal.style.left = '-9999px';
+        elementoTemporal.style.top = '-9999px';
+        document.body.appendChild(elementoTemporal);
+
+        // Generar y descargar el PDF
+        html2pdf()
+            .set(opciones)
+            .from(elementoTemporal)
+            .save()
+            .then(() => {
+                console.log('✅ PDF individual generado y descargado exitosamente');
+                mostrarExitoActas('PDF descargado exitosamente');
+                // Limpiar elemento temporal
+                document.body.removeChild(elementoTemporal);
+            })
+            .catch(error => {
+                console.error('❌ Error al generar PDF individual:', error);
+                mostrarErrorActas('Error al generar el PDF: ' + error.message);
+                document.body.removeChild(elementoTemporal);
+            });
+
+    } catch (error) {
+        console.error('❌ Error en generarPDFIndividual:', error);
+        mostrarErrorActas('Error al preparar el PDF: ' + error.message);
+    }
 }
 
 // Función para exportar historial del fiscalizador
@@ -3982,6 +4167,8 @@ window.verDetalleActaFiscalizador = verDetalleActaFiscalizador;
 window.exportarMisActas = exportarMisActas;
 window.imprimirMisActas = imprimirMisActas;
 window.exportarActaIndividual = exportarActaIndividual;
+window.exportarActaIndividualPDF = exportarActaIndividualPDF;
+window.generarPDFIndividual = generarPDFIndividual;
 window.generarHTMLHistorialActas = generarHTMLHistorialActas;
 window.mostrarAnimacionCargaCamion = mostrarAnimacionCargaCamion;
 window.actualizarEstadoActaEnTabla = actualizarEstadoActaEnTabla;
