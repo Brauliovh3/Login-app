@@ -581,15 +581,7 @@ function updateNotificationBadge(count) {
     }
 }
 
-// NOTA: Esta función fue movida al módulo administrador.js para evitar conflictos
-// function loadAprobarUsuarios() {
-//     console.log('👥 Función movida a administrador.js');
-//     if (window.loadAprobarUsuarios && typeof window.loadAprobarUsuarios === 'function') {
-//         window.loadAprobarUsuarios();
-//     } else {
-//         console.warn('⚠️ Función loadAprobarUsuarios no disponible en módulo específico');
-//     }
-// }
+
 
 function loadRolesPermisos() {
     console.log('🔐 Cargando roles y permisos...');

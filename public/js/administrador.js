@@ -1481,6 +1481,21 @@ function formatearFecha(fecha) {
     }
 }
 
+// Función para formatear fechas en formato corto
+function formatDate(fecha) {
+    if (!fecha) return 'N/A';
+    try {
+        const date = new Date(fecha);
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch {
+        return fecha;
+    }
+}
+
 // ==================== FUNCIONES GESTIÓN DE ACTAS ====================
 
 function loadActasList() {
@@ -1651,7 +1666,7 @@ async function cargarActasAdmin() {
                             <td><span class="badge bg-info">${acta.numero_acta || 'N/A'}</span></td>
                             <td>${acta.nombre_conductor || 'N/A'}</td>
                             <td><small class="text-muted">${acta.ruc_dni || 'N/A'}</small></td>
-                            <td><span class="badge ${getEstadoBadge(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
+                            <td><span class="badge ${getEstadoBadgeClass(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
                             <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
                             <td>
                                 <button class="btn btn-sm btn-info me-1" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
@@ -1695,6 +1710,23 @@ function getEstadoBadgeClassActa(estado) {
         case 'pendiente': return 'warning';
         case 'rechazado': return 'danger';
         default: return 'secondary';
+    }
+}
+
+// Función para obtener la clase del badge según el estado del acta
+function getEstadoBadgeClass(estado) {
+    const estadoLower = (estado || '').toLowerCase().trim();
+    switch(estadoLower) {
+        case 'pendiente': return 'bg-warning text-dark';
+        case 'procesada': 
+        case 'procesado': return 'bg-primary';
+        case 'aprobada':
+        case 'aprobado': return 'bg-success';
+        case 'anulada':
+        case 'anulado': return 'bg-danger';
+        case 'pagada':
+        case 'pagado': return 'bg-info';
+        default: return 'bg-secondary';
     }
 }
 
@@ -1995,22 +2027,36 @@ function actualizarEstadisticasInfracciones(infracciones) {
 
 function loadCargaPasajerosList() {
     document.getElementById('contentContainer').innerHTML = `
-        <div class="content-wrapper">
+        <div class="content-section active">
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">
-                                <i class="fas fa-truck"></i> Lista de Registros de Carga y Pasajeros
-                            </h3>
-                            <button class="btn btn-primary" onclick="loadCrearCargaPasajero()">
-                                <i class="fas fa-plus"></i> Nuevo Registro
-                            </button>
+                            <div>
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-truck"></i> Lista de Registros de Carga y Pasajeros
+                                </h3>
+                                <p class="text-muted mb-0">Gestión de registros de transporte</p>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-success" onclick="exportarCargaPasajerosExcel()">
+                                    <i class="fas fa-file-excel"></i> Exportar
+                                </button>
+                                <button class="btn btn-primary" onclick="loadCrearCargaPasajero()">
+                                    <i class="fas fa-plus"></i> Nuevo Registro
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Información:</strong> Los registros se ordenan por fecha de creación (más recientes primero). 
+                                La fecha se asigna automáticamente al crear cada registro.
+                            </div>
+                            
                             <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                                <table class="table table-hover table-striped">
+                                    <thead class="table-dark">
                                         <tr>
                                             <th>#</th>
                                             <th>Tipo</th>
@@ -2018,17 +2064,18 @@ function loadCargaPasajerosList() {
                                             <th>Peso/Cantidad</th>
                                             <th>Origen</th>
                                             <th>Destino</th>
-                                            <th>Fecha</th>
+                                            <th>Fecha Creación</th>
                                             <th>Estado</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="carga-pasajeros-list">
                                         <tr>
-                                            <td colspan="9" class="text-center">
-                                                <div class="spinner-border" role="status">
-                                                    <span class="sr-only">Cargando...</span>
+                                            <td colspan="9" class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
                                                 </div>
+                                                <p class="mt-2 text-muted">Cargando registros...</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -2041,30 +2088,35 @@ function loadCargaPasajerosList() {
         </div>
     `;
     
-    cargarDatosCargaPasajeros();
+    // Cargar datos después de un breve delay
+    setTimeout(() => {
+        cargarDatosCargaPasajeros();
+    }, 500);
 }
 
 function loadCrearCargaPasajero() {
     document.getElementById('contentContainer').innerHTML = `
-        <div class="content-wrapper">
+        <div class="content-section active">
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">
                                 <i class="fas fa-plus"></i> Nuevo Registro de Carga/Pasajero
                             </h3>
-                            <button class="btn btn-secondary float-right" onclick="loadCargaPasajerosList()">
+                            <button class="btn btn-secondary" onclick="loadCargaPasajerosList()">
                                 <i class="fas fa-arrow-left"></i> Volver
                             </button>
                         </div>
                         <div class="card-body">
+
+                            
                             <form id="crear-carga-form">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="tipo">Tipo *</label>
-                                            <select class="form-control" id="tipo" required>
+                                        <div class="mb-3">
+                                            <label for="tipo" class="form-label">Tipo *</label>
+                                            <select class="form-select" id="tipo" required>
                                                 <option value="">Seleccionar tipo</option>
                                                 <option value="carga">Carga</option>
                                                 <option value="pasajero">Pasajero</option>
@@ -2072,60 +2124,62 @@ function loadCrearCargaPasajero() {
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="descripcion">Descripción *</label>
-                                            <input type="text" class="form-control" id="descripcion" required>
+                                        <div class="mb-3">
+                                            <label for="descripcion" class="form-label">Descripción *</label>
+                                            <input type="text" class="form-control" id="descripcion" required 
+                                                   placeholder="Ej: Transporte de mercancías varias">
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="peso_cantidad">Peso/Cantidad</label>
-                                            <input type="text" class="form-control" id="peso_cantidad">
+                                        <div class="mb-3">
+                                            <label for="peso_cantidad" class="form-label">Peso/Cantidad</label>
+                                            <input type="text" class="form-control" id="peso_cantidad" 
+                                                   placeholder="Ej: 2.5 toneladas o 45 pasajeros">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="origen">Origen *</label>
-                                            <input type="text" class="form-control" id="origen" required>
+                                        <div class="mb-3">
+                                            <label for="origen" class="form-label">Origen *</label>
+                                            <input type="text" class="form-control" id="origen" required 
+                                                   placeholder="Ej: Lima">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="destino">Destino *</label>
-                                            <input type="text" class="form-control" id="destino" required>
+                                        <div class="mb-3">
+                                            <label for="destino" class="form-label">Destino *</label>
+                                            <input type="text" class="form-control" id="destino" required 
+                                                   placeholder="Ej: Abancay">
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="fecha_registro">Fecha de Registro</label>
-                                            <input type="date" class="form-control" id="fecha_registro" value="${new Date().toISOString().split('T')[0]}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="estado">Estado</label>
-                                            <select class="form-control" id="estado">
+                                        <div class="mb-3">
+                                            <label for="estado" class="form-label">Estado</label>
+                                            <select class="form-select" id="estado">
+                                                <option value="pendiente" selected>Pendiente</option>
                                                 <option value="en_transito">En Tránsito</option>
                                                 <option value="entregado">Entregado</option>
-                                                <option value="pendiente">Pendiente</option>
                                                 <option value="cancelado">Cancelado</option>
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="observaciones" class="form-label">Observaciones</label>
+                                            <textarea class="form-control" id="observaciones" rows="2" 
+                                                      placeholder="Observaciones adicionales (opcional)"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label for="observaciones">Observaciones</label>
-                                    <textarea class="form-control" id="observaciones" rows="3"></textarea>
-                                </div>
+
                                 
-                                <div class="form-group text-right">
+                                <div class="d-flex justify-content-end gap-2">
                                     <button type="button" class="btn btn-secondary" onclick="loadCargaPasajerosList()">
                                         <i class="fas fa-times"></i> Cancelar
                                     </button>
@@ -2140,6 +2194,17 @@ function loadCrearCargaPasajero() {
             </div>
         </div>
     `;
+    
+    // Configurar el evento de envío del formulario
+    setTimeout(() => {
+        const form = document.getElementById('crear-carga-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                guardarNuevoCargaPasajero();
+            });
+        }
+    }, 100);
 }
 
 function loadEstadisticasCarga() {
@@ -2289,37 +2354,68 @@ async function cargarDatosCargaPasajeros() {
       const tbody = document.getElementById('carga-pasajeros-list');
       if (!tbody) return;
 
-      tbody.innerHTML = registros.map((registro, index) => `
-        <tr>
-          <td>${String(index + 1).padStart(2, '0')}</td>
-          <td>${registro.tipo || 'N/A'}</td>
-          <td>${registro.descripcion || 'N/A'}</td>
-          <td>${registro.peso_cantidad || 'N/A'}</td>
-          <td>${registro.origen || 'N/A'}</td>
-          <td>${registro.destino || 'N/A'}</td>
-          <td>${registro.fecha || 'N/A'}</td>
-          <td><span class="badge badge-${getEstadoBadgeClass(registro.estado || 'pendiente')}">${registro.estado || 'Pendiente'}</span></td>
-          <td>
-            <button class="btn btn-sm btn-info" onclick="verDetalleCarga('${btoa(registro.id)}')" title="Ver detalle">
-              <i class="fas fa-eye"></i>
-            </button>
-            <button class="btn btn-sm btn-warning" onclick="editarCarga('${btoa(registro.id)}')" title="Editar">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="eliminarCarga('${btoa(registro.id)}')" title="Eliminar">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = registros.map((registro, index) => {
+        const fechaFormateada = registro.fecha ? new Date(registro.fecha).toLocaleDateString('es-ES') : 
+                                (registro.created_at ? new Date(registro.created_at).toLocaleDateString('es-ES') : 'N/A');
+        
+        return `
+          <tr>
+            <td><strong>${String(index + 1).padStart(2, '0')}</strong></td>
+            <td><span class="badge ${registro.tipo === 'carga' ? 'bg-primary' : 'bg-info'}">${registro.tipo || 'N/A'}</span></td>
+            <td>${registro.descripcion || 'N/A'}</td>
+            <td><small class="text-muted">${registro.peso_cantidad || 'N/A'}</small></td>
+            <td>${registro.origen || 'N/A'}</td>
+            <td>${registro.destino || 'N/A'}</td>
+            <td><small class="text-muted">${fechaFormateada}</small></td>
+            <td><span class="badge bg-${getEstadoBadgeClass(registro.estado || 'pendiente')}">${registro.estado || 'Pendiente'}</span></td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-info" onclick="verDetalleCarga('${btoa(registro.id)}')" title="Ver detalle">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-warning" onclick="editarCarga('${btoa(registro.id)}')" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="eliminarCarga('${btoa(registro.id)}')" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     } else {
       const tbody = document.getElementById('carga-pasajeros-list');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="9">No hay registros disponibles</td></tr>';
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="text-center py-4">
+              <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+              <p class="mt-2 text-muted">No hay registros disponibles</p>
+              <button class="btn btn-primary" onclick="loadCrearCargaPasajero()">
+                <i class="fas fa-plus"></i> Crear Primer Registro
+              </button>
+            </td>
+          </tr>
+        `;
+      }
     }
   } catch (error) {
     console.error('Error al cargar datos de carga/pasajeros:', error);
     const tbody = document.getElementById('carga-pasajeros-list');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar los datos</td></tr>';
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="text-center py-4 text-danger">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem;"></i>
+            <p class="mt-2">Error al cargar los datos</p>
+            <button class="btn btn-outline-primary" onclick="cargarDatosCargaPasajeros()">
+              <i class="fas fa-refresh"></i> Reintentar
+            </button>
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -2345,16 +2441,159 @@ function editarCarga(encodedId) {
     }
 }
 
-function eliminarCarga(encodedId) {
+async function eliminarCarga(encodedId) {
     try {
         const id = atob(encodedId);
-        if (confirm('¿Está seguro de que desea eliminar este registro?')) {
-            showInfoToast('Procesando eliminación...');
-            // Aquí puedes agregar la lógica para eliminar
-            console.log('Eliminar registro ID:', id); // Solo para debug
-        }
+        
+        showConfirmModal({
+            title: 'Eliminar Registro',
+            message: '¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.',
+            type: 'danger',
+            confirmText: 'Sí, Eliminar',
+            cancelText: 'Cancelar',
+            onConfirm: async () => {
+                try {
+                    const response = await fetch(`${window.location.origin}${window.location.pathname}?api=eliminar-carga-pasajero`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ id: id }),
+                        credentials: 'same-origin'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showSuccessToast('Registro eliminado correctamente');
+                        // Recargar la lista
+                        cargarDatosCargaPasajeros();
+                    } else {
+                        showErrorToast('Error al eliminar: ' + (data.message || 'Error desconocido'));
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar registro:', error);
+                    showErrorToast('Error de conexión al eliminar registro');
+                }
+            }
+        });
     } catch (error) {
         showErrorToast('Error al procesar la solicitud');
+    }
+}
+
+// Función para exportar a Excel
+function exportarCargaPasajerosExcel() {
+    showInfoToast('Preparando exportación a Excel...', 'info');
+    
+    const tbody = document.getElementById('carga-pasajeros-list');
+    if (!tbody) {
+        showErrorToast('No se encontró la tabla de registros');
+        return;
+    }
+    
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0 || (rows.length === 1 && rows[0].cells.length === 1)) {
+        showErrorToast('No hay registros para exportar');
+        return;
+    }
+    
+    let csvContent = 'Número,Tipo,Descripción,Peso/Cantidad,Origen,Destino,Fecha,Estado\n';
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length > 1) {
+            const rowData = [
+                cells[0].textContent.trim(),
+                cells[1].textContent.trim(),
+                cells[2].textContent.trim(),
+                cells[3].textContent.trim(),
+                cells[4].textContent.trim(),
+                cells[5].textContent.trim(),
+                cells[6].textContent.trim(),
+                cells[7].textContent.trim()
+            ];
+            csvContent += rowData.map(cell => `"${cell}"`).join(',') + '\n';
+        }
+    });
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `carga_pasajeros_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showSuccessToast('Archivo Excel exportado correctamente');
+}
+
+// Función para guardar nuevo registro de carga/pasajero
+async function guardarNuevoCargaPasajero() {
+    const tipo = document.getElementById('tipo').value;
+    const descripcion = document.getElementById('descripcion').value;
+    const peso_cantidad = document.getElementById('peso_cantidad').value;
+    const origen = document.getElementById('origen').value;
+    const destino = document.getElementById('destino').value;
+    const estado = document.getElementById('estado').value;
+    const observaciones = document.getElementById('observaciones').value;
+    
+    // Validaciones
+    if (!tipo || !descripcion || !origen || !destino) {
+        showErrorToast('Por favor completa todos los campos obligatorios');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnGuardar = document.querySelector('#crear-carga-form button[type="submit"]');
+    const originalText = btnGuardar.innerHTML;
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    btnGuardar.disabled = true;
+    
+    try {
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=carga-pasajeros`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                tipo: tipo,
+                descripcion: descripcion,
+                peso_cantidad: peso_cantidad,
+                origen: origen,
+                destino: destino,
+                estado: estado,
+                observaciones: observaciones
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccessToast(`Registro de ${tipo} creado exitosamente`);
+            showInfoToast(`ID: ${data.id} | ${descripcion} | ${origen} → ${destino}`);
+            
+            // Limpiar formulario
+            document.getElementById('crear-carga-form').reset();
+            
+            // Volver a la lista después de 2 segundos
+            setTimeout(() => {
+                loadCargaPasajerosList();
+            }, 2000);
+        } else {
+            showErrorToast('Error al crear registro: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showErrorToast('Error de conexión al crear registro');
+    } finally {
+        // Restaurar botón
+        btnGuardar.innerHTML = originalText;
+        btnGuardar.disabled = false;
     }
 }
 
@@ -2379,11 +2618,20 @@ window.loadDashboardStatsAdmin = loadDashboardStatsAdmin;
 window.guardarNuevoUsuario = guardarNuevoUsuario;
 window.actualizarUsuario = actualizarUsuario;
 window.confirmarEliminacionUsuario = confirmarEliminacionUsuario;
+window.guardarNuevoCargaPasajero = guardarNuevoCargaPasajero;
+window.cargarDatosCargaPasajeros = cargarDatosCargaPasajeros;
+window.verDetalleCarga = verDetalleCarga;
+window.editarCarga = editarCarga;
+window.eliminarCarga = eliminarCarga;
+window.exportarCargaPasajerosExcel = exportarCargaPasajerosExcel;
 window.showToast = showToast;
 window.showSuccessToast = showSuccessToast;
 window.showErrorToast = showErrorToast;
 window.showWarningToast = showWarningToast;
 window.showInfoToast = showInfoToast;
+window.getEstadoBadgeClass = getEstadoBadgeClass;
+window.formatDate = formatDate;
+window.formatearFecha = formatearFecha;
 
 // Debug: Verificar que las funciones están disponibles
 console.log('🔍 Verificando funciones exportadas del administrador:');
@@ -2393,30 +2641,7 @@ console.log('- loadCargaPasajerosList:', typeof window.loadCargaPasajerosList);
 console.log('- loadCrearCargaPasajero:', typeof window.loadCrearCargaPasajero);
 console.log('- loadEstadisticasCarga:', typeof window.loadEstadisticasCarga);
 
-// Funciones auxiliares para actas
-function getEstadoBadge(estado) {
-    switch(estado?.toLowerCase()) {
-        case 'pendiente': return 'bg-warning';
-        case 'procesada': case 'procesado': return 'bg-primary';
-        case 'aprobada': case 'aprobado': return 'bg-success';
-        case 'anulada': case 'anulado': return 'bg-danger';
-        default: return 'bg-secondary';
-    }
-}
 
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-    } catch (error) {
-        return 'N/A';
-    }
-}
 
 
 

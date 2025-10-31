@@ -174,10 +174,6 @@ class DashboardApp {
                     }
                     break;
                     
-                case 'pending-users':
-                    echo json_encode($this->getPendingUsers());
-                    break;
-                    
                 case 'obtener_actas_fiscalizador':
                     if ($method === 'POST') {
                         $input = json_decode(file_get_contents('php://input'), true);
@@ -198,7 +194,11 @@ class DashboardApp {
                     break;
 
                 case 'carga-pasajeros':
-                    echo json_encode($this->getCargaPasajeros());
+                    if ($method === 'GET') {
+                        echo json_encode($this->getCargaPasajeros());
+                    } elseif ($method === 'POST') {
+                        echo json_encode($this->createCargaPasajero());
+                    }
                     break;
 
                 case 'dashboard-stats':
@@ -368,6 +368,22 @@ class DashboardApp {
                     }
                     break;
                     
+                case 'eliminar-carga-pasajero':
+                    if ($method === 'DELETE' || $method === 'POST') {
+                        $data = json_decode(file_get_contents('php://input'), true);
+                        if (!$data) { $data = $_POST; }
+                        $id = $data['id'] ?? null;
+                        if (!$id) {
+                            echo json_encode(['success' => false, 'message' => 'ID requerido']);
+                        } else {
+                            echo json_encode($this->deleteCargaPasajero($id));
+                        }
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
                 case 'registrar-atencion':
                     if ($method === 'POST') {
                         echo json_encode($this->registrarAtencion());
@@ -393,6 +409,15 @@ class DashboardApp {
                         echo json_encode($this->getTramites());
                     } elseif ($method === 'POST') {
                         echo json_encode($this->registrarTramite());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'actualizar-carga-pasajero':
+                    if ($method === 'PUT' || $method === 'POST') {
+                        echo json_encode($this->updateCargaPasajero());
                     } else {
                         http_response_code(405);
                         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
@@ -1481,10 +1506,92 @@ class DashboardApp {
                 $this->createInfraccionesTable();
             }
             
-            $stmt = $this->pdo->query("SELECT * FROM infracciones ORDER BY codigo_infraccion LIMIT 100");
+            // Obtener estadísticas detalladas de infracciones
+            $statsQuery = "
+                SELECT 
+                    COUNT(*) as total_infracciones,
+                    SUM(CASE WHEN estado = 'activo' THEN 1 ELSE 0 END) as activas,
+                    SUM(CASE WHEN estado = 'inactivo' THEN 1 ELSE 0 END) as inactivas,
+                    SUM(CASE WHEN gravedad = 'Leve' THEN 1 ELSE 0 END) as leves,
+                    SUM(CASE WHEN gravedad = 'Grave' THEN 1 ELSE 0 END) as graves,
+                    SUM(CASE WHEN gravedad = 'Muy grave' THEN 1 ELSE 0 END) as muy_graves,
+                    SUM(CASE WHEN aplica_sobre = 'Transportista' THEN 1 ELSE 0 END) as transportista,
+                    SUM(CASE WHEN aplica_sobre = 'Conductor' THEN 1 ELSE 0 END) as conductor,
+                    SUM(CASE WHEN clase_pago = 'Pecuniaria' THEN 1 ELSE 0 END) as pecuniarias,
+                    SUM(CASE WHEN clase_pago = 'No pecuniaria' THEN 1 ELSE 0 END) as no_pecuniarias
+                FROM infracciones
+            ";
+            
+            $statsStmt = $this->pdo->query($statsQuery);
+            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Obtener infracciones con información completa
+            $stmt = $this->pdo->query("
+                SELECT 
+                    id,
+                    codigo_infraccion,
+                    aplica_sobre,
+                    reglamento,
+                    norma_modificatoria,
+                    infraccion as descripcion,
+                    clase_pago,
+                    sancion,
+                    tipo,
+                    medida_preventiva,
+                    gravedad,
+                    otros_responsables_otros_beneficios,
+                    estado,
+                    created_at,
+                    updated_at,
+                    CASE 
+                        WHEN sancion LIKE '%UIT%' THEN 
+                            CASE 
+                                WHEN sancion LIKE '1 UIT%' THEN 5150.00
+                                WHEN sancion LIKE '0.5 UIT%' THEN 2575.00
+                                WHEN sancion LIKE '0.25 UIT%' THEN 1287.50
+                                WHEN sancion LIKE '0.1 UIT%' THEN 515.00
+                                ELSE 0.00
+                            END
+                        ELSE 0.00
+                    END as monto_base_uit
+                FROM infracciones 
+                ORDER BY 
+                    CASE gravedad 
+                        WHEN 'Muy grave' THEN 1
+                        WHEN 'Grave' THEN 2
+                        WHEN 'Leve' THEN 3
+                    END,
+                    codigo_infraccion 
+                LIMIT 200
+            ");
             $infracciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            return ['success' => true, 'infracciones' => $infracciones];
+            // Obtener infracciones más frecuentes (simulado)
+            $frecuentesQuery = "
+                SELECT 
+                    codigo_infraccion,
+                    infraccion as descripcion,
+                    gravedad,
+                    sancion,
+                    COUNT(*) as frecuencia
+                FROM infracciones i
+                LEFT JOIN actas a ON i.codigo_infraccion = a.codigo_infraccion
+                WHERE i.estado = 'activo'
+                GROUP BY i.id, i.codigo_infraccion, i.infraccion, i.gravedad, i.sancion
+                ORDER BY frecuencia DESC, i.codigo_infraccion
+                LIMIT 10
+            ";
+            
+            $frecuentesStmt = $this->pdo->query($frecuentesQuery);
+            $frecuentes = $frecuentesStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                'success' => true, 
+                'infracciones' => $infracciones,
+                'estadisticas' => $stats,
+                'mas_frecuentes' => $frecuentes,
+                'total' => count($infracciones)
+            ];
         } catch (Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -1492,45 +1599,70 @@ class DashboardApp {
     
     private function createInfraccionesTable() {
         try {
-            // Ejecutar el script SQL para crear la tabla
-            $sqlFile = __DIR__ . '/../database/migrations/create_infracciones_table.sql';
-            if (file_exists($sqlFile)) {
-                $sql = file_get_contents($sqlFile);
-                $this->pdo->exec($sql);
-            } else {
-                // Crear tabla básica si no existe el archivo
-                $this->pdo->exec("
-                    CREATE TABLE IF NOT EXISTS `infracciones` (
-                        `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                        `codigo_infraccion` varchar(255) NOT NULL,
-                        `aplica_sobre` varchar(255) NOT NULL,
-                        `reglamento` varchar(255) NOT NULL,
-                        `norma_modificatoria` varchar(255) NOT NULL,
-                        `infraccion` text NOT NULL,
-                        `clase_pago` enum('Pecuniaria','No pecuniaria') NOT NULL,
-                        `sancion` varchar(255) NOT NULL,
-                        `tipo` enum('Infracción') NOT NULL DEFAULT 'Infracción',
-                        `medida_preventiva` text,
-                        `gravedad` enum('Leve','Grave','Muy grave') NOT NULL,
-                        `otros_responsables_otros_beneficios` text,
-                        `estado` varchar(255) NOT NULL DEFAULT 'activo',
-                        `created_at` timestamp NULL DEFAULT NULL,
-                        `updated_at` timestamp NULL DEFAULT NULL,
-                        PRIMARY KEY (`id`),
-                        UNIQUE KEY `infracciones_codigo_infraccion_unique` (`codigo_infraccion`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-                ");
+            // Crear tabla completa de infracciones
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `infracciones` (
+                    `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `codigo_infraccion` varchar(255) NOT NULL,
+                    `aplica_sobre` varchar(255) NOT NULL,
+                    `reglamento` varchar(255) NOT NULL,
+                    `norma_modificatoria` varchar(255) NOT NULL,
+                    `infraccion` text NOT NULL,
+                    `clase_pago` enum('Pecuniaria','No pecuniaria') NOT NULL,
+                    `sancion` varchar(255) NOT NULL,
+                    `tipo` enum('Infracción') NOT NULL DEFAULT 'Infracción',
+                    `medida_preventiva` text,
+                    `gravedad` enum('Leve','Grave','Muy grave') NOT NULL,
+                    `otros_responsables_otros_beneficios` text,
+                    `estado` varchar(255) NOT NULL DEFAULT 'activo',
+                    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `infracciones_codigo_infraccion_unique` (`codigo_infraccion`),
+                    INDEX `idx_gravedad` (`gravedad`),
+                    INDEX `idx_aplica_sobre` (`aplica_sobre`),
+                    INDEX `idx_estado` (`estado`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            
+            // Insertar catálogo completo de infracciones del RENAT
+            $this->pdo->exec("
+                INSERT IGNORE INTO `infracciones` (
+                    `codigo_infraccion`, `aplica_sobre`, `reglamento`, `norma_modificatoria`, 
+                    `infraccion`, `clase_pago`, `sancion`, `medida_preventiva`, `gravedad`, 
+                    `otros_responsables_otros_beneficios`
+                ) VALUES
+                -- INFRACCIONES MUY GRAVES
+                ('F.1', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio de transporte público sin contar con autorización', 'Pecuniaria', '1 UIT', 'Internamiento del vehículo', 'Muy grave', 'Responsabilidad solidaria del propietario'),
+                ('F.2', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Bloqueo o interrupción del libre tránsito en las vías', 'Pecuniaria', '1 UIT', 'Internamiento del vehículo', 'Muy grave', NULL),
+                ('F.3', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Participar en bloqueo de vías o impedir el libre tránsito', 'Pecuniaria', '1 UIT', 'Suspensión de licencia por 3 años', 'Muy grave', NULL),
+                ('F.4-a', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Negarse a entregar información o documentación requerida', 'Pecuniaria', '1 UIT', NULL, 'Muy grave', NULL),
+                ('F.4-b', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Brindar intencionalmente información no conforme con la realidad', 'Pecuniaria', '1 UIT', NULL, 'Muy grave', NULL),
+                ('F.5', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Contratar servicios de transportista no autorizado', 'Pecuniaria', '1 UIT', NULL, 'Muy grave', 'Responsabilidad solidaria'),
+                ('F.6-a', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Negarse a entregar información o documentación al inspector', 'Pecuniaria', '1 UIT', 'Suspensión de licencia por 1 año', 'Muy grave', NULL),
+                ('F.6-b', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Brindar información falsa al inspector de transporte', 'Pecuniaria', '1 UIT', 'Suspensión de licencia por 1 año', 'Muy grave', NULL),
+                ('F.7', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Atentar contra la integridad física del inspector', 'Pecuniaria', '1 UIT', 'Cancelación definitiva de licencia', 'Muy grave', 'Denuncia penal'),
                 
-                // Insertar datos básicos
-                $this->pdo->exec("
-                    INSERT IGNORE INTO `infracciones` (`codigo_infraccion`, `aplica_sobre`, `reglamento`, `norma_modificatoria`, `infraccion`, `clase_pago`, `sancion`, `medida_preventiva`, `gravedad`) VALUES
-                    ('F.1', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio de transporte público sin contar con autorización', 'Pecuniaria', '1 UIT', 'Internamiento del vehículo', 'Muy grave'),
-                    ('F.2', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio fuera del ámbito autorizado', 'Pecuniaria', '0.5 UIT', NULL, 'Grave'),
-                    ('F.3', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Conducir sin licencia de conducir', 'Pecuniaria', '1 UIT', 'Retención del vehículo', 'Muy grave'),
-                    ('F.4', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Exceder los límites de velocidad', 'Pecuniaria', '0.25 UIT', NULL, 'Leve'),
-                    ('F.5', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No contar con SOAT vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave')
-                ");
-            }
+                -- INFRACCIONES GRAVES
+                ('I.1-a', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar manifiesto de usuarios o relación de pasajeros', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.1-b', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar hoja de ruta del servicio', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.1-c', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar guía de remisión del transportista', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.1-d', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar documento de habilitación vehicular vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave', NULL),
+                ('I.1-e', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar certificado de Inspección Técnica Vehicular vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave', NULL),
+                ('I.1-f', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No portar certificado SOAT vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave', NULL),
+                ('I.2-a', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No exhibir modalidad de servicio y razón social', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.2-b', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'No colocar tarifas y ruta visible para usuarios', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.3', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Prestar servicio fuera del ámbito geográfico autorizado', 'Pecuniaria', '0.5 UIT', NULL, 'Grave', NULL),
+                ('I.4', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Conducir sin licencia de conducir vigente', 'Pecuniaria', '0.5 UIT', 'Retención del vehículo', 'Grave', NULL),
+                
+                -- INFRACCIONES LEVES
+                ('L.1', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'Exceder los límites de velocidad establecidos', 'Pecuniaria', '0.25 UIT', NULL, 'Leve', 'Descuento del 50% por pago inmediato'),
+                ('L.2', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'No respetar las señales de tránsito', 'Pecuniaria', '0.25 UIT', NULL, 'Leve', 'Descuento del 50% por pago inmediato'),
+                ('L.3', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Vehículo en mal estado de conservación o limpieza', 'Pecuniaria', '0.1 UIT', NULL, 'Leve', NULL),
+                ('L.4', 'Conductor', 'RENAT', 'D.S. N° 017-2009-MTC', 'No usar cinturón de seguridad', 'Pecuniaria', '0.1 UIT', NULL, 'Leve', 'Descuento del 50% por pago inmediato'),
+                ('L.5', 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Documentación desactualizada o incompleta', 'Pecuniaria', '0.1 UIT', NULL, 'Leve', NULL)
+            ");
+            
         } catch (Exception $e) {
             error_log('Error creating infracciones table: ' . $e->getMessage());
         }
@@ -1538,15 +1670,75 @@ class DashboardApp {
     
     private function getCargaPasajeros() {
         try {
+            // Verificar si la tabla existe y tiene la estructura correcta
+            if (!$this->tableExists('carga_pasajeros')) {
+                // Crear tabla real de carga y pasajeros
+                $this->pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `carga_pasajeros` (
+                        `id` INT NOT NULL AUTO_INCREMENT,
+                        `tipo` ENUM('carga', 'pasajero') NOT NULL,
+                        `descripcion` VARCHAR(255) NULL,
+                        `peso_cantidad` VARCHAR(100) NULL,
+                        `origen` VARCHAR(150) NULL,
+                        `destino` VARCHAR(150) NULL,
+                        `fecha` DATE NULL,
+                        `estado` ENUM('pendiente', 'en_transito', 'entregado', 'cancelado') DEFAULT 'pendiente',
+                        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+                ");
+                
+                // Insertar algunos datos de ejemplo reales
+                $this->pdo->exec("
+                    INSERT INTO `carga_pasajeros` (`tipo`, `descripcion`, `peso_cantidad`, `origen`, `destino`, `fecha`, `estado`) VALUES
+                    ('carga', 'Transporte de mercancías varias', '2.5 toneladas', 'Lima', 'Abancay', CURDATE(), 'en_transito'),
+                    ('pasajero', 'Servicio interprovincial', '45 pasajeros', 'Abancay', 'Cusco', CURDATE(), 'pendiente'),
+                    ('carga', 'Productos agrícolas', '1.8 toneladas', 'Andahuaylas', 'Lima', DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'entregado'),
+                    ('pasajero', 'Ruta urbana', '30 pasajeros', 'Centro', 'Periférico', CURDATE(), 'en_transito')
+                ");
+            } else {
+                // Verificar si la tabla tiene la estructura antigua y migrarla
+                $hasNewStructure = $this->columnExists('carga_pasajeros', 'tipo') && 
+                                   $this->columnExists('carga_pasajeros', 'descripcion') && 
+                                   $this->columnExists('carga_pasajeros', 'peso_cantidad');
+                
+                if (!$hasNewStructure) {
+                    // Migrar estructura antigua a nueva
+                    $this->pdo->exec("
+                        ALTER TABLE `carga_pasajeros` 
+                        ADD COLUMN `tipo` ENUM('carga', 'pasajero') DEFAULT 'carga' AFTER `id`,
+                        ADD COLUMN `descripcion` VARCHAR(255) NULL AFTER `tipo`,
+                        ADD COLUMN `peso_cantidad` VARCHAR(100) NULL AFTER `descripcion`,
+                        ADD COLUMN `origen` VARCHAR(150) NULL AFTER `peso_cantidad`,
+                        ADD COLUMN `destino` VARCHAR(150) NULL AFTER `origen`,
+                        ADD COLUMN `fecha` DATE NULL AFTER `destino`,
+                        MODIFY COLUMN `estado` ENUM('pendiente', 'en_transito', 'entregado', 'cancelado') DEFAULT 'pendiente'
+                    ");
+                    
+                    // Migrar datos existentes si los hay
+                    $this->pdo->exec("
+                        UPDATE `carga_pasajeros` SET 
+                        `descripcion` = COALESCE(`informe`, 'Registro migrado'),
+                        `peso_cantidad` = 'N/A',
+                        `origen` = 'Por definir',
+                        `destino` = 'Por definir',
+                        `fecha` = CURDATE(),
+                        `tipo` = 'carga'
+                        WHERE `descripcion` IS NULL
+                    ");
+                }
+            }
+            
             $stmt = $this->pdo->query("
                 SELECT 
                     id,
-                    informe as tipo,
-                    resolucion as descripcion,
-                    conductor as peso_cantidad,
-                    licencia_conductor as origen,
-                    'N/A' as destino,
-                    DATE(created_at) as fecha,
+                    tipo,
+                    descripcion,
+                    peso_cantidad,
+                    origen,
+                    destino,
+                    fecha,
                     estado,
                     created_at
                 FROM carga_pasajeros 
@@ -3222,10 +3414,111 @@ class DashboardApp {
         }
     }
     
-
-
+    // ==================== FUNCIONES PARA CARGA Y PASAJEROS ====================
     
-
+    private function createCargaPasajero() {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) { $data = $_POST; }
+            
+            // Validar campos requeridos
+            if (empty($data['tipo']) || empty($data['descripcion']) || empty($data['origen']) || empty($data['destino'])) {
+                return ['success' => false, 'message' => 'Campos requeridos: tipo, descripción, origen, destino'];
+            }
+            
+            // Asegurar que la tabla existe con la estructura correcta
+            $this->getCargaPasajeros(); // Esto creará la tabla si no existe
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO carga_pasajeros (tipo, descripcion, peso_cantidad, origen, destino, fecha, estado, created_at) 
+                VALUES (?, ?, ?, ?, ?, CURDATE(), ?, NOW())
+            ");
+            
+            $result = $stmt->execute([
+                $data['tipo'],
+                $data['descripcion'],
+                $data['peso_cantidad'] ?? null,
+                $data['origen'],
+                $data['destino'],
+                $data['estado'] ?? 'pendiente'
+            ]);
+            
+            if ($result) {
+                return [
+                    'success' => true, 
+                    'message' => 'Registro creado correctamente',
+                    'id' => $this->pdo->lastInsertId()
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Error al crear el registro'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function updateCargaPasajero() {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) { $data = $_POST; }
+            
+            if (empty($data['id'])) {
+                return ['success' => false, 'message' => 'ID requerido'];
+            }
+            
+            $updateFields = [];
+            $params = [];
+            
+            // Campos que se pueden actualizar
+            $allowedFields = ['tipo', 'descripcion', 'peso_cantidad', 'origen', 'destino', 'estado'];
+            
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $updateFields[] = "$field = ?";
+                    $params[] = $data[$field];
+                }
+            }
+            
+            if (empty($updateFields)) {
+                return ['success' => false, 'message' => 'No hay campos para actualizar'];
+            }
+            
+            $updateFields[] = 'updated_at = NOW()';
+            $params[] = $data['id'];
+            
+            $sql = "UPDATE carga_pasajeros SET " . implode(', ', $updateFields) . " WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $result = $stmt->execute($params);
+            
+            if ($result && $stmt->rowCount() > 0) {
+                return ['success' => true, 'message' => 'Registro actualizado correctamente'];
+            } else {
+                return ['success' => false, 'message' => 'No se pudo actualizar el registro o no se encontró'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function deleteCargaPasajero($id) {
+        try {
+            if (!$id) {
+                return ['success' => false, 'message' => 'ID requerido'];
+            }
+            
+            $stmt = $this->pdo->prepare("DELETE FROM carga_pasajeros WHERE id = ?");
+            $result = $stmt->execute([$id]);
+            
+            if ($result && $stmt->rowCount() > 0) {
+                return ['success' => true, 'message' => 'Registro eliminado correctamente'];
+            } else {
+                return ['success' => false, 'message' => 'No se pudo eliminar el registro o no se encontró'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
 }
 
 // Inicializar la aplicación
@@ -3250,6 +3543,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="css/dashboard.css" rel="stylesheet">
+    <link href="css/infracciones-dashboard.css" rel="stylesheet">
     <?php if ($rol === 'ventanilla'): ?>
     <link href="css/ventanilla-simple.css" rel="stylesheet">
     <?php endif; ?>
@@ -4290,6 +4584,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <script src="js/dashboard-core.js"></script>
     <script src="js/dashboard-stats.js"></script>
     <script src="js/usuarios-utils.js"></script>
+    <script src="js/infracciones-dashboard.js"></script>
     
     <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
     <!-- JavaScript específico para administrador -->
