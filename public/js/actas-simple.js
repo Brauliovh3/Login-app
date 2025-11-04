@@ -343,13 +343,24 @@ function mostrarActasEnTabla(actas) {
         return;
     }
     
-    tbody.innerHTML = actas.map(acta => `
+    tbody.innerHTML = actas.map(acta => {
+        // Construir nombre completo del conductor
+        let nombreConductor = 'N/A';
+        if (acta.nombres_conductor || acta.apellidos_conductor) {
+            nombreConductor = `${acta.nombres_conductor || ''} ${acta.apellidos_conductor || ''}`.trim();
+        } else if (acta.nombre_conductor) {
+            nombreConductor = acta.nombre_conductor;
+        } else if (acta.conductor_nombre) {
+            nombreConductor = acta.conductor_nombre;
+        }
+        
+        return `
         <tr>
             <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
             <td><small>${formatearFecha(acta.fecha_intervencion || acta.created_at)}</small></td>
             <td><span class="badge bg-dark">${acta.placa || acta.placa_vehiculo || 'N/A'}</span></td>
-            <td>${acta.nombre_conductor || acta.conductor_nombre || 'N/A'}</td>
-            <td><span class="badge ${getBadgeColor(acta.estado)}">${acta.estado || 'Pendiente'}</span></td>
+            <td>${nombreConductor}</td>
+            <td><span class="badge ${getBadgeColor(acta.estado)}">${getEstadoTexto(acta.estado)}</span></td>
             <td><strong>S/ ${parseFloat(acta.monto_multa || 0).toFixed(2)}</strong></td>
             <td>
                 <div class="btn-group btn-group-sm">
@@ -368,7 +379,8 @@ function mostrarActasEnTabla(actas) {
                 </div>
             </td>
         </tr>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function mostrarErrorEnTabla(mensaje) {

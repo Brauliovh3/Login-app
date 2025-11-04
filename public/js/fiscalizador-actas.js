@@ -451,25 +451,46 @@ async function cargarActasDesdeAPI() {
         `;
     }
     
+    const tryUrls = ['/dashboard.php?api=actas-raw'];
+    let data = null;
     try {
-        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+        // Intento 1: actas por rol; si falla o viene vacío, intentar actas-admin
+        for (let i = 0; i < tryUrls.length; i++) {
+            const response = await fetchWithTimeout(tryUrls[i], {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
 
-        const text = await response.text();
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (err) {
-            throw { status: response.status, text };
+            const text = await response.text();
+            let parsed;
+            try { parsed = JSON.parse(text); } catch (err) {
+                console.error('❌ Respuesta no JSON al listar actas:', text);
+                continue;
+            }
+            console.log('📦 Respuesta actas desde', tryUrls[i], parsed);
+            if (parsed && parsed.success && Array.isArray(parsed.actas) && parsed.actas.length >= 0) {
+                data = parsed;
+                break;
+            }
+        }
+
+        if (!data) {
+            throw { status: 500, text: 'Sin datos válidos desde endpoints de actas' };
         }
         
         if (data.success) {
-            todasLasActas = data.actas || [];
+            if (typeof data.db !== 'undefined' || typeof data.count !== 'undefined') {
+                const dbName = data.db || 'desconocida';
+                const total = typeof data.count !== 'undefined' ? data.count : (Array.isArray(data.actas) ? data.actas.length : 0);
+                mostrarInfoActas(`BD: ${dbName} · Registros en actas: ${total}`);
+            }
+            // Si el backend envía conteo y DB, úsalos para diagnosticar
+            if (typeof data.count !== 'undefined' && data.count > 0 && (!Array.isArray(data.actas) || data.actas.length === 0)) {
+                console.warn('⚠️ El backend reporta filas pero no se recibieron actas. DB:', data.db, 'count:', data.count);
+                mostrarInfoActas(`Conexión a BD "${data.db || 'desconocida'}". Registros en actas: ${data.count}. Recibidos: 0`);
+            }
+            todasLasActas = Array.isArray(data.actas) ? data.actas : [];
             mostrarActas(todasLasActas);
             if (todasLasActas.length > 0) {
                 mostrarExitoActas(`${todasLasActas.length} actas cargadas correctamente`);
@@ -507,7 +528,7 @@ async function cargarMisActasDesdeAPI() {
     }
     
     try {
-        const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=actas`, {
+        const response = await fetchWithTimeout('/dashboard.php?api=actas', {
             method: 'GET',
             credentials: 'same-origin',
             headers: {
@@ -520,8 +541,10 @@ async function cargarMisActasDesdeAPI() {
         try {
             data = JSON.parse(text);
         } catch (err) {
+            console.error('❌ Respuesta no JSON al listar MIS actas:', text);
             throw { status: response.status, text };
         }
+        console.log('📦 Respuesta MIS actas:', data);
         
         if (data.success) {
             const todasActas = data.actas || [];
@@ -568,6 +591,27 @@ function mostrarActas(actas) {
         return;
     }
     
+    // Normalizar estado antes de renderizar (acepta numérico o textos alternos)
+    const normalizarEstado = (valor, estadoTexto) => {
+        if (typeof valor === 'number') {
+            switch (valor) {
+                case 0: return 'pendiente';
+                case 1: return 'procesada';
+                case 2: return 'anulada';
+                case 3: return 'pagada';
+                default: return 'pendiente';
+            }
+        }
+        if (typeof valor === 'string' && valor.trim() !== '') {
+            return valor.toLowerCase();
+        }
+        if (estadoTexto && typeof estadoTexto === 'string') {
+            return estadoTexto.toLowerCase();
+        }
+        return 'pendiente';
+    };
+    actas.forEach(a => { a.estado = normalizarEstado(a.estado, a.estado_texto); });
+
     // Función para verificar y crear la tabla si es necesario
     const verificarYCrearTabla = () => {
         let tbody = document.getElementById('actasTableBody');
@@ -790,7 +834,7 @@ function renderizarActasEnTabla(tbody, actas) {
             </td>
             <td>
                 <small class="text-muted">
-                    ${acta.fecha_acta ? formatDate(acta.fecha_acta) : formatDate(acta.created_at)}
+                    ${acta.fecha_acta ? formatDate(acta.fecha_acta) : (acta.created_at ? formatDate(acta.created_at) : (acta.fecha_intervencion ? formatDate(acta.fecha_intervencion) : ''))}
                 </small>
             </td>
             <td class="text-center">
@@ -1076,7 +1120,7 @@ async function cargarCodigosInfracciones() {
     console.log('📋 Cargando códigos de infracciones...');
     
     try {
-        const response = await fetch('dashboard.php?api=codigos-infracciones', {
+        const response = await fetch('/dashboard.php?api=codigos-infracciones', {
             method: 'GET',
             credentials: 'same-origin'
         });
@@ -4126,6 +4170,15 @@ window.cargarActasDesdeAPI = cargarActasDesdeAPI;
 window.cargarMisActasDesdeAPI = cargarMisActasDesdeAPI;
 window.showCrearActaModal = showCrearActaModal;
 window.guardarNuevaActa = guardarNuevaActa;
+
+// Cargar automáticamente la lista de actas al cargar el panel
+document.addEventListener('DOMContentLoaded', () => {
+    const tabla = document.getElementById('actasTableBody');
+    const contenedor = document.getElementById('contentContainer');
+    if (tabla || contenedor) {
+        try { cargarActasDesdeAPI(); } catch (e) { /* noop */ }
+    }
+});
 window.verActa = verActa;
 window.editarActa = editarActa;
 window.anularActa = anularActa;

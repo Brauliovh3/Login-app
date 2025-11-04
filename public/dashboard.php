@@ -31,40 +31,103 @@ class DashboardApp {
     
     private function getActasByRole() {
         try {
-            $sql = "SELECT 
-                id,
-                numero_acta,
-                placa_vehiculo,
-                CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor,
-                nombres_conductor,
-                apellidos_conductor,
-                ruc_dni,
-                COALESCE(codigo_infraccion, 'N/A') as codigo_infraccion,
-                CASE 
-                    WHEN estado = 0 THEN 'pendiente'
-                    WHEN estado = 1 THEN 'procesada' 
-                    WHEN estado = 2 THEN 'anulada'
-                    WHEN estado = 3 THEN 'pagada'
-                    ELSE 'pendiente'
-                END AS estado,
-                fecha_intervencion AS created_at,
-                fecha_intervencion AS fecha_acta,
-                fiscalizador_id
-            FROM actas 
-            ORDER BY id DESC 
-            LIMIT 200";
+            if (!$this->tableExists('actas')) {
+                return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
+            }
+
+            // Determinar columnas disponibles de forma segura
+            $hasAnioActa = $this->columnExists('actas', 'anio_acta');
+            $hasPlacaVehiculo = $this->columnExists('actas', 'placa_vehiculo');
+            $hasNombres = $this->columnExists('actas', 'nombres_conductor');
+            $hasApellidos = $this->columnExists('actas', 'apellidos_conductor');
+            $hasNombrePlano = $this->columnExists('actas', 'nombre_conductor');
+            $hasMonto = $this->columnExists('actas', 'monto_multa');
+            $hasEstado = $this->columnExists('actas', 'estado');
+            $hasCreatedAt = $this->columnExists('actas', 'created_at');
+            $hasFechaIntervencion = $this->columnExists('actas', 'fecha_intervencion');
+            $hasFiscalizador = $this->columnExists('actas', 'fiscalizador_id');
+            $hasCodigoInfraccion = $this->columnExists('actas', 'codigo_infraccion');
+            $hasNumeroActa = $this->columnExists('actas', 'numero_acta');
+            $hasPlaca = $this->columnExists('actas', 'placa');
+
+            // Construir los campos del SELECT con fallbacks
+            $select = [
+                'id',
+                ($hasNumeroActa ? 'numero_acta' : "'' AS numero_acta"),
+                ($hasAnioActa 
+                    ? 'anio_acta' 
+                    : ($hasFechaIntervencion ? "YEAR(COALESCE(fecha_intervencion, NOW())) AS anio_acta" : 'YEAR(NOW()) AS anio_acta')),
+                ($hasPlaca ? 'placa' : "'' AS placa"),
+                ($hasPlacaVehiculo ? 'placa_vehiculo' : "placa AS placa_vehiculo"),
+                ($hasNombres || $hasApellidos
+                    ? "CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor"
+                    : ($hasNombrePlano ? 'nombre_conductor' : "'' AS nombre_conductor")),
+                ($hasNombres ? 'nombres_conductor' : "NULL AS nombres_conductor"),
+                ($hasApellidos ? 'apellidos_conductor' : "NULL AS apellidos_conductor"),
+                'ruc_dni',
+                ($hasCodigoInfraccion ? 'COALESCE(codigo_infraccion, \"N/A\") as codigo_infraccion' : "'N/A' AS codigo_infraccion"),
+                ($hasMonto ? 'COALESCE(monto_multa, 0) as monto_multa' : '0 AS monto_multa'),
+                ($hasEstado ? 'estado' : '0 AS estado'),
+                ($hasEstado
+                    ? "CASE WHEN estado = 0 THEN 'pendiente' WHEN estado = 1 THEN 'procesada' WHEN estado = 2 THEN 'anulada' WHEN estado = 3 THEN 'pagada' ELSE 'pendiente' END AS estado_texto"
+                    : "'pendiente' AS estado_texto"),
+                ($hasFechaIntervencion ? 'fecha_intervencion' : 'NULL AS fecha_intervencion'),
+                ($hasCreatedAt 
+                    ? 'created_at' 
+                    : ($hasFechaIntervencion ? 'fecha_intervencion AS created_at' : 'NOW() AS created_at')),
+                ($hasFechaIntervencion ? 'fecha_intervencion AS fecha_acta' : 'NOW() AS fecha_acta'),
+                ($hasFiscalizador ? 'fiscalizador_id' : 'NULL AS fiscalizador_id')
+            ];
+
+            $sql = "SELECT " . implode(",\n                ", $select) . "\nFROM actas\nORDER BY id DESC\nLIMIT 200";
             
             $stmt = $this->pdo->query($sql);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            error_log('[DASH] getActasByRole filas=' . count($rows));
             
             return [
                 'success' => true,
                 'actas' => $rows,
-                'stats' => ['total_actas' => count($rows)]
+                'stats' => ['total_actas' => count($rows)],
+                'debug' => ['sql' => $sql]
             ];
         } catch (Exception $e) {
             error_log('Error en getActasByRole: ' . $e->getMessage());
-            return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
+            return ['success' => false, 'message' => $e->getMessage(), 'actas' => [], 'stats' => ['total_actas' => 0]];
+        }
+    }
+
+    private function getActasRaw() {
+        try {
+            $dbName = $this->pdo->query('SELECT DATABASE() AS db')->fetch(PDO::FETCH_ASSOC)['db'] ?? null;
+            $actasExists = $this->tableExists('actas');
+            
+            // Intentar siempre contar y seleccionar, aunque tableExists falle (por colación/permisos)
+            $count = 0; $rows = [];
+            try {
+                $countStmt = $this->pdo->query('SELECT COUNT(*) AS c FROM actas');
+                $count = (int)($countStmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+            } catch (Exception $e) {
+                error_log('COUNT actas error: ' . $e->getMessage());
+            }
+            try {
+                $stmt = $this->pdo->query("SELECT * FROM actas ORDER BY id DESC LIMIT 200");
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Exception $e) {
+                error_log('SELECT actas error: ' . $e->getMessage());
+            }
+            
+            error_log('[DASH] getActasRaw db=' . $dbName . ' existe_actas=' . ($actasExists? '1':'0') . ' count=' . $count);
+            return [
+                'success' => true,
+                'db' => $dbName,
+                'table_exists' => $actasExists,
+                'count' => $count,
+                'actas' => $rows
+            ];
+        } catch (Exception $e) {
+            error_log('Error en getActasRaw: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage(), 'actas' => []];
         }
     }
 
@@ -80,10 +143,16 @@ class DashboardApp {
 
     private function tableExists($table) {
         try {
-            $stmt = $this->pdo->prepare("SHOW TABLES LIKE ?");
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) AS c FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
             $stmt->execute([$table]);
-            return $stmt->fetch() ? true : false;
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row && (int)$row['c'] > 0) { return true; }
+            // Fallback con SHOW TABLES sin parámetros (evita escapes sobre '?')
+            $table = str_replace(['`', '%', '_'], ['``', '\\%', '\\_'], $table);
+            $res = $this->pdo->query("SHOW TABLES LIKE '" . $table . "'");
+            return $res && $res->fetch() ? true : false;
         } catch (Exception $e) {
+            error_log('tableExists error: ' . $e->getMessage());
             return false;
         }
     }
@@ -102,7 +171,25 @@ class DashboardApp {
     private function handleApiRequest() {
         header('Content-Type: application/json');
         
-        // Verificar que el usuario esté autenticado para APIs
+        $api = $_GET['api'];
+        $method = $_SERVER['REQUEST_METHOD'];
+        
+        // Permitir lectura pública mínima para listar actas desde el panel
+        $publicReadApis = ['actas', 'actas-admin', 'actas-raw', 'codigos-infracciones'];
+        if (!isset($_SESSION['user_id']) && $method === 'GET' && in_array($api, $publicReadApis, true)) {
+            switch ($api) {
+                case 'actas':
+                case 'actas-admin':
+                case 'actas-raw':
+                    echo json_encode($this->getActasRaw());
+                    return;
+                case 'codigos-infracciones':
+                    echo json_encode($this->getCodigosInfracciones());
+                    return;
+            }
+        }
+        
+        // Verificar que el usuario esté autenticado para el resto de APIs
         if (!isset($_SESSION['user_id'])) {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => 'No autenticado']);
@@ -122,9 +209,6 @@ class DashboardApp {
         
         $this->userRole = $this->user['role'];
         $this->userName = $this->user['name'];
-        
-        $api = $_GET['api'];
-        $method = $_SERVER['REQUEST_METHOD'];
         
         try {
             switch ($api) {
@@ -187,6 +271,10 @@ class DashboardApp {
                     
                 case 'actas':
                     echo json_encode($this->getActasByRole());
+                    break;
+
+                case 'actas-raw':
+                    echo json_encode($this->getActasRaw());
                     break;
 
                 case 'infracciones':
