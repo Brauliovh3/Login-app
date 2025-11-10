@@ -1669,11 +1669,8 @@ async function cargarActasAdmin() {
                             <td><span class="badge ${getEstadoBadgeClass(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
                             <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
                             <td>
-                                <button class="btn btn-sm btn-info me-1" onclick="verDetalleActaAdmin(${acta.id})" title="Ver">
+                                <button class="btn btn-sm btn-info me-1" onclick="verDetalleActa(${acta.id})" title="Ver">
                                     <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-secondary me-1" onclick="duplicarActaAdmin(${acta.id})" title="Duplicar">
-                                    <i class="fas fa-copy"></i>
                                 </button>
                                 <button class="btn btn-sm btn-danger" onclick="eliminarActaAdmin(${acta.id})" title="Eliminar">
                                     <i class="fas fa-trash"></i>
@@ -2945,6 +2942,37 @@ function guardarNuevaActa() {
     console.log('Guardando nueva acta...');
 }
 
+async function limpiarActasErroneas() {
+    showConfirmModal({
+        title: 'Limpiar Actas Erróneas',
+        message: '¿Estás seguro de eliminar todas las actas con datos vacíos o inválidos? Esta acción no se puede deshacer.',
+        type: 'danger',
+        confirmText: 'Sí, Limpiar',
+        cancelText: 'Cancelar',
+        onConfirm: async () => {
+            try {
+                const response = await fetch('limpiar_actas.php', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccessToast(`Se eliminaron ${data.eliminadas} actas erróneas`);
+                    cargarActasAdmin();
+                } else {
+                    showErrorToast('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorToast('Error de conexión: ' + error.message);
+            }
+        }
+    });
+}
+
 // Exportar la nueva función
 window.showCrearActaModal = showCrearActaModal;
 window.cargarDistritos = cargarDistritos;
+window.limpiarActasErroneas = limpiarActasErroneas;

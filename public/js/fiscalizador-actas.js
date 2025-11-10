@@ -845,9 +845,6 @@ function renderizarActasEnTabla(tbody, actas) {
                     <button class="btn btn-sm btn-outline-success" onclick="editarActa(${acta.id})" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
-                        <i class="fas fa-print"></i>
-                    </button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="exportarActaPDF(${acta.id})" title="Exportar PDF">
                         <i class="fas fa-file-pdf"></i>
                     </button>
@@ -2522,9 +2519,9 @@ async function exportarActaPDF(actaId) {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Exportar Acta - ${acta.numero_acta}</title>
+                    <title>Acta ${acta.numero_acta}</title>
                     <style>
-                        body { margin: 0; padding: 0; }
+                        body { margin: 0; padding: 20px; }
                         @media print {
                             body { margin: 0; }
                         }
@@ -2532,16 +2529,19 @@ async function exportarActaPDF(actaId) {
                 </head>
                 <body>
                     ${printContent}
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() {
+                                window.print();
+                            }, 500);
+                        };
+                    </script>
                 </body>
             </html>
         `);
         printWindow.document.close();
-        
-        setTimeout(() => {
-            printWindow.print();
-        }, 500);
 
-        mostrarExitoActas('Vista previa abierta - Use Ctrl+P para guardar como PDF');
+        mostrarExitoActas('PDF generado - Seleccione "Guardar como PDF" en el diálogo de impresión');
 
     } catch (error) {
         if (error.text) {
@@ -3562,9 +3562,6 @@ function mostrarMisActasEnTabla(actas) {
                     <div class="btn-group" role="group">
                         <button class="btn btn-sm btn-outline-primary" onclick="verActa(${acta.id})" title="Ver">
                             <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
-                            <i class="fas fa-print"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-secondary" onclick="exportarActaIndividualPDF(${acta.id})" title="Exportar PDF">
                             <i class="fas fa-file-pdf"></i>

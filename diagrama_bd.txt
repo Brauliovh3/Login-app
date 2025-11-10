@@ -1,0 +1,138 @@
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                    DIAGRAMA DE BASE DE DATOS - SISTEMA DE ACTAS DE TRÁNSITO                ║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────┐
+│       USUARIOS          │
+├─────────────────────────┤
+│ PK  id                  │
+│     name                │
+│     username (unique)   │
+│     email (unique)      │
+│     password            │
+│     role                │
+│     status              │
+│     approved_at         │
+│ FK  approved_by         │
+│     timestamps          │
+└─────────────────────────┘
+           │
+           │ 1:N (crea actas)
+           │
+           ▼
+┌─────────────────────────┐         ┌─────────────────────────┐
+│       EMPRESAS          │         │      INFRACCIONES       │
+├─────────────────────────┤         ├─────────────────────────┤
+│ PK  id                  │         │ PK  id                  │
+│     razon_social        │         │     codigo_infraccion   │
+│     ruc (unique)        │         │     aplica_sobre        │
+│     nombre_comercial    │         │     reglamento          │
+│     direccion           │         │     infraccion          │
+│     distrito            │         │     clase_pago          │
+│     telefono            │         │     sancion             │
+│     email               │         │     gravedad            │
+│     estado              │         │     medida_preventiva   │
+│     timestamps          │         │     estado              │
+└─────────────────────────┘         │     timestamps          │
+           │                        └─────────────────────────┘
+           │ 1:N                               │
+           │                                   │ 1:N
+           ▼                                   │
+┌─────────────────────────┐                   │
+│      CONDUCTORES        │                   │
+├─────────────────────────┤                   │
+│ PK  id                  │                   │
+│     nombres             │                   │
+│     apellidos           │                   │
+│     dni (unique)        │                   │
+│     fecha_nacimiento    │                   │
+│     direccion           │                   │
+│     telefono            │                   │
+│     numero_licencia     │                   │
+│     clase_categoria     │                   │
+│ FK  empresa_id          │                   │
+│     estado              │                   │
+│     puntos_acumulados   │                   │
+│     timestamps          │                   │
+└─────────────────────────┘                   │
+           │                                   │
+           │ 1:N                               │
+           │                                   │
+           ▼                                   │
+┌─────────────────────────┐                   │
+│       VEHICULOS         │                   │
+├─────────────────────────┤                   │
+│ PK  id                  │                   │
+│     placa (unique)      │                   │
+│     marca               │                   │
+│     modelo              │                   │
+│     año                 │                   │
+│     color               │                   │
+│     numero_motor        │                   │
+│     clase               │                   │
+│     categoria           │                   │
+│ FK  empresa_id          │                   │
+│ FK  conductor_id        │                   │
+│     estado              │                   │
+│     fecha_soat          │                   │
+│     timestamps          │                   │
+└─────────────────────────┘                   │
+           │                                   │
+           │ 1:N                               │
+           │                                   │
+           ▼                                   ▼
+┌──────────────────────────────────────────────────────────┐
+│                        ACTAS                             │
+├──────────────────────────────────────────────────────────┤
+│ PK  id                                                   │
+│     numero_acta (unique)                                 │
+│     codigo_ds                                            │
+│     lugar_intervencion                                   │
+│     fecha_intervencion                                   │
+│     hora_intervencion                                    │
+│     inspector_responsable                                │
+│     tipo_servicio                                        │
+│     tipo_agente                                          │
+│     placa                                                │
+│     razon_social                                         │
+│     ruc_dni                                              │
+│     nombre_conductor                                     │
+│     licencia                                             │
+│     origen                                               │
+│     destino                                              │
+│     numero_personas                                      │
+│ FK  conductor_id         ──────────────┐                 │
+│ FK  infraccion_id        ──────────────┼────────────┐    │
+│ FK  inspector_id                       │            │    │
+│ FK  vehiculo_id          ──────────────┼────┐       │    │
+│ FK  user_id                            │    │       │    │
+│     codigo_infraccion                  │    │       │    │
+│     descripcion_infraccion             │    │       │    │
+│     descripcion_hechos                 │    │       │    │
+│     medios_probatorios                 │    │       │    │
+│     calificacion                       │    │       │    │
+│     medida_administrativa              │    │       │    │
+│     sancion                            │    │       │    │
+│     monto_multa                        │    │       │    │
+│     observaciones                      │    │       │    │
+│     estado (0=pendiente, 1=procesada)  │    │       │    │
+│     timestamps                         │    │       │    │
+└──────────────────────────────────────────────────────────┘
+                                              │    │       │
+                                              │    │       │
+                                              ▲    ▲       ▲
+                                              │    │       │
+                                         CONDUCTORES  VEHICULOS  INFRACCIONES
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                                    RELACIONES                                               ║
+╠═══════════════════════════════════════════════════════════════════════════════════════════╣
+║  USUARIOS (1) ──────── (N) ACTAS          │  Un usuario crea múltiples actas              ║
+║  EMPRESAS (1) ──────── (N) CONDUCTORES    │  Una empresa tiene múltiples conductores      ║
+║  EMPRESAS (1) ──────── (N) VEHICULOS      │  Una empresa tiene múltiples vehículos        ║
+║  CONDUCTORES (1) ───── (N) VEHICULOS      │  Un conductor puede tener múltiples vehículos ║
+║  CONDUCTORES (1) ───── (N) ACTAS          │  Un conductor puede tener múltiples actas     ║
+║  VEHICULOS (1) ──────── (N) ACTAS         │  Un vehículo puede tener múltiples actas      ║
+║  INFRACCIONES (1) ───── (N) ACTAS         │  Una infracción puede estar en múltiples actas║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝

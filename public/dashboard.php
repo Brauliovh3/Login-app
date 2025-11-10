@@ -1843,49 +1843,72 @@ class DashboardApp {
     
     private function getActasAdmin() {
         try {
-            // Solo administradores pueden ver TODAS las actas
             if ($this->userRole !== 'administrador' && $this->userRole !== 'admin') {
                 return ['success' => false, 'message' => 'Acceso denegado'];
             }
+
+            if (!$this->tableExists('actas')) {
+                return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
+            }
+
+            $hasAnioActa = $this->columnExists('actas', 'anio_acta');
+            $hasPlacaVehiculo = $this->columnExists('actas', 'placa_vehiculo');
+            $hasNombres = $this->columnExists('actas', 'nombres_conductor');
+            $hasApellidos = $this->columnExists('actas', 'apellidos_conductor');
+            $hasNombrePlano = $this->columnExists('actas', 'nombre_conductor');
+            $hasMonto = $this->columnExists('actas', 'monto_multa');
+            $hasEstado = $this->columnExists('actas', 'estado');
+            $hasCreatedAt = $this->columnExists('actas', 'created_at');
+            $hasFechaIntervencion = $this->columnExists('actas', 'fecha_intervencion');
+            $hasFiscalizador = $this->columnExists('actas', 'fiscalizador_id');
+            $hasCodigoInfraccion = $this->columnExists('actas', 'codigo_infraccion');
+            $hasNumeroActa = $this->columnExists('actas', 'numero_acta');
+            $hasPlaca = $this->columnExists('actas', 'placa');
+
+            $select = [
+                'id',
+                ($hasNumeroActa ? 'numero_acta' : "'' AS numero_acta"),
+                ($hasAnioActa 
+                    ? 'anio_acta' 
+                    : ($hasFechaIntervencion ? "YEAR(COALESCE(fecha_intervencion, NOW())) AS anio_acta" : 'YEAR(NOW()) AS anio_acta')),
+                ($hasPlaca ? 'placa' : "'' AS placa"),
+                ($hasPlacaVehiculo ? 'placa_vehiculo' : "placa AS placa_vehiculo"),
+                ($hasNombres || $hasApellidos
+                    ? "CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor"
+                    : ($hasNombrePlano ? 'nombre_conductor' : "'' AS nombre_conductor")),
+                ($hasNombres ? 'nombres_conductor' : "NULL AS nombres_conductor"),
+                ($hasApellidos ? 'apellidos_conductor' : "NULL AS apellidos_conductor"),
+                'ruc_dni',
+                ($hasCodigoInfraccion ? 'COALESCE(codigo_infraccion, "N/A") as codigo_infraccion' : "'N/A' AS codigo_infraccion"),
+                ($hasMonto ? 'COALESCE(monto_multa, 0) as monto_multa' : '0 AS monto_multa'),
+                ($hasEstado ? 'estado' : '0 AS estado'),
+                ($hasEstado
+                    ? "CASE WHEN estado = 0 THEN 'pendiente' WHEN estado = 1 THEN 'procesada' WHEN estado = 2 THEN 'anulada' WHEN estado = 3 THEN 'pagada' ELSE 'pendiente' END AS estado_texto"
+                    : "'pendiente' AS estado_texto"),
+                ($hasFechaIntervencion ? 'fecha_intervencion' : 'NULL AS fecha_intervencion'),
+                ($hasCreatedAt 
+                    ? 'created_at' 
+                    : ($hasFechaIntervencion ? 'fecha_intervencion AS created_at' : 'NOW() AS created_at')),
+                ($hasFechaIntervencion ? 'fecha_intervencion AS fecha_acta' : 'NOW() AS fecha_acta'),
+                ($hasFiscalizador ? 'fiscalizador_id' : 'NULL AS fiscalizador_id')
+            ];
+
+            $where = [];
+            if ($hasNumeroActa) $where[] = "(numero_acta IS NOT NULL AND numero_acta != '')";
+            if ($hasNombres) $where[] = "(nombres_conductor IS NOT NULL AND nombres_conductor != '')";
+            if ($hasApellidos) $where[] = "(apellidos_conductor IS NOT NULL AND apellidos_conductor != '')";
+            if ($hasNombrePlano) $where[] = "(nombre_conductor IS NOT NULL AND nombre_conductor != '')";
             
-            // Consulta para obtener todas las actas con campos correctos
-            $query = "
-                SELECT 
-                    id,
-                    numero_acta,
-                    placa_vehiculo,
-                    CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor,
-                    nombres_conductor,
-                    apellidos_conductor,
-                    ruc_dni,
-                    COALESCE(codigo_infraccion, 'N/A') as codigo_infraccion,
-                    CASE 
-                        WHEN estado = 0 THEN 'pendiente'
-                        WHEN estado = 1 THEN 'procesada' 
-                        WHEN estado = 2 THEN 'anulada'
-                        WHEN estado = 3 THEN 'pagada'
-                        ELSE 'pendiente'
-                    END AS estado,
-                    fecha_intervencion AS created_at,
-                    fecha_intervencion AS fecha_acta,
-                    fiscalizador_id
-                FROM actas 
-                ORDER BY id DESC 
-                LIMIT 200
-            ";
+            $whereClause = !empty($where) ? "WHERE " . implode(" OR ", $where) : "";
+            $sql = "SELECT " . implode(",\n                ", $select) . "\nFROM actas\n$whereClause\nORDER BY id DESC\nLIMIT 200";
             
-            $stmt = $this->pdo->query($query);
+            $stmt = $this->pdo->query($sql);
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            
-            // Estadísticas básicas
-            $statsQuery = "SELECT COUNT(*) as total_actas FROM actas";
-            $statsStmt = $this->pdo->query($statsQuery);
-            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
             
             return [
                 'success' => true, 
                 'actas' => $actas,
-                'stats' => $stats
+                'stats' => ['total_actas' => count($actas)]
             ];
             
         } catch (Exception $e) {
