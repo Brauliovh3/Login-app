@@ -60,7 +60,7 @@ class DashboardApp {
                 ($hasPlaca ? 'placa' : "'' AS placa"),
                 ($hasPlacaVehiculo ? 'placa_vehiculo' : "placa AS placa_vehiculo"),
                 ($hasNombres || $hasApellidos
-                    ? "CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor"
+                    ? "CONCAT(COALESCE(apellidos_conductor, ''), ' ', COALESCE(nombres_conductor, '')) AS nombre_conductor"
                     : ($hasNombrePlano ? 'nombre_conductor' : "'' AS nombre_conductor")),
                 ($hasNombres ? 'nombres_conductor' : "NULL AS nombres_conductor"),
                 ($hasApellidos ? 'apellidos_conductor' : "NULL AS apellidos_conductor"),
@@ -1874,7 +1874,7 @@ class DashboardApp {
                 ($hasPlaca ? 'placa' : "'' AS placa"),
                 ($hasPlacaVehiculo ? 'placa_vehiculo' : "placa AS placa_vehiculo"),
                 ($hasNombres || $hasApellidos
-                    ? "CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor"
+                    ? "CONCAT(COALESCE(apellidos_conductor, ''), ' ', COALESCE(nombres_conductor, '')) AS nombre_conductor"
                     : ($hasNombrePlano ? 'nombre_conductor' : "'' AS nombre_conductor")),
                 ($hasNombres ? 'nombres_conductor' : "NULL AS nombres_conductor"),
                 ($hasApellidos ? 'apellidos_conductor' : "NULL AS apellidos_conductor"),
@@ -1893,14 +1893,8 @@ class DashboardApp {
                 ($hasFiscalizador ? 'fiscalizador_id' : 'NULL AS fiscalizador_id')
             ];
 
-            $where = [];
-            if ($hasNumeroActa) $where[] = "(numero_acta IS NOT NULL AND numero_acta != '')";
-            if ($hasNombres) $where[] = "(nombres_conductor IS NOT NULL AND nombres_conductor != '')";
-            if ($hasApellidos) $where[] = "(apellidos_conductor IS NOT NULL AND apellidos_conductor != '')";
-            if ($hasNombrePlano) $where[] = "(nombre_conductor IS NOT NULL AND nombre_conductor != '')";
-            
-            $whereClause = !empty($where) ? "WHERE " . implode(" OR ", $where) : "";
-            $sql = "SELECT " . implode(",\n                ", $select) . "\nFROM actas\n$whereClause\nORDER BY id DESC\nLIMIT 200";
+            // Admin ve TODAS las actas sin filtros
+            $sql = "SELECT " . implode(",\n                ", $select) . "\nFROM actas\nORDER BY id DESC\nLIMIT 200";
             
             $stmt = $this->pdo->query($sql);
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -3085,7 +3079,7 @@ class DashboardApp {
             }
             
             $sql = "SELECT *, 
-                CONCAT(COALESCE(nombres_conductor, ''), ' ', COALESCE(apellidos_conductor, '')) AS nombre_conductor
+                CONCAT(COALESCE(apellidos_conductor, ''), ' ', COALESCE(nombres_conductor, '')) AS nombre_conductor
                 FROM actas WHERE ";
             $params = [];
             

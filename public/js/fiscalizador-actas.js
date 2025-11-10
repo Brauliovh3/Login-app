@@ -815,7 +815,30 @@ function renderizarActasEnTabla(tbody, actas) {
         return;
     }
 
-    tbody.innerHTML = actas.map(acta => `
+    tbody.innerHTML = actas.map(acta => {
+        // Construir nombre del conductor
+        let conductor = 'N/A';
+        
+        // Prioridad: nombre_conductor completo, luego apellidos + nombres separados
+        if (acta.nombre_conductor && acta.nombre_conductor.trim() !== '') {
+            conductor = acta.nombre_conductor.trim();
+        } else if (acta.conductor_nombre && acta.conductor_nombre.trim() !== '') {
+            conductor = acta.conductor_nombre.trim();
+        } else {
+            // Intentar construir desde apellidos y nombres separados
+            const apellidos = acta.apellidos_conductor || acta.apellidos || '';
+            const nombres = acta.nombres_conductor || acta.nombres || '';
+            
+            if (apellidos && nombres) {
+                conductor = `${apellidos.trim()}, ${nombres.trim()}`;
+            } else if (apellidos) {
+                conductor = apellidos.trim();
+            } else if (nombres) {
+                conductor = nombres.trim();
+            }
+        }
+        
+        return `
         <tr>
             <td>
                 <strong>${acta.numero_acta || 'N/A'}</strong>
@@ -824,7 +847,7 @@ function renderizarActasEnTabla(tbody, actas) {
                 <span class="badge bg-info">${acta.placa || acta.placa_vehiculo || 'N/A'}</span>
             </td>
             <td>
-                ${acta.conductor_nombre || acta.nombre_conductor || 'N/A'}
+                ${conductor}
             </td>
             <td>
                 <small class="text-muted">${acta.ruc_dni || 'N/A'}</small>
@@ -854,7 +877,8 @@ function renderizarActasEnTabla(tbody, actas) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ================================
@@ -3545,9 +3569,45 @@ function mostrarMisActasEnTabla(actas) {
         return;
     }
 
+    // Debug: ver qué datos llegan
+    console.log('📋 Mostrando actas:', actas.length);
+    if (actas.length > 0) {
+        console.log('📋 Primera acta completa:', actas[0]);
+        console.log('📋 Campos de conductor:', {
+            nombre_conductor: actas[0].nombre_conductor,
+            conductor_nombre: actas[0].conductor_nombre,
+            apellidos_conductor: actas[0].apellidos_conductor,
+            nombres_conductor: actas[0].nombres_conductor,
+            apellidos: actas[0].apellidos,
+            nombres: actas[0].nombres
+        });
+    }
+    
     tbody.innerHTML = actas.map(acta => {
         const placa = acta.placa || acta.placa_vehiculo || 'N/A';
-        const conductor = acta.nombre_conductor || acta.conductor_nombre || 'N/A';
+        
+        // Construir nombre del conductor
+        let conductor = 'N/A';
+        
+        // Prioridad: nombre_conductor completo, luego apellidos + nombres separados
+        if (acta.nombre_conductor && acta.nombre_conductor.trim() !== '') {
+            conductor = acta.nombre_conductor.trim();
+        } else if (acta.conductor_nombre && acta.conductor_nombre.trim() !== '') {
+            conductor = acta.conductor_nombre.trim();
+        } else {
+            // Intentar construir desde apellidos y nombres separados
+            const apellidos = acta.apellidos_conductor || acta.apellidos || '';
+            const nombres = acta.nombres_conductor || acta.nombres || '';
+            
+            if (apellidos && nombres) {
+                conductor = `${apellidos.trim()}, ${nombres.trim()}`;
+            } else if (apellidos) {
+                conductor = apellidos.trim();
+            } else if (nombres) {
+                conductor = nombres.trim();
+            }
+        }
+        
         const fecha = acta.fecha_intervencion || (acta.created_at ? formatDate(acta.created_at) : 'N/A');
 
         return `

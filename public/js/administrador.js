@@ -1660,11 +1660,28 @@ async function cargarActasAdmin() {
             const tbody = document.getElementById('actas-admin-list');
             if (tbody) {
                 if (actas.length > 0) {
-                    tbody.innerHTML = actas.map(acta => `
+                    tbody.innerHTML = actas.map(acta => {
+                        // Construir nombre del conductor
+                        let conductor = 'N/A';
+                        if (acta.nombre_conductor && acta.nombre_conductor.trim() !== '') {
+                            conductor = acta.nombre_conductor.trim();
+                        } else {
+                            const apellidos = acta.apellidos_conductor || '';
+                            const nombres = acta.nombres_conductor || '';
+                            if (apellidos && nombres) {
+                                conductor = `${apellidos.trim()} ${nombres.trim()}`;
+                            } else if (apellidos) {
+                                conductor = apellidos.trim();
+                            } else if (nombres) {
+                                conductor = nombres.trim();
+                            }
+                        }
+                        
+                        return `
                         <tr>
                             <td><strong>#${acta.id || 'N/A'}</strong></td>
                             <td><span class="badge bg-info">${acta.numero_acta || 'N/A'}</span></td>
-                            <td>${acta.nombre_conductor || 'N/A'}</td>
+                            <td>${conductor}</td>
                             <td><small class="text-muted">${acta.ruc_dni || 'N/A'}</small></td>
                             <td><span class="badge ${getEstadoBadgeClass(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
                             <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
@@ -1677,7 +1694,8 @@ async function cargarActasAdmin() {
                                 </button>
                             </td>
                         </tr>
-                    `).join('');
+                    `;
+                    }).join('');
                 } else {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay actas registradas en el sistema</td></tr>';
                 }
@@ -2926,20 +2944,225 @@ function cargarDistritos() {
 }
 
 // Funciones placeholder para evitar errores
+// Variable global para almacenar todos los códigos
+let todosLosCodigos = [];
+
 function configurarValidacionDinamica() {
-    console.log('Configurando validación dinámica...');
+    const camposObligatorios = [
+        'ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio',
+        'apellidos_conductor', 'nombres_conductor', 'lugar_intervencion', 'provincia'
+    ];
+    
+    const validarFormulario = () => {
+        const todosCompletos = camposObligatorios.every(id => {
+            const campo = document.getElementById(id);
+            return campo && campo.value.trim() !== '';
+        });
+        
+        const botonesAccion = document.getElementById('botonesAccion');
+        const estadoValidacion = document.getElementById('estadoValidacion');
+        
+        if (todosCompletos) {
+            botonesAccion.classList.add('activo');
+            estadoValidacion.innerHTML = '<i class="fas fa-check-circle"></i> Formulario completo - Opciones disponibles';
+            estadoValidacion.className = 'text-success text-center fw-bold';
+        } else {
+            botonesAccion.classList.remove('activo');
+            estadoValidacion.innerHTML = '<i class="fas fa-exclamation-circle"></i> Complete los 8 campos obligatorios para ver las opciones';
+            estadoValidacion.className = 'text-warning text-center fw-bold';
+        }
+    };
+    
+    camposObligatorios.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.addEventListener('input', validarFormulario);
+            campo.addEventListener('change', validarFormulario);
+        }
+    });
+    
+    validarFormulario();
 }
 
-function cargarCodigosInfracciones() {
-    console.log('Cargando códigos de infracciones...');
+async function cargarCodigosInfracciones() {
+    console.log('📋 Cargando códigos de infracciones...');
+    
+    try {
+        const response = await fetch('/dashboard.php?api=codigos-infracciones', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.codigos) {
+            todosLosCodigos = data.codigos;
+            
+            const codigosBase = {};
+            todosLosCodigos.forEach(item => {
+                const base = item.codigo.split('-')[0];
+                if (!codigosBase[base]) {
+                    codigosBase[base] = {
+                        codigo: base,
+                        gravedad: item.gravedad,
+                        descripcion: item.descripcion
+                    };
+                }
+            });
+            
+            const selectBase = document.getElementById('codigo_base');
+            if (!selectBase) {
+                console.error('❌ Select base no encontrado');
+                return;
+            }
+            
+            selectBase.innerHTML = '<option value="">Seleccione código...</option>';
+            
+            Object.keys(codigosBase).sort().forEach(base => {
+                const option = document.createElement('option');
+                option.value = base;
+                option.textContent = `${base} - ${codigosBase[base].gravedad}`;
+                option.dataset.gravedad = codigosBase[base].gravedad;
+                selectBase.appendChild(option);
+            });
+            
+            console.log(`✅ ${Object.keys(codigosBase).length} códigos base cargados`);
+            
+            selectBase.addEventListener('change', onCodigoBaseChange);
+            
+            const selectSubcat = document.getElementById('subcategoria');
+            if (selectSubcat) {
+                selectSubcat.addEventListener('change', onSubcategoriaChange);
+            }
+        } else {
+            console.error('❌ Error al cargar códigos:', data.message);
+            showErrorToast('No se pudieron cargar los códigos de infracciones');
+        }
+    } catch (error) {
+        console.error('💥 Error al cargar códigos:', error);
+        showErrorToast('Error de conexión al cargar códigos');
+    }
 }
 
-function exportarActaActual(formato) {
-    console.log('Exportando acta actual en formato:', formato);
+function onCodigoBaseChange(event) {
+    const codigoBase = event.target.value;
+    const selectSubcat = document.getElementById('subcategoria');
+    const badgeGravedad = document.getElementById('badge_gravedad');
+    const textareaDesc = document.getElementById('descripcion_infraccion');
+    const hiddenCodigo = document.getElementById('codigo_infraccion');
+    
+    selectSubcat.innerHTML = '<option value="">Seleccione subcategoría...</option>';
+    textareaDesc.value = '';
+    hiddenCodigo.value = '';
+    badgeGravedad.textContent = 'Sin seleccionar';
+    badgeGravedad.className = 'badge bg-secondary';
+    
+    if (!codigoBase) {
+        selectSubcat.disabled = true;
+        return;
+    }
+    
+    const selectedOption = event.target.options[event.target.selectedIndex];
+    const gravedad = selectedOption.dataset.gravedad;
+    if (gravedad) {
+        badgeGravedad.textContent = gravedad;
+        const gravedadClass = gravedad === 'Muy Grave' ? 'bg-danger' : (gravedad === 'Grave' ? 'bg-warning' : 'bg-info');
+        badgeGravedad.className = `badge ${gravedadClass}`;
+    }
+    
+    const subcategorias = todosLosCodigos.filter(c => c.codigo.startsWith(codigoBase + '-') || c.codigo === codigoBase);
+    
+    if (subcategorias.length > 0) {
+        subcategorias.forEach(subcat => {
+            const option = document.createElement('option');
+            option.value = subcat.codigo;
+            option.textContent = subcat.codigo;
+            option.dataset.descripcion = subcat.descripcion;
+            selectSubcat.appendChild(option);
+        });
+        selectSubcat.disabled = false;
+    } else {
+        selectSubcat.innerHTML = '<option value="">No hay subcategorías</option>';
+        selectSubcat.disabled = true;
+    }
 }
 
-function guardarNuevaActa() {
-    console.log('Guardando nueva acta...');
+function onSubcategoriaChange(event) {
+    const codigoCompleto = event.target.value;
+    const textareaDesc = document.getElementById('descripcion_infraccion');
+    const hiddenCodigo = document.getElementById('codigo_infraccion');
+    
+    if (!codigoCompleto) {
+        textareaDesc.value = '';
+        hiddenCodigo.value = '';
+        return;
+    }
+    
+    const selectedOption = event.target.options[event.target.selectedIndex];
+    const descripcion = selectedOption.dataset.descripcion;
+    
+    if (descripcion) {
+        textareaDesc.value = descripcion;
+    }
+    
+    hiddenCodigo.value = codigoCompleto;
+}
+
+async function exportarActaActual(formato) {
+    console.log('📤 Exportando acta en formato:', formato);
+    showInfoToast(`Preparando exportación en formato ${formato.toUpperCase()}...`);
+}
+
+async function guardarNuevaActa() {
+    console.log('💾 Guardando nueva acta...');
+    
+    const form = document.getElementById('formCrearActa');
+    if (!form) {
+        showErrorToast('Formulario no encontrado');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    const camposRequeridos = ['ruc_dni', 'placa', 'tipo_agente', 'tipo_servicio', 'apellidos_conductor', 'nombres_conductor', 'lugar_intervencion'];
+    const camposFaltantes = camposRequeridos.filter(campo => !data[campo] || data[campo].trim() === '');
+    
+    if (camposFaltantes.length > 0) {
+        showErrorToast('Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/dashboard.php?api=crear-acta', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            credentials: 'same-origin'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccessToast('Acta creada exitosamente');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('generalModal'));
+            if (modal) modal.hide();
+            if (typeof cargarActasAdmin === 'function') {
+                cargarActasAdmin();
+            }
+        } else {
+            showErrorToast('Error al crear acta: ' + (result.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('💥 Error:', error);
+        showErrorToast('Error de conexión al guardar acta');
+    }
 }
 
 async function limpiarActasErroneas() {
