@@ -2908,13 +2908,24 @@ class DashboardApp {
             }
             
             // Crear columna motivo_anulacion si no existe
-            if (!$this->columnExists('actas', 'motivo_anulacion')) {
-                $this->pdo->exec("ALTER TABLE actas ADD COLUMN motivo_anulacion TEXT NULL");
+            try {
+                if (!$this->columnExists('actas', 'motivo_anulacion')) {
+                    $this->pdo->exec("ALTER TABLE actas ADD COLUMN motivo_anulacion TEXT NULL");
+                }
+            } catch (Exception $e) {
+                // Si falla, probablemente la columna ya existe, continuar
+                error_log('Info: columna motivo_anulacion ya existe o error al crearla: ' . $e->getMessage());
             }
             
             // Actualizar acta a estado Anulado (2) con motivo
-            $updateFields = ['estado = ?', 'motivo_anulacion = ?'];
-            $params = [2, $motivo]; // 2 = anulada
+            $updateFields = ['estado = ?'];
+            $params = [2]; // 2 = anulada
+            
+            // Solo agregar motivo_anulacion si la columna existe
+            if ($this->columnExists('actas', 'motivo_anulacion')) {
+                $updateFields[] = 'motivo_anulacion = ?';
+                $params[] = $motivo;
+            }
             
             // Agregar campos adicionales si existen en la tabla
             if ($this->columnExists('actas', 'fecha_anulacion')) {

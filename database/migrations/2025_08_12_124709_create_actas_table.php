@@ -32,8 +32,9 @@ return new class extends Migration
             $table->string('placa')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas
             $table->string('placa_vehiculo')->nullable(); // Campo legacy
             $table->string('razon_social')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas  
-            $table->string('ruc_dni')->nullable(); // Hacer nullable como estaba en las migraciones eliminadas
-            $table->string('nombre_conductor')->nullable();
+            $table->string('ruc_dni')->nullable();
+            $table->string('apellidos_conductor', 100)->nullable();
+            $table->string('nombres_conductor', 100)->nullable();
             $table->string('licencia')->nullable();
             $table->string('clase_licencia')->nullable();
             $table->string('origen')->nullable();
@@ -73,10 +74,15 @@ return new class extends Migration
             // Campo usado por seeders y scripts antiguos
             $table->text('observaciones')->nullable();
 
-            // Estado y metadatos (cambiar a tinyint como estaba en migraciones eliminadas)
+            // Estado y metadatos
             $table->tinyInteger('estado')->default(0); // 0=pendiente, 1=procesada, 2=anulada, 3=pagada
-            // Inspector que creó el acta. Usamos columna idx en lugar de FK para
-            // evitar errores en instalaciones con tablas distintas.
+            
+            // Campos de anulación
+            $table->text('motivo_anulacion')->nullable();
+            $table->timestamp('fecha_anulacion')->nullable();
+            $table->unsignedBigInteger('anulado_por')->nullable();
+            
+            // Inspector que creó el acta
             $table->unsignedBigInteger('user_id')->nullable()->index();
 
             $table->timestamps();
