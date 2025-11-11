@@ -1847,56 +1847,7 @@ class DashboardApp {
                 return ['success' => false, 'message' => 'Acceso denegado'];
             }
 
-            if (!$this->tableExists('actas')) {
-                return ['success' => true, 'actas' => [], 'stats' => ['total_actas' => 0]];
-            }
-
-            $hasAnioActa = $this->columnExists('actas', 'anio_acta');
-            $hasPlacaVehiculo = $this->columnExists('actas', 'placa_vehiculo');
-            $hasNombres = $this->columnExists('actas', 'nombres_conductor');
-            $hasApellidos = $this->columnExists('actas', 'apellidos_conductor');
-            $hasNombrePlano = $this->columnExists('actas', 'nombre_conductor');
-            $hasMonto = $this->columnExists('actas', 'monto_multa');
-            $hasEstado = $this->columnExists('actas', 'estado');
-            $hasCreatedAt = $this->columnExists('actas', 'created_at');
-            $hasFechaIntervencion = $this->columnExists('actas', 'fecha_intervencion');
-            $hasFiscalizador = $this->columnExists('actas', 'fiscalizador_id');
-            $hasCodigoInfraccion = $this->columnExists('actas', 'codigo_infraccion');
-            $hasNumeroActa = $this->columnExists('actas', 'numero_acta');
-            $hasPlaca = $this->columnExists('actas', 'placa');
-
-            $select = [
-                'id',
-                ($hasNumeroActa ? 'numero_acta' : "'' AS numero_acta"),
-                ($hasAnioActa 
-                    ? 'anio_acta' 
-                    : ($hasFechaIntervencion ? "YEAR(COALESCE(fecha_intervencion, NOW())) AS anio_acta" : 'YEAR(NOW()) AS anio_acta')),
-                ($hasPlaca ? 'placa' : "'' AS placa"),
-                ($hasPlacaVehiculo ? 'placa_vehiculo' : "placa AS placa_vehiculo"),
-                ($hasNombres || $hasApellidos
-                    ? "CONCAT(COALESCE(apellidos_conductor, ''), ' ', COALESCE(nombres_conductor, '')) AS nombre_conductor"
-                    : ($hasNombrePlano ? 'nombre_conductor' : "'' AS nombre_conductor")),
-                ($hasNombres ? 'nombres_conductor' : "NULL AS nombres_conductor"),
-                ($hasApellidos ? 'apellidos_conductor' : "NULL AS apellidos_conductor"),
-                'ruc_dni',
-                ($hasCodigoInfraccion ? 'COALESCE(codigo_infraccion, "N/A") as codigo_infraccion' : "'N/A' AS codigo_infraccion"),
-                ($hasMonto ? 'COALESCE(monto_multa, 0) as monto_multa' : '0 AS monto_multa'),
-                ($hasEstado ? 'estado' : '0 AS estado'),
-                ($hasEstado
-                    ? "CASE WHEN estado = 0 THEN 'pendiente' WHEN estado = 1 THEN 'procesada' WHEN estado = 2 THEN 'anulada' WHEN estado = 3 THEN 'pagada' ELSE 'pendiente' END AS estado_texto"
-                    : "'pendiente' AS estado_texto"),
-                ($hasFechaIntervencion ? 'fecha_intervencion' : 'NULL AS fecha_intervencion'),
-                ($hasCreatedAt 
-                    ? 'created_at' 
-                    : ($hasFechaIntervencion ? 'fecha_intervencion AS created_at' : 'NOW() AS created_at')),
-                ($hasFechaIntervencion ? 'fecha_intervencion AS fecha_acta' : 'NOW() AS fecha_acta'),
-                ($hasFiscalizador ? 'fiscalizador_id' : 'NULL AS fiscalizador_id')
-            ];
-
-            // Admin ve TODAS las actas sin filtros
-            $sql = "SELECT " . implode(",\n                ", $select) . "\nFROM actas\nORDER BY id DESC\nLIMIT 200";
-            
-            $stmt = $this->pdo->query($sql);
+            $stmt = $this->pdo->query("SELECT * FROM actas ORDER BY id DESC LIMIT 200");
             $actas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             
             return [

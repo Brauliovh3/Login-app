@@ -1580,12 +1580,12 @@ function loadActasList() {
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Informe</th>
-                                            <th>Conductor</th>
-                                            <th>Licencia</th>
-                                            <th>Estado</th>
+                                            <th>N° Acta</th>
                                             <th>Fecha</th>
+                                            <th>Placa</th>
+                                            <th>Conductor</th>
+                                            <th>Estado</th>
+                                            <th>Código</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -1661,37 +1661,32 @@ async function cargarActasAdmin() {
             if (tbody) {
                 if (actas.length > 0) {
                     tbody.innerHTML = actas.map(acta => {
-                        // Construir nombre del conductor
-                        let conductor = 'N/A';
-                        if (acta.nombre_conductor && acta.nombre_conductor.trim() !== '') {
-                            conductor = acta.nombre_conductor.trim();
-                        } else {
-                            const apellidos = acta.apellidos_conductor || '';
-                            const nombres = acta.nombres_conductor || '';
-                            if (apellidos && nombres) {
-                                conductor = `${apellidos.trim()} ${nombres.trim()}`;
-                            } else if (apellidos) {
-                                conductor = apellidos.trim();
-                            } else if (nombres) {
-                                conductor = nombres.trim();
-                            }
-                        }
+                        const placa = acta.placa_vehiculo || acta.placa || 'N/A';
+                        const apellidos = acta.apellidos_conductor || '';
+                        const nombres = acta.nombres_conductor || '';
+                        const conductor = (apellidos && nombres) ? `${apellidos} ${nombres}` : (apellidos || nombres || 'N/A');
+                        const fecha = acta.fecha_intervencion || formatDate(acta.created_at) || 'N/A';
+                        const estadoNum = parseInt(acta.estado) || 0;
+                        const estadoTexto = estadoNum === 0 ? 'pendiente' : estadoNum === 1 ? 'procesada' : estadoNum === 2 ? 'anulada' : 'pagada';
+                        const estadoBadge = estadoNum === 0 ? 'bg-warning' : estadoNum === 2 ? 'bg-danger' : estadoNum === 3 ? 'bg-success' : 'bg-info';
                         
                         return `
                         <tr>
-                            <td><strong>#${acta.id || 'N/A'}</strong></td>
-                            <td><span class="badge bg-info">${acta.numero_acta || 'N/A'}</span></td>
+                            <td><strong>${acta.numero_acta || 'N/A'}</strong></td>
+                            <td>${fecha}</td>
+                            <td><span class="badge bg-info">${placa}</span></td>
                             <td>${conductor}</td>
-                            <td><small class="text-muted">${acta.ruc_dni || 'N/A'}</small></td>
-                            <td><span class="badge ${getEstadoBadgeClass(acta.estado)}">${acta.estado || 'pendiente'}</span></td>
-                            <td><small class="text-muted">${formatDate(acta.fecha_acta || acta.created_at)}</small></td>
-                            <td>
-                                <button class="btn btn-sm btn-info me-1" onclick="verDetalleActa(${acta.id})" title="Ver">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="eliminarActaAdmin(${acta.id})" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                            <td><span class="badge ${estadoBadge}">${estadoTexto}</span></td>
+                            <td><strong>${acta.codigo_infraccion || 'N/A'}</strong></td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="verDetalleActa(${acta.id})" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarActaAdmin(${acta.id})" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
