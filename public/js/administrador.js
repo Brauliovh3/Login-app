@@ -1713,30 +1713,23 @@ async function cargarActasAdmin() {
     }
 }
 
-function getEstadoBadgeClassActa(estado) {
-    switch(estado) {
-        case 'aprobado': return 'success';
-        case 'procesado': return 'primary';
-        case 'pendiente': return 'warning';
-        case 'rechazado': return 'danger';
-        default: return 'secondary';
-    }
-}
-
-// Función para obtener la clase del badge según el estado del acta
+// Función unificada para obtener la clase del badge según el estado
 function getEstadoBadgeClass(estado) {
     const estadoLower = (estado || '').toLowerCase().trim();
     switch(estadoLower) {
-        case 'pendiente': return 'bg-warning text-dark';
+        case 'pendiente': return 'warning';
         case 'procesada': 
-        case 'procesado': return 'bg-primary';
+        case 'procesado': return 'info';
         case 'aprobada':
-        case 'aprobado': return 'bg-success';
+        case 'aprobado': return 'success';
         case 'anulada':
-        case 'anulado': return 'bg-danger';
+        case 'anulado': return 'danger';
         case 'pagada':
-        case 'pagado': return 'bg-info';
-        default: return 'bg-secondary';
+        case 'pagado': return 'info';
+        case 'en_transito':
+        case 'en tránsito':
+        case 'en-transito': return 'secondary';
+        default: return 'secondary';
     }
 }
 
@@ -1877,7 +1870,7 @@ function loadGestionarInfracciones() {
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
                                 <h5><i class="fas fa-list"></i> Infracciones Registradas</h5>
@@ -1910,40 +1903,6 @@ function loadGestionarInfracciones() {
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-pie"></i> Estadísticas</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span>Total Infracciones:</span>
-                                    <span class="badge bg-primary" id="totalInfracciones">0</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span>Activas:</span>
-                                    <span class="badge bg-success" id="infraccionesActivas">0</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>Inactivas:</span>
-                                    <span class="badge bg-secondary" id="infraccionesInactivas">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h5><i class="fas fa-info-circle"></i> Información</h5>
-                            </div>
-                            <div class="card-body">
-                                <p class="small text-muted">
-                                    Las infracciones son la base para la generación de actas. 
-                                    Cada infracción tiene un código único y monto base establecido.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -1970,7 +1929,6 @@ async function cargarInfraccionesAdmin() {
         
         if (data.success) {
             mostrarInfraccionesEnTabla(data.infracciones);
-            actualizarEstadisticasInfracciones(data.infracciones);
         } else {
             showErrorToast('Error al cargar infracciones: ' + (data.message || 'Error desconocido'));
         }
@@ -1998,9 +1956,9 @@ function mostrarInfraccionesEnTabla(infracciones) {
     
     tbody.innerHTML = infracciones.map(infraccion => {
         const gravedadClase = {
-            'leve': 'success',
-            'grave': 'warning', 
-            'muy_grave': 'danger'
+            'Leve': 'success',
+            'Grave': 'warning', 
+            'Muy grave': 'danger'
         }[infraccion.gravedad] || 'secondary';
         
         return `
@@ -2008,7 +1966,7 @@ function mostrarInfraccionesEnTabla(infracciones) {
                 <td><strong>${infraccion.codigo_infraccion}</strong></td>
                 <td>${infraccion.descripcion}</td>
                 <td><span class="badge bg-${gravedadClase}">${infraccion.gravedad || 'N/A'}</span></td>
-                <td>S/ ${parseFloat(infraccion.monto_base || 0).toFixed(2)}</td>
+                <td>${infraccion.sancion || 'N/A'}</td>
                 <td><span class="badge bg-success">Activa</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline-warning me-1" onclick="editarInfraccion(${infraccion.id})" title="Editar">
@@ -2023,14 +1981,119 @@ function mostrarInfraccionesEnTabla(infracciones) {
     }).join('');
 }
 
-function actualizarEstadisticasInfracciones(infracciones) {
-    const total = infracciones.length;
-    const activas = infracciones.filter(i => i.estado === 'activa').length;
-    const inactivas = total - activas;
+function mostrarModalNuevaInfraccion() {
+    const modalHTML = `
+        <div class="modal fade" id="modalNuevaInfraccion" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-plus-circle"></i> Nueva Infracción
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formNuevaInfraccion">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Código de Infracción *</label>
+                                        <input type="text" class="form-control" id="codigoInfraccion" required 
+                                               placeholder="Ej: F.1, I.2-a, L.3">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Gravedad *</label>
+                                        <select class="form-select" id="gravedadInfraccion" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="Leve">Leve</option>
+                                            <option value="Grave">Grave</option>
+                                            <option value="Muy grave">Muy Grave</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Descripción *</label>
+                                <textarea class="form-control" id="descripcionInfraccion" rows="3" required
+                                          placeholder="Descripción detallada de la infracción"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Sanción *</label>
+                                <input type="text" class="form-control" id="sancionInfraccion" required
+                                       placeholder="Ej: 1 UIT, 0.5 UIT, Suspensión de licencia">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevaInfraccion()">
+                            <i class="fas fa-save"></i> Guardar Infracción
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
-    document.getElementById('totalInfracciones').textContent = total;
-    document.getElementById('infraccionesActivas').textContent = activas;
-    document.getElementById('infraccionesInactivas').textContent = inactivas;
+    const existingModal = document.getElementById('modalNuevaInfraccion');
+    if (existingModal) existingModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = new bootstrap.Modal(document.getElementById('modalNuevaInfraccion'));
+    modal.show();
+}
+
+async function guardarNuevaInfraccion() {
+    const codigo = document.getElementById('codigoInfraccion').value.trim();
+    const gravedad = document.getElementById('gravedadInfraccion').value;
+    const descripcion = document.getElementById('descripcionInfraccion').value.trim();
+    const sancion = document.getElementById('sancionInfraccion').value.trim();
+    
+    if (!codigo || !gravedad || !descripcion || !sancion) {
+        showErrorToast('Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    const btnGuardar = document.querySelector('#modalNuevaInfraccion .btn-primary');
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    
+    try {
+        const response = await fetch('dashboard.php?api=crear-infraccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ codigo, gravedad, descripcion, sancion }),
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccessToast('Infracción creada exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('modalNuevaInfraccion')).hide();
+            cargarInfraccionesAdmin();
+        } else {
+            showErrorToast('Error: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showErrorToast('Error de conexión');
+    } finally {
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Infracción';
+    }
+}
+
+function editarInfraccion(id) {
+    showInfoToast('Función de edición en desarrollo');
+}
+
+function eliminarInfraccion(id) {
+    showInfoToast('Función de eliminación en desarrollo');
 }
 
 // ==================== GESTIÓN DE CARGA Y PASAJEROS ====================
@@ -2336,18 +2399,7 @@ async function cargarEstadisticasCarga() {
   }
 }
 
-// Función que devuelve la clase del badge (devuelve la parte final: 'warning','info','success','secondary')
-function getEstadoBadgeClass(estadoRaw) {
-  const estado = (estadoRaw || '').toLowerCase().trim();
 
-  if (estado === 'pendiente') return 'warning';
-  if (estado === 'procesado' || estado === 'procesada') return 'info';
-  if (estado === 'aprobado' || estado === 'aprobada') return 'success';
-  if (estado === 'en_transito' || estado === 'en tránsito' || estado === 'en-transito') return 'secondary';
-
-  // fallback
-  return 'secondary';
-}
 
 // Renderizado/lectura de la lista (reemplaza la función antigua cargarDatosCargaPasajeros si existe)
 async function cargarDatosCargaPasajeros() {
@@ -2613,6 +2665,10 @@ window.loadAprobarUsuarios = loadAprobarUsuarios;
 window.loadActasList = loadActasList;
 window.loadCrearActa = loadCrearActa;
 window.loadGestionarInfracciones = loadGestionarInfracciones;
+window.mostrarModalNuevaInfraccion = mostrarModalNuevaInfraccion;
+window.guardarNuevaInfraccion = guardarNuevaInfraccion;
+window.editarInfraccion = editarInfraccion;
+window.eliminarInfraccion = eliminarInfraccion;
 window.loadCargaPasajerosList = loadCargaPasajerosList;
 window.loadCrearCargaPasajero = loadCrearCargaPasajero;
 window.loadEstadisticasCarga = loadEstadisticasCarga;
@@ -2857,6 +2913,9 @@ function showCrearActaModal() {
         </style>
         <div class="d-flex justify-content-center align-items-center w-100 flex-column gap-3">
             <div id="botonesAccion" class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioActa()">
+                    <i class="fas fa-eraser"></i> Limpiar
+                </button>
                 <button type="button" class="btn btn-success" onclick="exportarActaActual('excel')">
                     <i class="fas fa-file-excel"></i> Exportar Excel
                 </button>
@@ -3190,7 +3249,74 @@ async function limpiarActasErroneas() {
     });
 }
 
+// Función para limpiar el formulario de acta
+function limpiarFormularioActa() {
+    const form = document.getElementById('formCrearActa');
+    if (!form) {
+        showErrorToast('Formulario no encontrado');
+        return;
+    }
+    
+    // Resetear todos los campos del formulario
+    form.reset();
+    
+    // Limpiar campos específicos que no se resetean automáticamente
+    const camposALimpiar = [
+        'ruc_dni', 'razon_social', 'placa', 'tipo_agente', 'tipo_servicio',
+        'apellidos_conductor', 'nombres_conductor', 'licencia_conductor',
+        'provincia', 'distrito', 'lugar_intervencion', 'codigo_base',
+        'subcategoria', 'descripcion_infraccion', 'codigo_infraccion'
+    ];
+    
+    camposALimpiar.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.value = '';
+        }
+    });
+    
+    // Resetear el select de distrito
+    const distritoSelect = document.getElementById('distrito');
+    if (distritoSelect) {
+        distritoSelect.innerHTML = '<option value="">Primero seleccione provincia</option>';
+        distritoSelect.disabled = true;
+    }
+    
+    // Resetear el select de subcategoría
+    const subcategoriaSelect = document.getElementById('subcategoria');
+    if (subcategoriaSelect) {
+        subcategoriaSelect.innerHTML = '<option value="">Primero seleccione código</option>';
+        subcategoriaSelect.disabled = true;
+    }
+    
+    // Resetear el badge de gravedad
+    const badgeGravedad = document.getElementById('badge_gravedad');
+    if (badgeGravedad) {
+        badgeGravedad.textContent = 'Sin seleccionar';
+        badgeGravedad.className = 'badge bg-secondary';
+    }
+    
+    // Reconfigurar timestamp automático
+    configurarTimestampAutomatico();
+    
+    // Ocultar botones de acción
+    const botonesAccion = document.getElementById('botonesAccion');
+    if (botonesAccion) {
+        botonesAccion.classList.remove('activo');
+    }
+    
+    // Actualizar mensaje de validación
+    const estadoValidacion = document.getElementById('estadoValidacion');
+    if (estadoValidacion) {
+        estadoValidacion.innerHTML = '<i class="fas fa-exclamation-circle"></i> Complete los 8 campos obligatorios para ver las opciones';
+        estadoValidacion.className = 'text-warning text-center fw-bold';
+    }
+    
+    showSuccessToast('Formulario limpiado correctamente');
+}
+
 // Exportar la nueva función
 window.showCrearActaModal = showCrearActaModal;
 window.cargarDistritos = cargarDistritos;
 window.limpiarActasErroneas = limpiarActasErroneas;
+window.limpiarFormularioActa = limpiarFormularioActa;

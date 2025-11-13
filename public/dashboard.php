@@ -280,6 +280,15 @@ class DashboardApp {
                 case 'infracciones':
                     echo json_encode($this->getInfracciones());
                     break;
+                    
+                case 'crear-infraccion':
+                    if ($method === 'POST') {
+                        echo json_encode($this->crearInfraccion());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
 
                 case 'carga-pasajeros':
                     if ($method === 'GET') {
@@ -506,6 +515,33 @@ class DashboardApp {
                 case 'actualizar-carga-pasajero':
                     if ($method === 'PUT' || $method === 'POST') {
                         echo json_encode($this->updateCargaPasajero());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'perfil':
+                    if ($method === 'GET') {
+                        echo json_encode($this->getUserProfile());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'update-perfil':
+                    if ($method === 'POST') {
+                        echo json_encode($this->updateUserProfile());
+                    } else {
+                        http_response_code(405);
+                        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+                    }
+                    break;
+                    
+                case 'upload-profile-image':
+                    if ($method === 'POST') {
+                        echo json_encode($this->uploadProfileImage());
                     } else {
                         http_response_code(405);
                         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
@@ -1594,93 +1630,27 @@ class DashboardApp {
                 $this->createInfraccionesTable();
             }
             
-            // Obtener estadísticas detalladas de infracciones
-            $statsQuery = "
-                SELECT 
-                    COUNT(*) as total_infracciones,
-                    SUM(CASE WHEN estado = 'activo' THEN 1 ELSE 0 END) as activas,
-                    SUM(CASE WHEN estado = 'inactivo' THEN 1 ELSE 0 END) as inactivas,
-                    SUM(CASE WHEN gravedad = 'Leve' THEN 1 ELSE 0 END) as leves,
-                    SUM(CASE WHEN gravedad = 'Grave' THEN 1 ELSE 0 END) as graves,
-                    SUM(CASE WHEN gravedad = 'Muy grave' THEN 1 ELSE 0 END) as muy_graves,
-                    SUM(CASE WHEN aplica_sobre = 'Transportista' THEN 1 ELSE 0 END) as transportista,
-                    SUM(CASE WHEN aplica_sobre = 'Conductor' THEN 1 ELSE 0 END) as conductor,
-                    SUM(CASE WHEN clase_pago = 'Pecuniaria' THEN 1 ELSE 0 END) as pecuniarias,
-                    SUM(CASE WHEN clase_pago = 'No pecuniaria' THEN 1 ELSE 0 END) as no_pecuniarias
-                FROM infracciones
-            ";
-            
-            $statsStmt = $this->pdo->query($statsQuery);
-            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Obtener infracciones con información completa
+            // Obtener infracciones básicas
             $stmt = $this->pdo->query("
                 SELECT 
                     id,
                     codigo_infraccion,
-                    aplica_sobre,
-                    reglamento,
-                    norma_modificatoria,
                     infraccion as descripcion,
-                    clase_pago,
-                    sancion,
-                    tipo,
-                    medida_preventiva,
                     gravedad,
-                    otros_responsables_otros_beneficios,
-                    estado,
-                    created_at,
-                    updated_at,
-                    CASE 
-                        WHEN sancion LIKE '%UIT%' THEN 
-                            CASE 
-                                WHEN sancion LIKE '1 UIT%' THEN 5150.00
-                                WHEN sancion LIKE '0.5 UIT%' THEN 2575.00
-                                WHEN sancion LIKE '0.25 UIT%' THEN 1287.50
-                                WHEN sancion LIKE '0.1 UIT%' THEN 515.00
-                                ELSE 0.00
-                            END
-                        ELSE 0.00
-                    END as monto_base_uit
+                    sancion
                 FROM infracciones 
-                ORDER BY 
-                    CASE gravedad 
-                        WHEN 'Muy grave' THEN 1
-                        WHEN 'Grave' THEN 2
-                        WHEN 'Leve' THEN 3
-                    END,
-                    codigo_infraccion 
+                ORDER BY codigo_infraccion
                 LIMIT 200
             ");
             $infracciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Obtener infracciones más frecuentes (simulado)
-            $frecuentesQuery = "
-                SELECT 
-                    codigo_infraccion,
-                    infraccion as descripcion,
-                    gravedad,
-                    sancion,
-                    COUNT(*) as frecuencia
-                FROM infracciones i
-                LEFT JOIN actas a ON i.codigo_infraccion = a.codigo_infraccion
-                WHERE i.estado = 'activo'
-                GROUP BY i.id, i.codigo_infraccion, i.infraccion, i.gravedad, i.sancion
-                ORDER BY frecuencia DESC, i.codigo_infraccion
-                LIMIT 10
-            ";
-            
-            $frecuentesStmt = $this->pdo->query($frecuentesQuery);
-            $frecuentes = $frecuentesStmt->fetchAll(PDO::FETCH_ASSOC);
-            
             return [
                 'success' => true, 
                 'infracciones' => $infracciones,
-                'estadisticas' => $stats,
-                'mas_frecuentes' => $frecuentes,
                 'total' => count($infracciones)
             ];
         } catch (Exception $e) {
+            error_log('Error en getInfracciones: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -1753,6 +1723,60 @@ class DashboardApp {
             
         } catch (Exception $e) {
             error_log('Error creating infracciones table: ' . $e->getMessage());
+        }
+    }
+    
+    private function crearInfraccion() {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$data) {
+                return ['success' => false, 'message' => 'Datos inválidos'];
+            }
+            
+            $codigo = $data['codigo'] ?? '';
+            $gravedad = $data['gravedad'] ?? '';
+            $descripcion = $data['descripcion'] ?? '';
+            $sancion = $data['sancion'] ?? '';
+            
+            if (empty($codigo) || empty($gravedad) || empty($descripcion) || empty($sancion)) {
+                return ['success' => false, 'message' => 'Todos los campos son obligatorios'];
+            }
+            
+            // Verificar si la tabla existe
+            if (!$this->tableExists('infracciones')) {
+                $this->createInfraccionesTable();
+            }
+            
+            // Verificar si el código ya existe
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM infracciones WHERE codigo_infraccion = ?");
+            $stmt->execute([$codigo]);
+            if ($stmt->fetch()['count'] > 0) {
+                return ['success' => false, 'message' => 'El código de infracción ya existe'];
+            }
+            
+            // Insertar la nueva infracción
+            $stmt = $this->pdo->prepare("
+                INSERT INTO infracciones (
+                    codigo_infraccion, infraccion, gravedad, sancion, 
+                    aplica_sobre, reglamento, norma_modificatoria, clase_pago, tipo, estado
+                ) VALUES (?, ?, ?, ?, 'Transportista', 'RENAT', 'D.S. N° 017-2009-MTC', 'Pecuniaria', 'Infracción', 'activo')
+            ");
+            
+            $result = $stmt->execute([$codigo, $descripcion, $gravedad, $sancion]);
+            
+            if ($result) {
+                return [
+                    'success' => true, 
+                    'message' => 'Infracción creada correctamente',
+                    'id' => $this->pdo->lastInsertId()
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Error al crear la infracción'];
+            }
+        } catch (Exception $e) {
+            error_log('Error en crearInfraccion: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()];
         }
     }
     
@@ -2379,7 +2403,19 @@ class DashboardApp {
     
     private function getUserProfile() {
         try {
-            $stmt = $this->pdo->prepare("SELECT id, name, username, email, role, status, created_at, updated_at FROM usuarios WHERE id = ?");
+            // Verificar si existe la columna profile_image
+            $hasProfileImage = $this->columnExists('usuarios', 'profile_image');
+            $hasPhone = $this->columnExists('usuarios', 'phone');
+            
+            $selectFields = 'id, name, username, email, role, status, created_at, updated_at';
+            if ($hasProfileImage) {
+                $selectFields .= ', profile_image';
+            }
+            if ($hasPhone) {
+                $selectFields .= ', phone';
+            }
+            
+            $stmt = $this->pdo->prepare("SELECT {$selectFields} FROM usuarios WHERE id = ?");
             $stmt->execute([$this->user['id']]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -2398,10 +2434,13 @@ class DashboardApp {
             $data = json_decode(file_get_contents('php://input'), true);
             
             $name = $data['name'] ?? '';
+            $username = $data['username'] ?? '';
             $email = $data['email'] ?? '';
+            $phone = $data['phone'] ?? null;
+            $password = $data['password'] ?? '';
             
-            if (!$name || !$email) {
-                throw new Exception('Nombre y email son requeridos');
+            if (!$name || !$username || !$email) {
+                throw new Exception('Nombre, usuario y email son requeridos');
             }
             
             // Verificar si el email ya existe (excluyendo el usuario actual)
@@ -2411,10 +2450,105 @@ class DashboardApp {
                 throw new Exception('El email ya está en uso');
             }
             
-            $stmt = $this->pdo->prepare("UPDATE usuarios SET name = ?, email = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$name, $email, $this->user['id']]);
+            // Verificar si el username ya existe (excluyendo el usuario actual)
+            $stmt = $this->pdo->prepare("SELECT id FROM usuarios WHERE username = ? AND id != ?");
+            $stmt->execute([$username, $this->user['id']]);
+            if ($stmt->fetch()) {
+                throw new Exception('El nombre de usuario ya está en uso');
+            }
+            
+            // Construir la consulta de actualización
+            $updateFields = ['name = ?', 'username = ?', 'email = ?'];
+            $params = [$name, $username, $email];
+            
+            // Agregar phone si la columna existe
+            if ($this->columnExists('usuarios', 'phone')) {
+                $updateFields[] = 'phone = ?';
+                $params[] = $phone;
+            }
+            
+            // Agregar password si se proporcionó
+            if (!empty($password)) {
+                $updateFields[] = 'password = ?';
+                $params[] = password_hash($password, PASSWORD_DEFAULT);
+            }
+            
+            $updateFields[] = 'updated_at = NOW()';
+            $params[] = $this->user['id'];
+            
+            $sql = "UPDATE usuarios SET " . implode(', ', $updateFields) . " WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
             
             return ['success' => true, 'message' => 'Perfil actualizado correctamente'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+    
+    private function uploadProfileImage() {
+        try {
+            // Verificar que se haya subido un archivo
+            if (!isset($_FILES['profile_image']) || $_FILES['profile_image']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('No se ha subido ninguna imagen');
+            }
+            
+            $file = $_FILES['profile_image'];
+            
+            // Validar tipo de archivo
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                throw new Exception('Tipo de archivo no permitido. Solo se permiten imágenes JPG, PNG, GIF y WEBP');
+            }
+            
+            // Validar tamaño (máximo 5MB)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                throw new Exception('La imagen no debe superar los 5MB');
+            }
+            
+            // Crear directorio de uploads si no existe
+            $uploadDir = __DIR__ . '/uploads/profiles/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            // Generar nombre único para el archivo
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = 'profile_' . $this->user['id'] . '_' . time() . '.' . $extension;
+            $filePath = $uploadDir . $fileName;
+            
+            // Mover archivo subido
+            if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                throw new Exception('Error al guardar la imagen');
+            }
+            
+            // Crear columna profile_image si no existe
+            try {
+                if (!$this->columnExists('usuarios', 'profile_image')) {
+                    $this->pdo->exec("ALTER TABLE usuarios ADD COLUMN profile_image VARCHAR(255) NULL");
+                }
+            } catch (PDOException $e) {
+                // Si la columna ya existe, ignorar el error
+                if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                    throw $e;
+                }
+            }
+            
+            // Actualizar base de datos
+            $imageUrl = 'uploads/profiles/' . $fileName;
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET profile_image = ? WHERE id = ?");
+            $stmt->execute([$imageUrl, $this->user['id']]);
+            
+            // Eliminar imagen anterior si existe
+            if (!empty($this->user['profile_image']) && file_exists(__DIR__ . '/' . $this->user['profile_image'])) {
+                @unlink(__DIR__ . '/' . $this->user['profile_image']);
+            }
+            
+            return [
+                'success' => true, 
+                'message' => 'Imagen de perfil actualizada correctamente',
+                'image_url' => $imageUrl
+            ];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
@@ -4264,6 +4398,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
                     <i class="fas fa-chart-bar"></i> Reportes
                 </a>
             </li>
+
             <!-- Configuración eliminada del menú del administrador por petición -->
             <?php endif; ?>
 
@@ -4641,6 +4776,9 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- jsPDF para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <!-- Variables globales del PHP para JavaScript -->
     <script>
         // Variables globales del usuario
@@ -4652,7 +4790,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <script src="js/utils.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="js/dashboard-stats.js"></script>
-    <script src="js/usuarios-utils.js"></script>
+    <script src="js/usuarios-utils.js"></script>`r`n    <script src="js/perfil.js"></script>
     <script src="js/infracciones-dashboard.js"></script>
     
     <?php if ($rol === 'administrador' || $rol === 'admin'): ?>
@@ -4664,6 +4802,7 @@ echo "<!-- DEBUG: Usuario: $usuario, Rol: $rol -->";
     <!-- JavaScript específico para fiscalizador -->
     <script src="js/fiscalizador.js"></script>
     <script src="js/fiscalizador-actas.js"></script>
+    <script src="js/actas-simple.js"></script>
     <?php endif; ?>
     
     <?php if ($rol === 'ventanilla'): ?>

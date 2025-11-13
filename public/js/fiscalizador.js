@@ -141,6 +141,88 @@ function createFiscalizadorSpecificCards(stats) {
     dashboardContent.insertAdjacentHTML('beforeend', fiscalizadorCardsHTML);
 }
 
+// ==================== GESTIÓN DE ACTAS DEL FISCALIZADOR ====================
+async function loadActas(event) {
+    console.log('📋 Cargando gestión de actas...');
+    
+    // Determinar qué sección cargar
+    let seccion = 'crear-acta';
+    if (event && event.target) {
+        seccion = event.target.getAttribute('data-section') || 
+                  event.target.closest('a').getAttribute('data-section') || 
+                  'crear-acta';
+    }
+    
+    console.log('📋 Cargando sección:', seccion);
+    
+    switch(seccion) {
+        case 'crear-acta':
+            await loadCrearActa();
+            break;
+        case 'mis-actas':
+            await loadMisActas();
+            break;
+        case 'buscar-conductor':
+            await loadBuscarConductor();
+            break;
+        case 'buscar-vehiculo':
+            await loadBuscarVehiculo();
+            break;
+        default:
+            await loadCrearActa();
+    }
+}
+
+async function loadMisActas() {
+    console.log('📋 Cargando mis actas...');
+    
+    try {
+        // Obtener el ID del fiscalizador actual
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=obtener_actas_fiscalizador`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                fiscalizador_id: window.dashboardUserId || null
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.actas) {
+            mostrarMisActasEnTabla(result.actas);
+            actualizarEstadisticasFiscalizador(result.actas);
+        } else {
+            console.error('❌ Error al cargar mis actas:', result.message);
+            mostrarErrorActas('No se pudieron cargar las actas');
+        }
+    } catch (error) {
+        console.error('❌ Error al cargar mis actas:', error);
+        mostrarErrorActas('Error de conexión al cargar las actas');
+    }
+}
+
+async function loadCrearActa() {
+    console.log('📋 Cargando formulario crear acta...');
+    // Esta función ya debe estar implementada en fiscalizador-actas.js
+    if (typeof window.mostrarFormularioCrearActa === 'function') {
+        window.mostrarFormularioCrearActa();
+    } else {
+        console.warn('⚠️ Función mostrarFormularioCrearActa no encontrada');
+    }
+}
+
+async function loadBuscarConductor() {
+    console.log('📋 Cargando búsqueda de conductor...');
+    // Implementar búsqueda de conductor
+}
+
+async function loadBuscarVehiculo() {
+    console.log('📋 Cargando búsqueda de vehículo...');
+    // Implementar búsqueda de vehículo
+}
+
 // ==================== GESTIÓN DE INFRACCIONES ====================
 async function loadInfracciones(event) {
     console.log('📋 Cargando gestión de infracciones...');
@@ -930,6 +1012,11 @@ function ejecutarBusquedaInfracciones() {
 // ==================== EXPORTAR FUNCIONES ====================
 // Hacer las funciones disponibles globalmente para el fiscalizador
 window.loadDashboardStatsFiscalizador = loadDashboardStatsFiscalizador;
+window.loadActas = loadActas;
+window.loadMisActas = loadMisActas;
+window.loadCrearActa = loadCrearActa;
+window.loadBuscarConductor = loadBuscarConductor;
+window.loadBuscarVehiculo = loadBuscarVehiculo;
 window.loadInfracciones = loadInfracciones;
 window.loadGestionarInfracciones = loadGestionarInfracciones;
 window.loadNuevaInfraccion = loadNuevaInfraccion;

@@ -868,6 +868,9 @@ function renderizarActasEnTabla(tbody, actas) {
                     <button class="btn btn-sm btn-outline-success" onclick="editarActa(${acta.id})" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="imprimirActa(${acta.id})" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="exportarActaPDF(${acta.id})" title="Exportar PDF">
                         <i class="fas fa-file-pdf"></i>
                     </button>
@@ -1077,6 +1080,9 @@ function showCrearActaModal() {
         </style>
         <div class="d-flex justify-content-center align-items-center w-100 flex-column gap-3">
             <div id="botonesAccion" class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-secondary" onclick="limpiarFormularioActa()">
+                    <i class="fas fa-eraser"></i> Limpiar
+                </button>
                 <button type="button" class="btn btn-success" onclick="exportarActaActual('excel')">
                     <i class="fas fa-file-excel"></i> Exportar Excel
                 </button>
@@ -2335,6 +2341,7 @@ async function imprimirActa(actaId) {
 }
 
 async function exportarActaPDF(actaId) {
+    console.log('📄 Exportando PDF para acta ID:', actaId);
     try {
         const response = await fetchWithTimeout(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${actaId}`, {
             credentials: 'same-origin',
@@ -2358,6 +2365,17 @@ async function exportarActaPDF(actaId) {
 
         const acta = data.acta;
         const aniActual = new Date().getFullYear();
+        
+        // Verificar que jsPDF esté disponible
+        if (typeof window.jspdf === 'undefined') {
+            mostrarErrorActas('Error: Librería jsPDF no disponible. Recargue la página.');
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Generar PDF con formato oficial usando jsPDF
         
         const printContent = `
             <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
@@ -2539,33 +2557,172 @@ async function exportarActaPDF(actaId) {
             </div>
         `;
 
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Acta ${acta.numero_acta}</title>
-                    <style>
-                        body { margin: 0; padding: 20px; }
-                        @media print {
-                            body { margin: 0; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>
-                        window.onload = function() {
-                            setTimeout(function() {
-                                window.print();
-                            }, 500);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-
-        mostrarExitoActas('PDF generado - Seleccione "Guardar como PDF" en el diálogo de impresión');
+        // Encabezado
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PERÚ', 105, 10, { align: 'center' });
+        doc.text('GOBIERNO REGIONAL', 105, 13, { align: 'center' });
+        doc.text('DE APURÍMAC', 105, 16, { align: 'center' });
+        doc.text('DIRECCIÓN REGIONAL DE', 105, 19, { align: 'center' });
+        doc.text('TRANSPORTES Y COMUNICACIONES', 105, 22, { align: 'center' });
+        doc.text('DIRECCIÓN DE CIRCULACIÓN', 105, 25, { align: 'center' });
+        doc.text('TERRESTRE Y SEGURIDAD VIAL', 105, 28, { align: 'center' });
+        
+        // Título
+        doc.setFontSize(11);
+        doc.text(`ACTA DE CONTROL N° ${acta.numero_acta || '000000'} -${aniActual}`, 105, 36, { align: 'center' });
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('D.S. N° 017-2009-MTC', 105, 41, { align: 'center' });
+        doc.setFontSize(7);
+        doc.text('Código de infracciones y/o incumplimiento', 105, 45, { align: 'center' });
+        doc.text('Tipo infractor', 105, 48, { align: 'center' });
+        
+        // Texto intro
+        doc.setFontSize(6);
+        const intro = doc.splitTextToSize('Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:', 170);
+        doc.text(intro, 20, 53);
+        
+        let y = 60;
+        doc.setFontSize(7);
+        
+        const cell = (x, y, w, h, text, bold = false) => {
+            doc.rect(x, y, w, h);
+            doc.setFont('helvetica', bold ? 'bold' : 'normal');
+            doc.text(text, x + 2, y + 4);
+        };
+        
+        // Tabla
+        cell(20, y, 42.5, 6, 'Agente Infractor:', true);
+        cell(62.5, y, 42.5, 6, '☐ Transportista');
+        cell(105, y, 42.5, 6, '☐ Operador de Ruta');
+        cell(147.5, y, 42.5, 6, '☑ Conductor');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Placa:', true);
+        cell(62.5, y, 127.5, 6, acta.placa || acta.placa_vehiculo || 'N/A');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Razón Social/Nombre:', true);
+        cell(62.5, y, 127.5, 6, acta.razon_social || 'N/A');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'RUC /DNI:', true);
+        cell(62.5, y, 127.5, 6, acta.ruc_dni || 'N/A');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Fecha y Hora Inicio:', true);
+        cell(62.5, y, 127.5, 6, `${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}`);
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Fecha y Hora de fin:', true);
+        cell(62.5, y, 127.5, 6, '');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Nombre de Conductor:', true);
+        cell(62.5, y, 127.5, 6, acta.nombre_conductor || 'N/A');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'N° Licencia:', true);
+        cell(62.5, y, 63.75, 6, `N°: ${acta.licencia_conductor || acta.licencia || 'N/A'}`);
+        cell(126.25, y, 63.75, 6, 'Clase y Categoría:');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Dirección:', true);
+        cell(62.5, y, 127.5, 6, '');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'N° Km. red Vial:', true);
+        cell(62.5, y, 127.5, 6, acta.lugar_intervencion || 'N/A');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Origen del viaje:', true);
+        cell(62.5, y, 127.5, 6, '');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Destino Viaje:', true);
+        cell(62.5, y, 127.5, 6, '');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Tipo de Servicio:', true);
+        cell(62.5, y, 42.5, 6, '☐ Personas');
+        cell(105, y, 42.5, 6, '☐ mercancía');
+        cell(147.5, y, 42.5, 6, '☐ mixto');
+        y += 6;
+        
+        cell(20, y, 42.5, 6, 'Inspector:', true);
+        cell(62.5, y, 127.5, 6, acta.inspector_responsable || 'N/A');
+        y += 8;
+        
+        // Descripción
+        doc.rect(20, y, 170, 20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Descripción de los hechos:', 22, y + 4);
+        doc.setFont('helvetica', 'normal');
+        const desc = doc.splitTextToSize(acta.descripcion_infraccion || acta.descripcion_hechos || '', 166);
+        doc.text(desc, 22, y + 9);
+        y += 22;
+        
+        cell(20, y, 85, 6, 'Medios probatorios:', true);
+        cell(105, y, 85, 6, '');
+        y += 6;
+        
+        cell(20, y, 85, 6, 'Calificación Infracción:', true);
+        cell(105, y, 85, 6, acta.codigo_infraccion || 'N/A');
+        y += 6;
+        
+        cell(20, y, 85, 6, 'Medida(s) Administrativa(s):', true);
+        cell(105, y, 85, 6, '');
+        y += 6;
+        
+        cell(20, y, 85, 6, 'Sanción:', true);
+        cell(105, y, 85, 6, '');
+        y += 6;
+        
+        cell(20, y, 85, 10, 'Observaciones intervenido:', true);
+        cell(105, y, 85, 10, '');
+        y += 10;
+        
+        doc.rect(20, y, 170, 10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Observaciones del inspector:', 22, y + 4);
+        y += 12;
+        
+        // Texto legal
+        doc.setFontSize(5);
+        doc.setFont('helvetica', 'normal');
+        const legal = doc.splitTextToSize('La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.', 170);
+        doc.text(legal, 20, y);
+        y += 8;
+        
+        // Firmas
+        doc.setFontSize(7);
+        doc.line(25, y + 10, 60, y + 10);
+        doc.line(85, y + 10, 120, y + 10);
+        doc.line(145, y + 10, 180, y + 10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Firma del Intervenido', 42.5, y + 13, { align: 'center' });
+        doc.text('Firma Rep. PNP', 102.5, y + 13, { align: 'center' });
+        doc.text('Firma del Inspector', 162.5, y + 13, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.text('Nom Ap.:', 25, y + 16);
+        doc.text('DNI:', 25, y + 19);
+        doc.text('Nom Ap.:', 85, y + 16);
+        doc.text('CIP:', 85, y + 19);
+        doc.text('Nombre Ap.:', 145, y + 16);
+        doc.text('DNI:', 145, y + 19);
+        y += 22;
+        
+        // Texto final
+        doc.setFontSize(5);
+        const textoFinal = doc.splitTextToSize('De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante Ordenanza Regional N°...', 170);
+        doc.text(textoFinal, 20, y);
+        
+        // Descargar PDF
+        doc.save(`Acta_${acta.numero_acta || actaId}.pdf`);
+        
+        mostrarExitoActas('PDF descargado exitosamente');
 
     } catch (error) {
         if (error.text) {
@@ -4267,6 +4424,71 @@ window.exportarActaTemporal = exportarActaTemporal;
 window.cargarDistritos = cargarDistritos;
 window.onSubcategoriaCheckboxChange = onSubcategoriaCheckboxChange;
 
+// Función para limpiar el formulario de acta
+function limpiarFormularioActa() {
+    const form = document.getElementById('formCrearActa');
+    if (!form) {
+        mostrarErrorActas('Formulario no encontrado');
+        return;
+    }
+    
+    // Resetear todos los campos del formulario
+    form.reset();
+    
+    // Limpiar campos específicos que no se resetean automáticamente
+    const camposALimpiar = [
+        'ruc_dni', 'razon_social', 'placa', 'tipo_agente', 'tipo_servicio',
+        'apellidos_conductor', 'nombres_conductor', 'licencia_conductor',
+        'provincia', 'distrito', 'lugar_intervencion', 'codigo_base',
+        'descripcion_infraccion', 'codigo_infraccion'
+    ];
+    
+    camposALimpiar.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.value = '';
+        }
+    });
+    
+    // Resetear el select de distrito
+    const distritoSelect = document.getElementById('distrito');
+    if (distritoSelect) {
+        distritoSelect.innerHTML = '<option value="">Primero seleccione provincia</option>';
+        distritoSelect.disabled = true;
+    }
+    
+    // Resetear el contenedor de subcategorías
+    const subcategoriaContainer = document.getElementById('subcategoria-container');
+    if (subcategoriaContainer) {
+        subcategoriaContainer.innerHTML = '<small class="text-muted">Primero seleccione código base</small>';
+    }
+    
+    // Resetear el badge de gravedad
+    const badgeGravedad = document.getElementById('badge_gravedad');
+    if (badgeGravedad) {
+        badgeGravedad.textContent = 'Sin seleccionar';
+        badgeGravedad.className = 'badge bg-secondary';
+    }
+    
+    // Reconfigurar timestamp automático
+    configurarTimestampAutomatico();
+    
+    // Ocultar botones de acción
+    const botonesAccion = document.getElementById('botonesAccion');
+    if (botonesAccion) {
+        botonesAccion.classList.remove('activo');
+    }
+    
+    // Actualizar mensaje de validación
+    const estadoValidacion = document.getElementById('estadoValidacion');
+    if (estadoValidacion) {
+        estadoValidacion.innerHTML = '<i class="fas fa-exclamation-circle"></i> Complete los 8 campos obligatorios para ver las opciones';
+        estadoValidacion.className = 'text-warning text-center fw-bold';
+    }
+    
+    mostrarExitoActas('Formulario limpiado correctamente');
+}
+
 // Funciones para historial del fiscalizador
 window.cargarMisActasDesdeAPI = cargarMisActasDesdeAPI;
 window.mostrarMisActasEnTabla = mostrarMisActasEnTabla;
@@ -4282,5 +4504,6 @@ window.generarPDFIndividual = generarPDFIndividual;
 window.generarHTMLHistorialActas = generarHTMLHistorialActas;
 window.mostrarAnimacionCargaCamion = mostrarAnimacionCargaCamion;
 window.actualizarEstadoActaEnTabla = actualizarEstadoActaEnTabla;
+window.limpiarFormularioActa = limpiarFormularioActa;
 
 console.log('✅ Fiscalizador Actas JS cargado correctamente con exportación mejorada');
