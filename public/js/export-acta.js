@@ -208,14 +208,19 @@ async function generarHTMLActa(acta) {
     `;
 }
 
+// Exportar a PDF con diseño completo
+function exportarActaPDF(actaId) {
+    window.open(`export-acta-pdf-v2.php?id=${actaId}`, '_blank');
+}
+
+// Exportar a Word con diseño completo
+function exportarActaWord(actaId) {
+    window.location.href = `export-acta-word.php?id=${actaId}`;
+}
+
 // Exportar a Excel con formato
 function exportarActaExcel(actaId) {
     window.location.href = `dashboard.php?api=exportar-acta&id=${actaId}&formato=excel`;
-}
-
-// Exportar a Word con formato
-function exportarActaWord(actaId) {
-    window.location.href = `dashboard.php?api=exportar-acta&id=${actaId}&formato=word`;
 }
 
 function imagenABase64(url) {
