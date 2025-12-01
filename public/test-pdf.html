@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test PDF Directo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="js/actas-simple.js"></script>
+</head>
+<body>
+    <h1>Test PDF Directo con jsPDF</h1>
+    <button onclick="testPDF()">Probar PDF Directo</button>
+
+    <script>
+        async function testPDF() {
+            // Simular datos de acta para prueba
+            const actaTest = {
+                numero_acta: 'TEST-001',
+                placa: 'ABC-123',
+                razon_social: 'Empresa Test',
+                ruc_dni: '12345678',
+                fecha_intervencion: '2025-01-27',
+                hora_intervencion: '10:30:00',
+                nombre_conductor: 'Juan Pérez',
+                licencia_conductor: 'A1-123456',
+                lugar_intervencion: 'Av. Test 123',
+                descripcion_infraccion: 'Prueba de descripción',
+                codigo_infraccion: 'TEST-001',
+                inspector_responsable: 'Inspector Test'
+            };
+
+            await generarPDFDirecto(actaTest);
+        }
+    </script>
+</body>
+</html>

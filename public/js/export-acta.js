@@ -20,10 +20,51 @@ async function generarPDFConDiseno(acta) {
     const ventana = window.open('', '_blank');
     ventana.document.write(html);
     ventana.document.close();
-    
+
     setTimeout(() => {
         ventana.print();
     }, 500);
+}
+
+async function generarPDFConHTML2PDF(acta) {
+    const html = await generarHTMLActa(acta);
+
+    // Crear un elemento temporal con el HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '-9999px';
+    document.body.appendChild(tempDiv);
+
+    try {
+        if (window.html2pdf) {
+            const opt = {
+                margin:       [10, 10, 10, 10], // [top, left, bottom, right]
+                filename:     `Acta_${acta.numero_acta || '000000'}_${new Date().getFullYear()}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, allowTaint: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(tempDiv).save();
+            showAlert('PDF generado exitosamente', 'success');
+        } else {
+            // Fallback: abrir en nueva ventana para impresión
+            const ventana = window.open('', '_blank');
+            ventana.document.write(html);
+            ventana.document.close();
+            setTimeout(() => {
+                ventana.print();
+            }, 500);
+        }
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        showAlert('Error al generar PDF', 'danger');
+    } finally {
+        // Limpiar el elemento temporal
+        document.body.removeChild(tempDiv);
+    }
 }
 
 async function generarHTMLActa(acta) {
@@ -210,7 +251,19 @@ async function generarHTMLActa(acta) {
 
 // Exportar a PDF con diseño completo
 function exportarActaPDF(actaId) {
-    window.open(`export-acta-pdf-v2.php?id=${actaId}`, '_blank');
+    fetch(`dashboard.php?api=acta-details&id=${actaId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.acta) {
+                generarPDFConHTML2PDF(data.acta);
+            } else {
+                showAlert('Error al obtener datos del acta', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error al exportar acta a PDF', 'danger');
+        });
 }
 
 // Exportar a Word con diseño completo

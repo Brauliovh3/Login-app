@@ -1,22 +1,22 @@
-/**
- * SISTEMA SIMPLE DE GESTIÓN DE ACTAS - FISCALIZADOR
- * Versión simplificada para garantizar funcionamiento
+﻿/**
+ * SISTEMA SIMPLE DE GESTIÃ“N DE ACTAS - FISCALIZADOR
+ * VersiÃ³n simplificada para garantizar funcionamiento
  */
 
-console.log('🔄 Cargando sistema simple de actas...');
+console.log('ðŸ”„ Cargando sistema simple de actas...');
 
-// Función principal para gestión de actas
+// FunciÃ³n principal para gestiÃ³n de actas
 function loadActas(event) {
-    console.log('📋 Cargando gestión de actas...');
+    console.log('ðŸ“‹ Cargando gestiÃ³n de actas...');
     
     const contentContainer = document.getElementById('contentContainer');
     if (!contentContainer) {
-        console.error('❌ ContentContainer no encontrado');
+        console.error('âŒ ContentContainer no encontrado');
         alert('Error: Contenedor principal no encontrado');
         return;
     }
     
-    // Obtener sección específica
+    // Obtener secciÃ³n especÃ­fica
     let section = 'actas-contra'; // default
     if (event && event.target) {
         const clickedElement = event.target.closest('a');
@@ -25,12 +25,12 @@ function loadActas(event) {
         }
     }
     
-    console.log('🎯 Cargando sección:', section);
+    console.log('ðŸŽ¯ Cargando secciÃ³n:', section);
     
     // Limpiar contenido previo
     contentContainer.innerHTML = '';
     
-    // Crear interfaz según la sección
+    // Crear interfaz segÃºn la secciÃ³n
     switch(section) {
         case 'crear-acta':
             mostrarFormularioCrearActa();
@@ -46,7 +46,7 @@ function loadActas(event) {
 }
 
 function mostrarGestionActas() {
-    console.log('📊 Mostrando gestión de actas...');
+    console.log('ðŸ“Š Mostrando gestiÃ³n de actas...');
     
     const contentContainer = document.getElementById('contentContainer');
     contentContainer.innerHTML = `
@@ -55,7 +55,7 @@ function mostrarGestionActas() {
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center">
                         <h2 class="text-primary">
-                            <i class="fas fa-file-alt"></i> Gestión de Actas
+                            <i class="fas fa-file-alt"></i> GestiÃ³n de Actas
                         </h2>
                         <div class="btn-group">
                             <button class="btn btn-primary" onclick="abrirModalCrearActa()">
@@ -73,7 +73,7 @@ function mostrarGestionActas() {
             <div class="card mb-4">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">
-                        <i class="fas fa-filter"></i> Filtros de Búsqueda
+                        <i class="fas fa-filter"></i> Filtros de BÃºsqueda
                     </h6>
                 </div>
                 <div class="card-body">
@@ -81,7 +81,7 @@ function mostrarGestionActas() {
                         <div class="col-md-3">
                             <label class="form-label">Buscar:</label>
                             <input type="text" class="form-control" id="buscarActa" 
-                                   placeholder="Número, placa, conductor..." 
+                                   placeholder="NÃºmero, placa, conductor..." 
                                    onkeyup="filtrarTablaActas()">
                         </div>
                         <div class="col-md-2">
@@ -113,7 +113,7 @@ function mostrarGestionActas() {
                 </div>
             </div>
             
-            <!-- Estadísticas rápidas -->
+            <!-- EstadÃ­sticas rÃ¡pidas -->
             <div class="row mb-4">
                 <div class="col-md-3">
                     <div class="card text-white bg-warning">
@@ -153,7 +153,7 @@ function mostrarGestionActas() {
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">
-                        <i class="fas fa-list"></i> Lista de Actas de Fiscalización
+                        <i class="fas fa-list"></i> Lista de Actas de FiscalizaciÃ³n
                     </h6>
                 </div>
                 <div class="card-body">
@@ -161,7 +161,7 @@ function mostrarGestionActas() {
                         <table class="table table-striped table-hover" id="tablaActas">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>N° Acta</th>
+                                    <th>NÂ° Acta</th>
                                     <th>Fecha</th>
                                     <th>Placa</th>
                                     <th>Conductor</th>
@@ -187,14 +187,14 @@ function mostrarGestionActas() {
         </div>
     `;
     
-    // Cargar datos automáticamente
+    // Cargar datos automÃ¡ticamente
     setTimeout(() => {
         cargarListaActas();
     }, 500);
 }
 
 function mostrarFormularioCrearActa() {
-    console.log('📝 Mostrando formulario crear acta...');
+    console.log('ðŸ“ Mostrando formulario crear acta...');
     
     const contentContainer = document.getElementById('contentContainer');
     contentContainer.innerHTML = `
@@ -207,7 +207,7 @@ function mostrarFormularioCrearActa() {
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
-                                <a href="#" onclick="loadActas()" class="text-decoration-none">Gestión de Actas</a>
+                                <a href="#" onclick="loadActas()" class="text-decoration-none">GestiÃ³n de Actas</a>
                             </li>
                             <li class="breadcrumb-item active">Nueva Acta</li>
                         </ol>
@@ -237,11 +237,11 @@ function mostrarFormularioCrearActa() {
 }
 
 function mostrarMisActas() {
-    console.log('👤 Mostrando mis actas...');
+    console.log('ðŸ‘¤ Mostrando mis actas...');
     
     mostrarGestionActas();
     
-    // Cambiar título para indicar que son mis actas
+    // Cambiar tÃ­tulo para indicar que son mis actas
     setTimeout(() => {
         const titulo = document.querySelector('.content-section h2');
         if (titulo) {
@@ -252,11 +252,11 @@ function mostrarMisActas() {
 }
 
 async function cargarListaActas() {
-    console.log('📡 Cargando lista de actas desde API...');
+    console.log('ðŸ“¡ Cargando lista de actas desde API...');
     
     const tbody = document.getElementById('tablaActasBody');
     if (!tbody) {
-        console.error('❌ Tabla no encontrada');
+        console.error('âŒ Tabla no encontrada');
         return;
     }
     
@@ -273,7 +273,7 @@ async function cargarListaActas() {
     try {
         const baseUrl = window.location.origin + window.location.pathname;
         const apiUrl = `${baseUrl}?api=actas`;
-        console.log('🌐 URL API:', apiUrl);
+        console.log('ðŸŒ URL API:', apiUrl);
         
         const response = await fetch(apiUrl, {
             method: 'GET',
@@ -284,17 +284,17 @@ async function cargarListaActas() {
             }
         });
         
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', response.headers);
+        console.log('ðŸ“¡ Response status:', response.status);
+        console.log('ðŸ“¡ Response headers:', response.headers);
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ Error response:', errorText);
+            console.error('âŒ Error response:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
         }
         
         const data = await response.json();
-        console.log('📊 Datos recibidos:', data);
+        console.log('ðŸ“Š Datos recibidos:', data);
         
         if (data.success && data.actas) {
             mostrarActasEnTabla(data.actas);
@@ -308,16 +308,16 @@ async function cargarListaActas() {
             mostrarActasEnTabla(data);
             actualizarEstadisticas(data);
         } else {
-            console.warn('⚠️ Formato de respuesta inesperado:', data);
-            mostrarErrorEnTabla('Formato de respuesta inesperado. Revisa la consola para más detalles.');
+            console.warn('âš ï¸ Formato de respuesta inesperado:', data);
+            mostrarErrorEnTabla('Formato de respuesta inesperado. Revisa la consola para mÃ¡s detalles.');
         }
         
     } catch (error) {
-        console.error('❌ Error completo al cargar actas:', error);
+        console.error('âŒ Error completo al cargar actas:', error);
         mostrarErrorEnTabla(`Error al cargar actas: ${error.message}`);
         
-        // Mostrar información adicional de depuración
-        console.group('🔍 Información de depuración');
+        // Mostrar informaciÃ³n adicional de depuraciÃ³n
+        console.group('ðŸ” InformaciÃ³n de depuraciÃ³n');
         console.log('Current URL:', window.location.href);
         console.log('Origin:', window.location.origin);
         console.log('CSRF Token:', document.querySelector('meta[name="csrf-token"]')?.content);
@@ -433,9 +433,9 @@ function formatearFecha(fecha) {
     }
 }
 
-// Funciones de acción (implementación real con API)
+// Funciones de acciÃ³n (implementaciÃ³n real con API)
 function abrirModalCrearActa() {
-    console.log('📝 Abriendo modal crear acta...');
+    console.log('ðŸ“ Abriendo modal crear acta...');
     // Crear modal simple usando Bootstrap
     const modalHTML = `
         <div class="modal fade" id="modalCrearActa" tabindex="-1">
@@ -443,7 +443,7 @@ function abrirModalCrearActa() {
                 <div class="modal-content">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
-                            <i class="fas fa-plus-circle"></i> Nueva Acta de Fiscalización
+                            <i class="fas fa-plus-circle"></i> Nueva Acta de FiscalizaciÃ³n
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -451,15 +451,15 @@ function abrirModalCrearActa() {
                         <form id="formNuevaActa">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Número de Acta *</label>
+                                    <label class="form-label">NÃºmero de Acta *</label>
                                     <input type="text" class="form-control" name="numero_acta" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Fecha de Intervención *</label>
+                                    <label class="form-label">Fecha de IntervenciÃ³n *</label>
                                     <input type="date" class="form-control" name="fecha_intervencion" required value="${new Date().toISOString().split('T')[0]}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Placa del Vehículo *</label>
+                                    <label class="form-label">Placa del VehÃ­culo *</label>
                                     <input type="text" class="form-control" name="placa" required>
                                 </div>
                                 <div class="col-md-6">
@@ -467,7 +467,7 @@ function abrirModalCrearActa() {
                                     <input type="text" class="form-control" name="nombre_conductor">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Descripción de Hechos *</label>
+                                    <label class="form-label">DescripciÃ³n de Hechos *</label>
                                     <textarea class="form-control" name="descripcion_hechos" rows="3" required></textarea>
                                 </div>
                                 <div class="col-md-6">
@@ -508,7 +508,7 @@ function abrirModalCrearActa() {
 }
 
 async function guardarNuevaActa() {
-    console.log('💾 Guardando nueva acta...');
+    console.log('ðŸ’¾ Guardando nueva acta...');
     
     const form = document.getElementById('formNuevaActa');
     const formData = new FormData(form);
@@ -522,20 +522,20 @@ async function guardarNuevaActa() {
         const result = await response.json();
         
         if (result.success) {
-            alert('✅ Acta guardada correctamente');
+            alert('âœ… Acta guardada correctamente');
             bootstrap.Modal.getInstance(document.getElementById('modalCrearActa')).hide();
             cargarListaActas();
         } else {
-            alert('❌ Error al guardar: ' + (result.message || 'Error desconocido'));
+            alert('âŒ Error al guardar: ' + (result.message || 'Error desconocido'));
         }
     } catch (error) {
         console.error('Error al guardar acta:', error);
-        alert('❌ Error al guardar la acta: ' + error.message);
+        alert('âŒ Error al guardar la acta: ' + error.message);
     }
 }
 
 async function verDetalleActa(id) {
-    console.log(`🔍 Cargando detalles del acta ID: ${id}`);
+    console.log(`ðŸ” Cargando detalles del acta ID: ${id}`);
     
     try {
         const response = await fetch(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${id}`);
@@ -544,11 +544,11 @@ async function verDetalleActa(id) {
         if (result.success && result.acta) {
             mostrarModalDetalleActa(result.acta);
         } else {
-            alert('❌ Error al cargar detalles: ' + (result.message || 'Acta no encontrada'));
+            alert('âŒ Error al cargar detalles: ' + (result.message || 'Acta no encontrada'));
         }
     } catch (error) {
         console.error('Error al cargar detalles:', error);
-        alert('❌ Error al cargar detalles: ' + error.message);
+        alert('âŒ Error al cargar detalles: ' + error.message);
     }
 }
 
@@ -566,7 +566,7 @@ function mostrarModalDetalleActa(acta) {
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <strong>Número de Acta:</strong><br>
+                                <strong>NÃºmero de Acta:</strong><br>
                                 ${acta.numero_acta || 'N/A'}
                             </div>
                             <div class="col-md-6">
@@ -590,8 +590,8 @@ function mostrarModalDetalleActa(acta) {
                                 <strong class="text-primary">S/ ${parseFloat(acta.monto_multa || 0).toFixed(2)}</strong>
                             </div>
                             <div class="col-12">
-                                <strong>Descripción de Hechos:</strong><br>
-                                <div class="bg-light p-3 rounded">${acta.descripcion_hechos || 'Sin descripción'}</div>
+                                <strong>DescripciÃ³n de Hechos:</strong><br>
+                                <div class="bg-light p-3 rounded">${acta.descripcion_hechos || 'Sin descripciÃ³n'}</div>
                             </div>
                         </div>
                     </div>
@@ -624,13 +624,13 @@ function mostrarModalDetalleActa(acta) {
 }
 
 function editarActaSimple(id) {
-    alert(`✏️ Editar acta ID: ${id}\n\nFuncionalidad en desarrollo.`);
+    alert(`âœï¸ Editar acta ID: ${id}\n\nFuncionalidad en desarrollo.`);
 }
 
 
 
 async function exportarActaPDF(id) {
-    console.log('📄 Exportando PDF para acta ID:', id);
+    console.log('ðŸ“„ Exportando PDF para acta ID:', id);
     try {
         const response = await fetch(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${id}`);
         const result = await response.json();
@@ -638,21 +638,156 @@ async function exportarActaPDF(id) {
         if (!result.success || !result.acta) return;
         
         const acta = result.acta;
+
+        // Método mejorado: usar jsPDF para generar PDF directamente
+        console.log('ðŸ“š Generando PDF directamente con jsPDF...');
+        await generarPDFDirecto(acta);
+
+    } catch (error) {
+        console.error('Error al generar PDF:', error);
+        alert('Error al generar PDF: ' + error.message);
+    }
+}
+
+async function generarPDFConHtml2pdf(acta) {
+    try {
+        // Verificar que html2pdf esté disponible
+        if (typeof html2pdf === 'undefined') {
+            throw new Error('html2pdf no está disponible. Recargue la página e intente nuevamente.');
+        }
         const aniActual = new Date().getFullYear();
-        
-        // Convertir imágenes a base64
-        const escudoBase64 = await imagenABase64('images/escudo_peru.png');
-        const logoBase64 = await imagenABase64('images/logo.png');
-        
-        const printContent = `
-            <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
-                <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+
+        // Convertir imágenes a base64 (igual que en impresión)
+        console.log('📷 Convirtiendo imágenes a base64...');
+        let escudoBase64, logoBase64;
+        try {
+            escudoBase64 = await imagenABase64('images/escudo_peru.png');
+            logoBase64 = await imagenABase64('images/logo.png');
+            console.log('✅ Imágenes convertidas correctamente');
+        } catch (imgError) {
+            console.warn('⚠️ Error convirtiendo imágenes, usando URLs directas:', imgError);
+            escudoBase64 = `${window.location.origin}/images/escudo_peru.png`;
+            logoBase64 = `${window.location.origin}/images/logo.png`;
+        }
+
+        // Crear HTML completo con estilos embebidos (igual que la impresiÃ³n)
+        const htmlCompleto = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Acta ${acta.numero_acta}</title>
+            <style>
+                * { box-sizing: border-box; }
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    font-size: 9pt;
+                    line-height: 1.3;
+                    color: #000;
+                }
+                @media print {
+                    body { margin: 0; padding: 10px; }
+                    @page { size: A4; margin: 1cm; }
+                }
+                .header-table {
+                    width: 100%;
+                    margin-bottom: 10px;
+                    border-collapse: collapse;
+                }
+                .header-table td {
+                    vertical-align: top;
+                }
+                .logo-left {
+                    width: 15%;
+                    text-align: left;
+                }
+                .logo-center {
+                    width: 70%;
+                    text-align: center;
+                }
+                .logo-right {
+                    width: 15%;
+                    text-align: right;
+                }
+                .logo-center div {
+                    font-size: 7pt;
+                    line-height: 1.2;
+                    font-weight: bold;
+                }
+                .logo-center strong {
+                    display: block;
+                }
+                .content-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 10px;
+                    font-size: 8pt;
+                }
+                .content-table td {
+                    border: 1px solid #000;
+                    padding: 3px;
+                    vertical-align: top;
+                }
+                .title-section {
+                    text-align: center;
+                    margin: 10px 0;
+                }
+                .title-section h3 {
+                    margin: 5px 0;
+                    font-size: 11pt;
+                }
+                .title-section p {
+                    margin: 3px 0;
+                    font-size: 8pt;
+                }
+                .description-box {
+                    border: 1px solid #000;
+                    padding: 5px;
+                    margin-bottom: 10px;
+                    min-height: 60px;
+                    font-size: 8pt;
+                }
+                .signatures-table {
+                    width: 100%;
+                    margin-top: 20px;
+                    font-size: 8pt;
+                }
+                .signatures-table td {
+                    width: 33%;
+                    text-align: center;
+                    vertical-align: bottom;
+                }
+                .signature-line {
+                    border-top: 1px solid #000;
+                    padding-top: 3px;
+                    margin: 0 10px;
+                }
+                .footer-text {
+                    font-size: 6pt;
+                    text-align: justify;
+                    margin: 10px 0;
+                }
+                .checkbox-checked {
+                    font-size: 12pt;
+                    color: #000;
+                }
+                .checkbox-empty {
+                    font-size: 12pt;
+                    color: #000;
+                }
+            </style>
+        </head>
+        <body>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <table class="header-table">
                     <tr>
-                        <td style="width: 15%; text-align: left; vertical-align: top;">
+                        <td class="logo-left">
                             <img src="${escudoBase64}" style="width: 60px; height: auto;" />
                         </td>
-                        <td style="width: 70%; text-align: center; vertical-align: middle;">
-                            <div style="font-size: 7pt; line-height: 1.2;">
+                        <td class="logo-center">
+                            <div>
                                 <strong>PERÚ</strong><br>
                                 <strong>GOBIERNO REGIONAL</strong><br>
                                 <strong>DE APURÍMAC</strong><br>
@@ -662,134 +797,151 @@ async function exportarActaPDF(id) {
                                 <strong>TERRESTRE Y SEGURIDAD VIAL</strong>
                             </div>
                         </td>
-                        <td style="width: 15%; text-align: right; vertical-align: top;">
+                        <td class="logo-right">
                             <img src="${logoBase64}" style="width: 60px; height: auto;" />
                         </td>
                     </tr>
                 </table>
-                <div style="text-align: center; margin: 10px 0;">
-                    <h3 style="margin: 5px 0; font-size: 11pt;">ACTA DE CONTROL N° ${acta.numero_acta || '000000'} -${aniActual}</h3>
-                    <p style="margin: 3px 0; font-size: 9pt;"><strong>D.S. N° 017-2009-MTC</strong></p>
-                    <p style="margin: 3px 0; font-size: 8pt;">Código de infracciones y/o incumplimiento<br>Tipo infractor</p>
+
+                <div class="title-section">
+                    <h3>ACTA DE CONTROL NÂ° ${acta.numero_acta || '000000'} -${aniActual}</h3>
+                    <p><strong>D.S. NÂ° 017-2009-MTC</strong></p>
+                    <p>CÃ³digo de infracciones y/o incumplimiento<br>Tipo infractor</p>
                 </div>
+
                 <p style="font-size: 7pt; text-align: justify; margin: 10px 0;">
-                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el 
-                    contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:
+                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el contenido de la acciÃ³n de fiscalizaciÃ³n, cumpliendo de acuerdo a lo seÃ±alado en la normativa vigente:
                 </p>
-                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+
+                <table class="content-table">
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px; width: 25%;"><strong>Agente Infractor:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☐ Transportista</td>
-                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☐ Operador de Ruta</td>
-                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">☑ Conductor</td>
+                        <td style="width: 25%;"><strong>Agente Infractor:</strong></td>
+                        <td style="width: 25%;">â˜ Transportista</td>
+                        <td style="width: 25%;">â˜ Operador de Ruta</td>
+                        <td style="width: 25%;">â˜‘ Conductor</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Placa:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
+                        <td><strong>Placa:</strong></td>
+                        <td colspan="3">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Razón Social/Nombre:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.razon_social || 'N/A'}</td>
+                        <td><strong>RazÃ³n Social/Nombre:</strong></td>
+                        <td colspan="3">${acta.razon_social || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>RUC /DNI:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.ruc_dni || 'N/A'}</td>
+                        <td><strong>RUC /DNI:</strong></td>
+                        <td colspan="3">${acta.ruc_dni || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora Inicio:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
+                        <td><strong>Fecha y Hora Inicio:</strong></td>
+                        <td colspan="3">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora de fin:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>Fecha y Hora de fin:</strong></td>
+                        <td colspan="3"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Nombre de Conductor:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.nombre_conductor || 'N/A'}</td>
+                        <td><strong>Nombre de Conductor:</strong></td>
+                        <td colspan="3">${acta.nombre_conductor || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>N° Licencia DNI del conductor:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px;">N°: ${acta.licencia_conductor || acta.licencia || 'N/A'}</td>
-                        <td colspan="2" style="border: 1px solid #000; padding: 3px;">Clase y Categoría:</td>
+                        <td><strong>NÂ° Licencia DNI del conductor:</strong></td>
+                        <td>NÂ°: ${acta.licencia_conductor || acta.licencia || 'N/A'}</td>
+                        <td colspan="2"><strong>Clase y CategorÃ­a:</strong></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Dirección:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>DirecciÃ³n:</strong></td>
+                        <td colspan="3"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>N° Km. De la red Vial Nacional Prov. /Dpto.</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.lugar_intervencion || 'N/A'}</td>
+                        <td><strong>NÂ° Km. De la red Vial Nacional</strong></td>
+                        <td colspan="3"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Origen del viaje (Depto./Prov./Distrito)</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>Prov. /Dpto.</strong></td>
+                        <td colspan="3">${acta.lugar_intervencion || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Destino Viaje: (Depto./Prov./Distrito)</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>Origen del viaje</strong></td>
+                        <td colspan="3"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Tipo de Servicio que presta:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px;">☐ Personas</td>
-                        <td style="border: 1px solid #000; padding: 3px;">☐ mercancía</td>
-                        <td style="border: 1px solid #000; padding: 3px;">☐ mixto</td>
+                        <td><strong>(Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Inspector:</strong></td>
-                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.inspector_responsable || 'N/A'}</td>
+                        <td><strong>Destino Viaje:</strong></td>
+                        <td colspan="3"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>(Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tipo de Servicio que presta:</strong></td>
+                        <td>â˜ Personas</td>
+                        <td>â˜ mercancÃ­a</td>
+                        <td>â˜ mixto</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Inspector:</strong></td>
+                        <td colspan="3">${acta.inspector_responsable || 'N/A'}</td>
                     </tr>
                 </table>
-                <div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px;">
-                    <p style="margin: 0; font-size: 8pt;"><strong>Descripción de los hechos:</strong></p>
-                    <p style="margin: 5px 0; font-size: 8pt; min-height: 60px;">${acta.descripcion_infraccion || acta.descripcion_hechos || ''}</p>
+
+                <div class="description-box">
+                    <p style="margin: 0; font-size: 8pt;"><strong>DescripciÃ³n de los hechos:</strong></p>
+                    <p style="margin: 5px 0; font-size: 8pt; min-height: 40px;">${acta.descripcion_infraccion || acta.descripcion_hechos || ''}</p>
                 </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+
+                <table class="content-table">
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"><strong>Medios probatorios:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"></td>
+                        <td style="width: 50%;"><strong>Medios probatorios:</strong></td>
+                        <td style="width: 50%;"></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Calificación de la Infracción:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px;">${acta.codigo_infraccion || 'N/A'}</td>
+                        <td><strong>CalificaciÃ³n de la InfracciÃ³n:</strong></td>
+                        <td>${acta.codigo_infraccion || 'N/A'}</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Medida(s) Administrativa(s):</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>Medida(s) Administrativa(s):</strong></td>
+                        <td></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Sanción:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                        <td><strong>SanciÃ³n:</strong></td>
+                        <td></td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px;"><strong>Observaciones del intervenido:</strong></td>
-                        <td style="border: 1px solid #000; padding: 3px; min-height: 40px;"></td>
+                        <td><strong>Observaciones del intervenido:</strong></td>
+                        <td style="min-height: 40px;"></td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="border: 1px solid #000; padding: 3px; min-height: 40px;"><strong>Observaciones del inspector:</strong></td>
+                        <td colspan="2" style="min-height: 40px;"><strong>Observaciones del inspector:</strong></td>
                     </tr>
                 </table>
-                <p style="font-size: 6pt; text-align: justify; margin: 10px 0;">
-                    La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado 
-                    penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
+
+                <p class="footer-text">
+                    La medida administrativa impuesta deberÃ¡ ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
                 </p>
-                <table style="width: 100%; margin-top: 20px; font-size: 8pt;">
+
+                <table class="signatures-table">
                     <tr>
-                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
-                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                        <td>
+                            <div class="signature-line">
                                 <p style="margin: 2px 0;"><strong>Firma del Intervenido</strong></p>
                                 <p style="margin: 2px 0;">Nom Ap.:</p>
                                 <p style="margin: 2px 0;">DNI:</p>
                             </div>
                         </td>
-                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
-                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                        <td>
+                            <div class="signature-line">
                                 <p style="margin: 2px 0;"><strong>Firma del Representante PNP</strong></p>
                                 <p style="margin: 2px 0;">Nom Ap.:</p>
                                 <p style="margin: 2px 0;">CIP:</p>
                             </div>
                         </td>
-                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
-                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                        <td>
+                            <div class="signature-line">
                                 <p style="margin: 2px 0;"><strong>Firma del Inspector</strong></p>
                                 <p style="margin: 2px 0;">Nombre Ap.:</p>
                                 <p style="margin: 2px 0;">DNI:</p>
@@ -797,68 +949,450 @@ async function exportarActaPDF(id) {
                         </td>
                     </tr>
                 </table>
-                <p style="font-size: 6pt; text-align: justify; margin-top: 15px;">
-                    De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días 
-                    hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento 
-                    Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, 
-                    aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante
-                    Ordenanza Regional N°...
+
+                <p class="footer-text">
+                    De conceder la presentaciÃ³n de algÃºn descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) dÃ­as hÃ¡biles, a partir de la imposiciÃ³n del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento Administrativo Sancionador Especial de la DirecciÃ³n General Caminos y Servicios de Transporte y trÃ¡nsito terrestre, y sus servicios complementarios, aprobado mediante Decreto Supremo NÂ° 009-2004 MTC, tal como si de acuerdo a la Ley NÂ° 27867 Ley OrgÃ¡nica de Gobiernos Regionales y su Reglamento de OrganizaciÃ³n y Funciones, aprobado mediante Ordenanza Regional NÂ°...
                 </p>
             </div>
+        </body>
+        </html>
         `;
 
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Acta ${acta.numero_acta}</title>
-                    <style>
-                        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-                        @media print { body { margin: 0; padding: 10px; } @page { size: A4; margin: 1cm; } }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>window.onload = function() { setTimeout(function() { window.print(); }, 250); };</script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        
+        // Crear elemento temporal con el HTML completo
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlCompleto;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.width = '210mm'; // Ancho A4
+        tempDiv.style.fontFamily = 'Arial, sans-serif';
+        document.body.appendChild(tempDiv);
+
+        // Configuración simplificada de html2pdf
+        const opt = {
+            margin: 10,
+            filename: `Acta_${acta.numero_acta || '000000'}_${new Date().getFullYear()}.pdf`,
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        console.log('📄 Generando PDF con html2pdf...');
+        console.log('📄 Elemento temporal creado con contenido HTML');
+        console.log('📄 HTML length:', htmlCompleto.length);
+        console.log('📄 HTML preview:', htmlCompleto.substring(0, 500));
+
+        // Verificar que html2pdf esté disponible
+        console.log('📄 html2pdf disponible:', typeof html2pdf);
+
+        // Generar PDF con manejo de errores detallado
+        try {
+            const pdfInstance = html2pdf().set(opt).from(tempDiv);
+            console.log('📄 PDF instance created');
+            await pdfInstance.save();
+            console.log('✅ PDF generado exitosamente');
+        } catch (pdfError) {
+            console.error('❌ Error específico en html2pdf:', pdfError);
+            throw pdfError;
+        }
+
     } catch (error) {
-        console.error('Error al generar PDF:', error);
+        console.error('âŒ Error generando PDF:', error);
+        alert('Error al generar PDF: ' + error.message);
+    } finally {
+        // Limpiar el elemento temporal
+        if (tempDiv && tempDiv.parentNode) {
+            document.body.removeChild(tempDiv);
+        }
+    }
+}
+
+async function generarPDFDirecto(acta) {
+    try {
+        console.log('ðŸ“š Generando PDF directo usando HTML renderizado...');
+
+        // Verificar que jsPDF esté disponible
+        if (typeof window.jspdf === 'undefined') {
+            throw new Error('jsPDF no está disponible. Recargue la página.');
+        }
+
+        // Verificar que html2canvas esté disponible
+        if (typeof html2canvas === 'undefined') {
+            console.log('ðŸ“š html2canvas no disponible, cargando...');
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        const { jsPDF } = window.jspdf;
+
+        // Crear el HTML completo igual que en la impresión
+        const aniActual = new Date().getFullYear();
+        const htmlCompleto = `
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Acta ${acta.numero_acta}</title>
+                <style>
+                    * { box-sizing: border-box; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 15px;
+                        font-size: 9pt;
+                        line-height: 1.3;
+                        color: #000;
+                        background: white;
+                    }
+                    .header-table {
+                        width: 100%;
+                        margin-bottom: 10px;
+                        border-collapse: collapse;
+                    }
+                    .header-table td {
+                        vertical-align: top;
+                        padding: 0;
+                    }
+                    .logo-left {
+                        width: 15%;
+                        text-align: left;
+                    }
+                    .logo-center {
+                        width: 70%;
+                        text-align: center;
+                    }
+                    .logo-right {
+                        width: 15%;
+                        text-align: right;
+                    }
+                    .logo-center div {
+                        font-size: 7pt;
+                        line-height: 1.2;
+                        font-weight: bold;
+                    }
+                    .title-section {
+                        text-align: center;
+                        margin: 10px 0;
+                    }
+                    .title-section h3 {
+                        margin: 5px 0;
+                        font-size: 11pt;
+                        font-weight: bold;
+                    }
+                    .title-section p {
+                        margin: 3px 0;
+                        font-size: 8pt;
+                    }
+                    .intro-text {
+                        font-size: 7pt;
+                        text-align: justify;
+                        margin: 10px 0;
+                    }
+                    .content-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                        font-size: 8pt;
+                    }
+                    .content-table td {
+                        border: 1px solid #000;
+                        padding: 3px;
+                        vertical-align: top;
+                    }
+                    .description-box {
+                        border: 1px solid #000;
+                        padding: 5px;
+                        margin-bottom: 10px;
+                        min-height: 60px;
+                        font-size: 8pt;
+                    }
+                    .footer-text {
+                        font-size: 6pt;
+                        text-align: justify;
+                        margin: 10px 0;
+                    }
+                    .signatures-table {
+                        width: 100%;
+                        margin-top: 20px;
+                        font-size: 8pt;
+                    }
+                    .signatures-table td {
+                        width: 33%;
+                        text-align: center;
+                        vertical-align: bottom;
+                    }
+                    .signature-line {
+                        border-top: 1px solid #000;
+                        padding-top: 3px;
+                        margin: 0 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <table class="header-table">
+                        <tr>
+                            <td class="logo-left">
+                                <img src="images/escudo_peru.png" style="width: 60px; height: auto;" />
+                            </td>
+                            <td class="logo-center">
+                                <div>
+                                    <strong>PERÚ</strong><br>
+                                    <strong>GOBIERNO REGIONAL</strong><br>
+                                    <strong>DE APURÍMAC</strong><br>
+                                    <strong>DIRECCIÓN REGIONAL DE</strong><br>
+                                    <strong>TRANSPORTES Y COMUNICACIONES</strong><br>
+                                    <strong>DIRECCIÓN DE CIRCULACIÓN</strong><br>
+                                    <strong>TERRESTRE Y SEGURIDAD VIAL</strong>
+                                </div>
+                            </td>
+                            <td class="logo-right">
+                                <img src="images/logo.png" style="width: 60px; height: auto;" />
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="title-section">
+                        <h3>ACTA DE CONTROL N° ${acta.numero_acta || '000000'} -${aniActual}</h3>
+                        <p><strong>D.S. N° 017-2009-MTC</strong></p>
+                        <p>Código de infracciones y/o incumplimiento<br>Tipo infractor</p>
+                    </div>
+
+                    <p class="intro-text">
+                        Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:
+                    </p>
+
+                    <table class="content-table">
+                        <tr>
+                            <td style="width: 25%;"><strong>Agente Infractor:</strong></td>
+                            <td style="width: 25%;">☐ Transportista</td>
+                            <td style="width: 25%;">☐ Operador de Ruta</td>
+                            <td style="width: 25%;">☑ Conductor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Placa:</strong></td>
+                            <td colspan="3">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Razón Social/Nombre:</strong></td>
+                            <td colspan="3">${acta.razon_social || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RUC /DNI:</strong></td>
+                            <td colspan="3">${acta.ruc_dni || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha y Hora Inicio:</strong></td>
+                            <td colspan="3">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha y Hora de fin:</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nombre de Conductor:</strong></td>
+                            <td colspan="3">${acta.nombre_conductor || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>N° Licencia DNI del conductor:</strong></td>
+                            <td>N°: ${acta.licencia_conductor || acta.licencia || 'N/A'}</td>
+                            <td colspan="2"><strong>Clase y Categoría:</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dirección:</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>N° Km. De la red Vial Nacional</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Prov. /Dpto.</strong></td>
+                            <td colspan="3">${acta.lugar_intervencion || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Origen del viaje</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>(Depto./Prov./Distrito)</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Destino Viaje:</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>(Depto./Prov./Distrito)</strong></td>
+                            <td colspan="3"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tipo de Servicio que presta:</strong></td>
+                            <td>☐ Personas</td>
+                            <td>☐ mercancía</td>
+                            <td>☐ mixto</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Inspector:</strong></td>
+                            <td colspan="3">${acta.inspector_responsable || 'N/A'}</td>
+                        </tr>
+                    </table>
+
+                    <div class="description-box">
+                        <p style="margin: 0; font-size: 8pt;"><strong>Descripción de los hechos:</strong></p>
+                        <p style="margin: 5px 0; font-size: 8pt; min-height: 40px;">${acta.descripcion_infraccion || acta.descripcion_hechos || ''}</p>
+                    </div>
+
+                    <table class="content-table">
+                        <tr>
+                            <td style="width: 50%;"><strong>Medios probatorios:</strong></td>
+                            <td style="width: 50%;"></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Calificación de la Infracción:</strong></td>
+                            <td>${acta.codigo_infraccion || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Medida(s) Administrativa(s):</strong></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sanción:</strong></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Observaciones del intervenido:</strong></td>
+                            <td style="min-height: 40px;"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="min-height: 40px;"><strong>Observaciones del inspector:</strong></td>
+                        </tr>
+                    </table>
+
+                    <p class="footer-text">
+                        La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
+                    </p>
+
+                    <table class="signatures-table">
+                        <tr>
+                            <td>
+                                <div class="signature-line">
+                                    <p style="margin: 2px 0;"><strong>Firma del Intervenido</strong></p>
+                                    <p style="margin: 2px 0;">Nom Ap.:</p>
+                                    <p style="margin: 2px 0;">DNI:</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="signature-line">
+                                    <p style="margin: 2px 0;"><strong>Firma del Representante PNP</strong></p>
+                                    <p style="margin: 2px 0;">Nom Ap.:</p>
+                                    <p style="margin: 2px 0;">CIP:</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="signature-line">
+                                    <p style="margin: 2px 0;"><strong>Firma del Inspector</strong></p>
+                                    <p style="margin: 2px 0;">Nombre Ap.:</p>
+                                    <p style="margin: 2px 0;">DNI:</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p class="footer-text">
+                        De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante Ordenanza Regional N°...
+                    </p>
+                </div>
+            </body>
+            </html>
+        `;
+
+        // Crear elemento temporal con el HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlCompleto;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.width = '800px';
+        tempDiv.style.background = 'white';
+        tempDiv.style.fontFamily = 'Arial, sans-serif';
+        document.body.appendChild(tempDiv);
+
+        console.log('📄 HTML creado, convirtiendo a canvas...');
+
+        // Usar html2canvas para convertir el HTML a imagen
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            width: 800,
+            height: tempDiv.scrollHeight
+        });
+
+        console.log('📄 Canvas generado, creando PDF...');
+
+        // Crear PDF con jsPDF
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Agregar primera página
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Agregar páginas adicionales si es necesario
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
+        // Generar nombre del archivo y guardar
+        const fileName = `Acta_${acta.numero_acta || '000000'}_${new Date().getFullYear()}.pdf`;
+        pdf.save(fileName);
+
+        console.log('✅ PDF generado y guardado como:', fileName);
+
+        // Limpiar
+        document.body.removeChild(tempDiv);
+
+        // Mostrar mensaje de éxito
+        if (typeof mostrarExitoActas === 'function') {
+            mostrarExitoActas('PDF generado correctamente');
+        } else {
+            alert('PDF generado correctamente');
+        }
+
+    } catch (error) {
+        console.error('❌ Error generando PDF directo:', error);
         alert('Error al generar PDF: ' + error.message);
     }
 }
 
-function imagenABase64(url) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(url);
-        img.src = url;
-    });
-}
-
-function imprimirActaSimple(id) {
+async function generarPDFAlternativo(acta) {
     try {
-        fetch(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${id}`)
-            .then(r => r.json())
-            .then(result => {
-                if (!result.success || !result.acta) return;
-                const acta = result.acta;
-                const aniActual = new Date().getFullYear();
-                const printContent = `
+        console.log('ðŸ“š Generando PDF alternativo para acta:', acta.numero_acta);
+
+        // Crear el mismo HTML que se usa para imprimir
+        const aniActual = new Date().getFullYear();
+        const printContent = `
             <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
                 <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
                     <tr>
@@ -887,8 +1421,7 @@ function imprimirActaSimple(id) {
                     <p style="margin: 3px 0; font-size: 8pt;">Código de infracciones y/o incumplimiento<br>Tipo infractor</p>
                 </div>
                 <p style="font-size: 7pt; text-align: justify; margin: 10px 0;">
-                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el 
-                    contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:
+                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el contenido de la acción de fiscalización, cumpliendo de acuerdo a lo señalado en la normativa vigente:
                 </p>
                 <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
                     <tr>
@@ -983,7 +1516,242 @@ function imprimirActaSimple(id) {
                     </tr>
                 </table>
                 <p style="font-size: 6pt; text-align: justify; margin: 10px 0;">
-                    La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado 
+                    La medida administrativa impuesta deberá ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
+                </p>
+                <table style="width: 100%; margin-top: 20px; font-size: 8pt;">
+                    <tr>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Intervenido</strong></p>
+                                <p style="margin: 2px 0;">Nom Ap.:</p>
+                                <p style="margin: 2px 0;">DNI:</p>
+                            </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Representante PNP</strong></p>
+                                <p style="margin: 2px 0;">Nom Ap.:</p>
+                                <p style="margin: 2px 0;">CIP:</p>
+                            </div>
+                        </td>
+                        <td style="width: 33%; text-align: center; vertical-align: bottom;">
+                            <div style="border-top: 1px solid #000; padding-top: 3px; margin: 0 10px;">
+                                <p style="margin: 2px 0;"><strong>Firma del Inspector</strong></p>
+                                <p style="margin: 2px 0;">Nombre Ap.:</p>
+                                <p style="margin: 2px 0;">DNI:</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <p style="font-size: 6pt; text-align: justify; margin-top: 15px;">
+                    De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante Ordenanza Regional N°...
+                </p>
+            </div>
+        `;
+
+        // Crear ventana oculta con el contenido
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        if (!printWindow) {
+            alert('Por favor permita las ventanas emergentes para generar el PDF');
+            return;
+        }
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Acta ${acta.numero_acta}</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            font-family: Arial, sans-serif;
+                            font-size: 9pt;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 10px; }
+                            @page { size: A4; margin: 1cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        // Esperar a que se cargue y luego mostrar diálogo de impresión (que permite guardar como PDF)
+        printWindow.onload = function() {
+            console.log('ðŸ“š Ventana de impresión lista, mostrando diálogo...');
+            setTimeout(() => {
+                printWindow.print();
+                // Cerrar la ventana después de un tiempo
+                setTimeout(() => {
+                    printWindow.close();
+                }, 1000);
+            }, 500);
+        };
+
+        console.log('âœ… PDF alternativo generado (usando diÃ¡logo de impresiÃ³n)');
+
+    } catch (error) {
+        console.error('âŒ Error en PDF alternativo:', error);
+        alert('Error al generar PDF: ' + error.message);
+    }
+}
+
+function imagenABase64(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(url);
+        img.src = url;
+    });
+}
+
+function imprimirActaSimple(id) {
+    fetch(`${window.location.origin}${window.location.pathname}?api=acta-details&id=${id}`)
+        .then(r => r.json())
+        .then(result => {
+            if (!result.success || !result.acta) return;
+            const acta = result.acta;
+            const aniActual = new Date().getFullYear();
+                const printContent = `
+            <div style="padding: 15px; font-family: Arial, sans-serif; font-size: 9pt; max-width: 800px; margin: 0 auto;">
+                <table style="width: 100%; margin-bottom: 10px; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 15%; text-align: left; vertical-align: top;">
+                            <img src="images/escudo_peru.png" style="width: 60px; height: auto;" />
+                        </td>
+                        <td style="width: 70%; text-align: center; vertical-align: middle;">
+                            <div style="font-size: 7pt; line-height: 1.2;">
+                                <strong>PERÃš</strong><br>
+                                <strong>GOBIERNO REGIONAL</strong><br>
+                                <strong>DE APURÃMAC</strong><br>
+                                <strong>DIRECCIÃ“N REGIONAL DE</strong><br>
+                                <strong>TRANSPORTES Y COMUNICACIONES</strong><br>
+                                <strong>DIRECCIÃ“N DE CIRCULACIÃ“N</strong><br>
+                                <strong>TERRESTRE Y SEGURIDAD VIAL</strong>
+                            </div>
+                        </td>
+                        <td style="width: 15%; text-align: right; vertical-align: top;">
+                            <img src="images/logo.png" style="width: 60px; height: auto;" />
+                        </td>
+                    </tr>
+                </table>
+                <div style="text-align: center; margin: 10px 0;">
+                    <h3 style="margin: 5px 0; font-size: 11pt;">ACTA DE CONTROL NÂ° ${acta.numero_acta || '000000'} -${aniActual}</h3>
+                    <p style="margin: 3px 0; font-size: 9pt;"><strong>D.S. NÂ° 017-2009-MTC</strong></p>
+                    <p style="margin: 3px 0; font-size: 8pt;">CÃ³digo de infracciones y/o incumplimiento<br>Tipo infractor</p>
+                </div>
+                <p style="font-size: 7pt; text-align: justify; margin: 10px 0;">
+                    Quienes suscriben la presente acta nos identificamos como Inspectores acreditados de la DRTC AP, informamos el objeto y el 
+                    contenido de la acciÃ³n de fiscalizaciÃ³n, cumpliendo de acuerdo a lo seÃ±alado en la normativa vigente:
+                </p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;"><strong>Agente Infractor:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">â˜ Transportista</td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">â˜ Operador de Ruta</td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 25%;">â˜‘ Conductor</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Placa:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.placa || acta.placa_vehiculo || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>RazÃ³n Social/Nombre:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.razon_social || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>RUC /DNI:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.ruc_dni || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora Inicio:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.fecha_intervencion || ''} ${acta.hora_intervencion || ''}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Fecha y Hora de fin:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Nombre de Conductor:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.nombre_conductor || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>NÂ° Licencia DNI del conductor:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">NÂ°: ${acta.licencia_conductor || acta.licencia || 'N/A'}</td>
+                        <td colspan="2" style="border: 1px solid #000; padding: 3px;">Clase y CategorÃ­a:</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>DirecciÃ³n:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>NÂ° Km. De la red Vial Nacional Prov. /Dpto.</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.lugar_intervencion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Origen del viaje (Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Destino Viaje: (Depto./Prov./Distrito)</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Tipo de Servicio que presta:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">â˜ Personas</td>
+                        <td style="border: 1px solid #000; padding: 3px;">â˜ mercancÃ­a</td>
+                        <td style="border: 1px solid #000; padding: 3px;">â˜ mixto</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Inspector:</strong></td>
+                        <td colspan="3" style="border: 1px solid #000; padding: 3px;">${acta.inspector_responsable || 'N/A'}</td>
+                    </tr>
+                </table>
+                <div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-size: 8pt;"><strong>DescripciÃ³n de los hechos:</strong></p>
+                    <p style="margin: 5px 0; font-size: 8pt; min-height: 60px;">${acta.descripcion_infraccion || acta.descripcion_hechos || ''}</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 10px;">
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"><strong>Medios probatorios:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; width: 50%;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>CalificaciÃ³n de la InfracciÃ³n:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;">${acta.codigo_infraccion || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Medida(s) Administrativa(s):</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>SanciÃ³n:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #000; padding: 3px;"><strong>Observaciones del intervenido:</strong></td>
+                        <td style="border: 1px solid #000; padding: 3px; min-height: 40px;"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="border: 1px solid #000; padding: 3px; min-height: 40px;"><strong>Observaciones del inspector:</strong></td>
+                    </tr>
+                </table>
+                <p style="font-size: 6pt; text-align: justify; margin: 10px 0;">
+                    La medida administrativa impuesta deberÃ¡ ser cumplida estrictamente, bajo apercibimiento expreso de ser denunciado 
                     penalmente por desobediencia o resistencia a la autoridad, ante su incumplimiento.
                 </p>
                 <table style="width: 100%; margin-top: 20px; font-size: 8pt;">
@@ -1012,11 +1780,11 @@ function imprimirActaSimple(id) {
                     </tr>
                 </table>
                 <p style="font-size: 6pt; text-align: justify; margin-top: 15px;">
-                    De conceder la presentación de algún descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) días 
-                    hábiles, a partir de la imposición del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento 
-                    Administrativo Sancionador Especial de la Dirección General Caminos y Servicios de Transporte y tránsito terrestre, y sus servicios complementarios, 
-                    aprobado mediante Decreto Supremo N° 009-2004 MTC, tal como si de acuerdo a la Ley N° 27867 Ley Orgánica de Gobiernos Regionales y su Reglamento de Organización y Funciones, aprobado mediante
-                    Ordenanza Regional N°...
+                    De conceder la presentaciÃ³n de algÃºn descargo puede realizarlo en la sede de la DRTC. As. (h) Para lo cual dispone de cinco (5) dÃ­as 
+                    hÃ¡biles, a partir de la imposiciÃ³n del presente informe de control o del certificado de presente documento de acuerdo a lo dispuesto en el Reglamento del Procedimiento 
+                    Administrativo Sancionador Especial de la DirecciÃ³n General Caminos y Servicios de Transporte y trÃ¡nsito terrestre, y sus servicios complementarios, 
+                    aprobado mediante Decreto Supremo NÂ° 009-2004 MTC, tal como si de acuerdo a la Ley NÂ° 27867 Ley OrgÃ¡nica de Gobiernos Regionales y su Reglamento de OrganizaciÃ³n y Funciones, aprobado mediante
+                    Ordenanza Regional NÂ°...
                 </p>
             </div>
         `;
@@ -1040,8 +1808,10 @@ function imprimirActaSimple(id) {
             </html>
         `);
         printWindow.document.close();
-        
-    } catch (error) {}
+        })
+        .catch(error => {
+            console.error('Error al imprimir acta:', error);
+        });
 }
 
 function getEstadoTexto(estado) {
@@ -1060,7 +1830,7 @@ function getEstadoTexto(estado) {
 }
 
 async function eliminarActaSimple(id, numero) {
-    if (!confirm(`⚠️ ¿Está seguro de eliminar el acta ${numero}?\n\nEsta acción no se puede deshacer.`)) {
+    if (!confirm(`âš ï¸ Â¿EstÃ¡ seguro de eliminar el acta ${numero}?\n\nEsta acciÃ³n no se puede deshacer.`)) {
         return;
     }
     
@@ -1076,31 +1846,31 @@ async function eliminarActaSimple(id, numero) {
         const result = await response.json();
         
         if (result.success) {
-            alert('✅ Acta eliminada correctamente');
+            alert('âœ… Acta eliminada correctamente');
             cargarListaActas();
         } else {
-            alert('❌ Error al eliminar: ' + (result.message || 'Error desconocido'));
+            alert('âŒ Error al eliminar: ' + (result.message || 'Error desconocido'));
         }
     } catch (error) {
         console.error('Error al eliminar acta:', error);
-        alert('❌ Error al eliminar la acta: ' + error.message);
+        alert('âŒ Error al eliminar la acta: ' + error.message);
     }
 }
 
 async function cargarMisActasEspecificas() {
     // Similar a cargarListaActas pero filtrado por usuario
-    console.log('👤 Cargando solo mis actas...');
-    // Por ahora usa la misma función
+    console.log('ðŸ‘¤ Cargando solo mis actas...');
+    // Por ahora usa la misma funciÃ³n
     cargarListaActas();
 }
 
 function filtrarTablaActas() {
-    console.log('🔍 Aplicando filtros...');
+    console.log('ðŸ” Aplicando filtros...');
     // Implementar filtrado local
 }
 
 function limpiarFiltrosActas() {
-    console.log('🧹 Limpiando filtros...');
+    console.log('ðŸ§¹ Limpiando filtros...');
     document.getElementById('buscarActa').value = '';
     document.getElementById('filtroEstado').value = '';
     document.getElementById('fechaDesde').value = '';
@@ -1123,4 +1893,4 @@ window.eliminarActaSimple = eliminarActaSimple;
 window.filtrarTablaActas = filtrarTablaActas;
 window.limpiarFiltrosActas = limpiarFiltrosActas;
 
-console.log('✅ Sistema simple de actas cargado correctamente');
+console.log('âœ… Sistema simple de actas cargado correctamente');

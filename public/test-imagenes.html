@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test de Imágenes</title>
+    <script src="js/actas-simple.js"></script>
+</head>
+<body>
+    <h1>Test de Conversión de Imágenes</h1>
+    <button onclick="testImagenes()">Probar Conversión</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function testImagenes() {
+            const resultado = document.getElementById('resultado');
+            resultado.innerHTML = 'Convirtiendo imágenes...';
+
+            try {
+                const escudoBase64 = await imagenABase64('images/escudo_peru.png');
+                const logoBase64 = await imagenABase64('images/logo.png');
+
+                resultado.innerHTML = `
+                    <h2>Imágenes convertidas correctamente</h2>
+                    <p><strong>Escudo (primeros 50 chars):</strong> ${escudoBase64.substring(0, 50)}...</p>
+                    <p><strong>Logo (primeros 50 chars):</strong> ${logoBase64.substring(0, 50)}...</p>
+                    <img src="${escudoBase64}" style="width: 60px;" />
+                    <img src="${logoBase64}" style="width: 60px;" />
+                `;
+            } catch (error) {
+                resultado.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
