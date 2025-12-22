@@ -203,24 +203,46 @@ async function loadMisActas() {
     }
 }
 
+// Función que conecta con fiscalizador-actas.js
+function mostrarFormularioCrearActa() {
+    console.log('📋 Conectando con fiscalizador-actas.js...');
+    if (typeof window.showCrearActaModal === 'function') {
+        window.showCrearActaModal();
+    } else {
+        console.warn('⚠️ Función showCrearActaModal no encontrada en fiscalizador-actas.js');
+        // Fallback: mostrar mensaje
+        const content = document.getElementById('contentContainer');
+        if (content) {
+            content.innerHTML = `
+                <div class="container-fluid">
+                    <div class="alert alert-warning">
+                        <h4><i class="fas fa-exclamation-triangle me-2"></i>Función no disponible</h4>
+                        <p>El módulo de creación de actas no se ha cargado correctamente.</p>
+                        <p>Por favor, recarga la página e intenta nuevamente.</p>
+                        <button class="btn btn-primary mt-2" onclick="location.reload()">
+                            <i class="fas fa-refresh me-2"></i>Recargar página
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
 async function loadCrearActa() {
     console.log('📋 Cargando formulario crear acta...');
     // Esta función ya debe estar implementada en fiscalizador-actas.js
-    if (typeof window.mostrarFormularioCrearActa === 'function') {
-        window.mostrarFormularioCrearActa();
-    } else {
-        console.warn('⚠️ Función mostrarFormularioCrearActa no encontrada');
-    }
+    mostrarFormularioCrearActa();
 }
 
 async function loadBuscarConductor() {
     console.log('📋 Cargando búsqueda de conductor...');
-    // Implementar búsqueda de conductor
+    await loadConductores();
 }
 
 async function loadBuscarVehiculo() {
     console.log('📋 Cargando búsqueda de vehículo...');
-    // Implementar búsqueda de vehículo
+    await loadVehiculos();
 }
 
 // ==================== GESTIÓN DE INFRACCIONES ====================
@@ -1009,6 +1031,1008 @@ function ejecutarBusquedaInfracciones() {
     `;
 }
 
+// ==================== GESTIÓN DE INSPECCIONES ====================
+async function loadInspecciones(event) {
+    console.log('📋 [DEBUG] loadInspecciones iniciado');
+
+    // Prevenir comportamiento por defecto y propagación
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    // Determinar qué sección de inspecciones cargar
+    let seccion = 'todas';
+    if (event && event.target) {
+        seccion = event.target.getAttribute('data-section') ||
+                  event.target.closest('a').getAttribute('data-section') ||
+                  'todas';
+    }
+
+    console.log('📋 [DEBUG] Cargando sección:', seccion);
+
+    const content = document.getElementById('contentContainer');
+    if (!content) {
+        console.error('📋 [ERROR] contentContainer no encontrado');
+        return;
+    }
+
+    // Determinar título según sección
+    let titulo = 'Gestión de Inspecciones';
+    let subtitulo = 'Todas las inspecciones';
+    switch(seccion) {
+        case 'mis-inspecciones':
+            titulo = 'Mis Inspecciones';
+            subtitulo = 'Inspecciones realizadas por mí';
+            break;
+        case 'inspecciones-pendientes':
+            titulo = 'Inspecciones Pendientes';
+            subtitulo = 'Inspecciones programadas pendientes';
+            break;
+        case 'nueva-inspeccion':
+            titulo = 'Nueva Inspección';
+            subtitulo = 'Registrar nueva inspección';
+            break;
+    }
+
+    const inspeccionesHTML = `
+        <div class="container-fluid">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">
+                            <i class="fas fa-clipboard-check text-primary"></i>
+                            ${titulo}
+                        </h3>
+                        <small class="text-muted">${subtitulo}</small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-success me-2" onclick="nuevaInspeccion()">
+                            <i class="fas fa-plus"></i> Nueva Inspección
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="cargarInspecciones()">
+                            <i class="fas fa-sync"></i> Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="filtroFechaInspeccion" class="form-label">Fecha:</label>
+                            <input type="date" id="filtroFechaInspeccion" class="form-control" onchange="filtrarInspecciones()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroEstadoInspeccion" class="form-label">Estado:</label>
+                            <select id="filtroEstadoInspeccion" class="form-control" onchange="filtrarInspecciones()">
+                                <option value="">Todos</option>
+                                <option value="completada">Completada</option>
+                                <option value="en_progreso">En Progreso</option>
+                                <option value="pendiente">Pendiente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="busquedaInspeccion" class="form-label">Buscar:</label>
+                            <input type="text" id="busquedaInspeccion" class="form-control"
+                                   placeholder="Placa, conductor..."
+                                   onkeyup="filtrarInspecciones()">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" onclick="limpiarFiltrosInspecciones()" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-eraser"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas rápidas -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center py-2">
+                                    <h5 class="mb-0" id="total-inspecciones">0</h5>
+                                    <small>Total Inspecciones</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center py-2">
+                                    <h5 class="mb-0" id="inspecciones-completadas">0</h5>
+                                    <small>Completadas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center py-2">
+                                    <h5 class="mb-0" id="inspecciones-progreso">0</h5>
+                                    <small>En Progreso</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center py-2">
+                                    <h5 class="mb-0" id="inspecciones-pendientes">0</h5>
+                                    <small>Pendientes</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de inspecciones -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tablaInspecciones">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Placa</th>
+                                    <th>Conductor</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Resultado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inspeccionesTableBody">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Cargando inspecciones...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = inspeccionesHTML;
+
+    // Asegurar que el submenu se mantenga abierto si se accedió desde un sub-item
+    if (seccion !== 'todas') {
+        const submenu = document.getElementById('submenu-inspecciones');
+        if (submenu) {
+            submenu.style.setProperty('display', 'block', 'important');
+            submenu.classList.add('show');
+            console.log('📋 [DEBUG] Submenu forzado a mantenerse abierto');
+        }
+    }
+
+    // Pequeño delay para asegurar que el submenu esté completamente renderizado
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    console.log('📋 [DEBUG] HTML insertado, iniciando carga de datos');
+
+    // Cargar datos
+    await cargarInspecciones(seccion);
+
+    console.log('📋 [DEBUG] Carga de inspecciones completada');
+}
+
+async function cargarInspecciones(seccion = 'todas') {
+    console.log('📋 Cargando lista de inspecciones...', seccion);
+
+    const tbody = document.getElementById('inspeccionesTableBody');
+    if (!tbody) return;
+
+    try {
+        let url = `${window.location.origin}${window.location.pathname}?api=inspecciones`;
+        if (seccion !== 'todas') {
+            url += `&seccion=${seccion}`;
+        }
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success && result.inspecciones) {
+            console.log('📋 [DEBUG] Inspecciones cargadas:', result.inspecciones.length);
+
+            // Filtrar inspecciones según la sección
+            let inspeccionesFiltradas = result.inspecciones;
+
+            if (seccion === 'mis-inspecciones') {
+                inspeccionesFiltradas = result.inspecciones.filter(i => i.inspector_id == window.dashboardUserId);
+                console.log('📋 [DEBUG] Inspecciones filtradas para usuario:', inspeccionesFiltradas.length);
+            } else if (seccion === 'inspecciones-pendientes') {
+                inspeccionesFiltradas = result.inspecciones.filter(i => i.estado === 'pendiente');
+                console.log('📋 [DEBUG] Inspecciones pendientes filtradas:', inspeccionesFiltradas.length);
+            }
+
+            mostrarInspeccionesEnTabla(inspeccionesFiltradas);
+            actualizarEstadisticasInspecciones(inspeccionesFiltradas);
+            console.log('📋 [DEBUG] Tabla de inspecciones actualizada');
+        } else {
+            console.error('📋 [ERROR] Respuesta inválida de la API:', result);
+            mostrarErrorInspecciones('Error en la respuesta del servidor');
+        }
+        } else {
+            mostrarErrorInspecciones('No se pudieron cargar las inspecciones');
+        }
+    } catch (error) {
+        console.error('❌ Error al cargar inspecciones:', error);
+        mostrarErrorInspecciones('Error de conexión al cargar las inspecciones');
+    }
+}
+
+function mostrarInspeccionesEnTabla(inspecciones) {
+    const tbody = document.getElementById('inspeccionesTableBody');
+
+    if (!inspecciones || inspecciones.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">No hay inspecciones registradas</p>
+                    <button class="btn btn-primary" onclick="nuevaInspeccion()">
+                        <i class="fas fa-plus"></i> Crear Primera Inspección
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = inspecciones.map(inspeccion => {
+        const estadoBadge = getEstadoInspeccionBadge(inspeccion.estado);
+        const resultadoTexto = inspeccion.resultado || 'Pendiente';
+
+        return `
+        <tr>
+            <td><strong>${inspeccion.id}</strong></td>
+            <td>${formatearFechaInspeccion(inspeccion.fecha_inspeccion)}</td>
+            <td><span class="badge bg-dark">${inspeccion.placa || 'N/A'}</span></td>
+            <td>${inspeccion.conductor_nombre || 'N/A'}</td>
+            <td>${inspeccion.tipo_inspeccion || 'General'}</td>
+            <td>${estadoBadge}</td>
+            <td>${resultadoTexto}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="verInspeccion(${inspeccion.id})" title="Ver">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-success" onclick="editarInspeccion(${inspeccion.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-info" onclick="imprimirInspeccion(${inspeccion.id})" title="Imprimir">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="eliminarInspeccion(${inspeccion.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function mostrarErrorInspecciones(mensaje) {
+    const tbody = document.getElementById('inspeccionesTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-4 text-danger">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem;"></i>
+                <p class="mt-2">${mensaje}</p>
+                <button class="btn btn-outline-primary" onclick="cargarInspecciones()">
+                    <i class="fas fa-refresh"></i> Reintentar
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function actualizarEstadisticasInspecciones(inspecciones) {
+    const total = inspecciones.length;
+    const completadas = inspecciones.filter(i => i.estado === 'completada').length;
+    const enProgreso = inspecciones.filter(i => i.estado === 'en_progreso').length;
+    const pendientes = inspecciones.filter(i => i.estado === 'pendiente').length;
+
+    document.getElementById('total-inspecciones').textContent = total;
+    document.getElementById('inspecciones-completadas').textContent = completadas;
+    document.getElementById('inspecciones-progreso').textContent = enProgreso;
+    document.getElementById('inspecciones-pendientes').textContent = pendientes;
+}
+
+function getEstadoInspeccionBadge(estado) {
+    switch(estado) {
+        case 'completada': return '<span class="badge bg-success">Completada</span>';
+        case 'en_progreso': return '<span class="badge bg-warning text-dark">En Progreso</span>';
+        case 'pendiente': return '<span class="badge bg-danger">Pendiente</span>';
+        default: return '<span class="badge bg-secondary">N/A</span>';
+    }
+}
+
+function formatearFechaInspeccion(fecha) {
+    if (!fecha) return 'N/A';
+    try {
+        return new Date(fecha).toLocaleDateString('es-ES');
+    } catch {
+        return fecha;
+    }
+}
+
+function nuevaInspeccion() {
+    alert('🚧 Nueva Inspección - Funcionalidad en desarrollo');
+}
+
+function verInspeccion(id) {
+    alert(`🚧 Ver Inspección ${id} - Funcionalidad en desarrollo`);
+}
+
+function editarInspeccion(id) {
+    alert(`🚧 Editar Inspección ${id} - Funcionalidad en desarrollo`);
+}
+
+function imprimirInspeccion(id) {
+    alert(`🚧 Imprimir Inspección ${id} - Funcionalidad en desarrollo`);
+}
+
+function eliminarInspeccion(id) {
+    if (confirm(`¿Está seguro de eliminar la inspección ${id}?`)) {
+        alert(`🚧 Eliminar Inspección ${id} - Funcionalidad en desarrollo`);
+    }
+}
+
+function filtrarInspecciones() {
+    console.log('🔍 Filtrando inspecciones...');
+    // Implementar filtrado local
+}
+
+function limpiarFiltrosInspecciones() {
+    document.getElementById('filtroFechaInspeccion').value = '';
+    document.getElementById('filtroEstadoInspeccion').value = '';
+    document.getElementById('busquedaInspeccion').value = '';
+    filtrarInspecciones();
+}
+
+// ==================== BÚSQUEDA DE CONDUCTORES ====================
+async function loadConductores() {
+    console.log('👤 Cargando búsqueda de conductores...');
+
+    const content = document.getElementById('contentContainer');
+    if (!content) return;
+
+    const conductoresHTML = `
+        <div class="container-fluid">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user-search text-primary"></i>
+                        Búsqueda de Conductores
+                    </h3>
+                    <button type="button" class="btn btn-success" onclick="nuevoConductor()">
+                        <i class="fas fa-plus"></i> Nuevo Conductor
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    <!-- Formulario de búsqueda -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="busquedaDniConductor" class="form-label">DNI</label>
+                            <input type="text" class="form-control" id="busquedaDniConductor" placeholder="12345678">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="busquedaNombreConductor" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="busquedaNombreConductor" placeholder="Nombre del conductor">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="busquedaLicenciaConductor" class="form-label">N° Licencia</label>
+                            <input type="text" class="form-control" id="busquedaLicenciaConductor" placeholder="A-IIIa-123456">
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary btn-lg w-100" onclick="buscarConductores()">
+                                <i class="fas fa-search me-2"></i>Buscar Conductores
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-secondary btn-lg w-100" onclick="limpiarBusquedaConductores()">
+                                <i class="fas fa-broom me-2"></i>Limpiar Búsqueda
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resultados -->
+                    <div id="resultadosConductores">
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Realice una búsqueda para ver los resultados</h5>
+                            <p class="text-muted">Ingrese DNI, nombre o número de licencia</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = conductoresHTML;
+}
+
+async function buscarConductores() {
+    const dni = document.getElementById('busquedaDniConductor').value.trim();
+    const nombre = document.getElementById('busquedaNombreConductor').value.trim();
+    const licencia = document.getElementById('busquedaLicenciaConductor').value.trim();
+
+    if (!dni && !nombre && !licencia) {
+        alert('Ingrese al menos un criterio de búsqueda');
+        return;
+    }
+
+    const resultadosDiv = document.getElementById('resultadosConductores');
+    resultadosDiv.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Buscando...</span>
+            </div>
+            <p class="mt-2">Buscando conductores...</p>
+        </div>
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        if (dni) params.append('dni', dni);
+        if (nombre) params.append('nombre', nombre);
+        if (licencia) params.append('licencia', licencia);
+
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=buscar-conductores&${params}`);
+        const result = await response.json();
+
+        if (result.success && result.conductores && result.conductores.length > 0) {
+            mostrarConductoresEnTabla(result.conductores);
+        } else {
+            resultadosDiv.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-user-times fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No se encontraron conductores</h5>
+                    <p class="text-muted">Intente con otros criterios de búsqueda</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al buscar conductores:', error);
+        resultadosDiv.innerHTML = `
+            <div class="text-center py-5 text-danger">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h5>Error en la búsqueda</h5>
+                <p>Intente nuevamente más tarde</p>
+            </div>
+        `;
+    }
+}
+
+function mostrarConductoresEnTabla(conductores) {
+    const resultadosDiv = document.getElementById('resultadosConductores');
+
+    const tablaHTML = `
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>DNI</th>
+                        <th>Nombre Completo</th>
+                        <th>Licencia</th>
+                        <th>Clase</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${conductores.map(conductor => `
+                        <tr>
+                            <td>${conductor.dni || 'N/A'}</td>
+                            <td>${conductor.nombre_completo || 'N/A'}</td>
+                            <td>${conductor.numero_licencia || 'N/A'}</td>
+                            <td>${conductor.clase_licencia || 'N/A'}</td>
+                            <td><span class="badge bg-success">Activo</span></td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="verConductor(${conductor.id})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="editarConductor(${conductor.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="verHistorialConductor(${conductor.id})">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    resultadosDiv.innerHTML = tablaHTML;
+}
+
+function limpiarBusquedaConductores() {
+    document.getElementById('busquedaDniConductor').value = '';
+    document.getElementById('busquedaNombreConductor').value = '';
+    document.getElementById('busquedaLicenciaConductor').value = '';
+
+    document.getElementById('resultadosConductores').innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-user-search fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Realice una búsqueda para ver los resultados</h5>
+            <p class="text-muted">Ingrese DNI, nombre o número de licencia</p>
+        </div>
+    `;
+}
+
+function nuevoConductor() {
+    alert('🚧 Nuevo Conductor - Funcionalidad en desarrollo');
+}
+
+function verConductor(id) {
+    alert(`🚧 Ver Conductor ${id} - Funcionalidad en desarrollo`);
+}
+
+function editarConductor(id) {
+    alert(`🚧 Editar Conductor ${id} - Funcionalidad en desarrollo`);
+}
+
+function verHistorialConductor(id) {
+    alert(`🚧 Historial Conductor ${id} - Funcionalidad en desarrollo`);
+}
+
+// ==================== BÚSQUEDA DE VEHÍCULOS ====================
+async function loadVehiculos() {
+    console.log('🚗 Cargando búsqueda de vehículos...');
+
+    const content = document.getElementById('contentContainer');
+    if (!content) return;
+
+    const vehiculosHTML = `
+        <div class="container-fluid">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-car text-success"></i>
+                        Búsqueda de Vehículos
+                    </h3>
+                    <button type="button" class="btn btn-success" onclick="nuevoVehiculo()">
+                        <i class="fas fa-plus"></i> Nuevo Vehículo
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    <!-- Formulario de búsqueda -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="busquedaPlacaVehiculo" class="form-label">Placa</label>
+                            <input type="text" class="form-control" id="busquedaPlacaVehiculo" placeholder="ABC-123" style="text-transform: uppercase;">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="busquedaMarcaVehiculo" class="form-label">Marca</label>
+                            <input type="text" class="form-control" id="busquedaMarcaVehiculo" placeholder="Toyota, Hyundai, etc.">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="busquedaModeloVehiculo" class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="busquedaModeloVehiculo" placeholder="Corolla, Tucson, etc.">
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary btn-lg w-100" onclick="buscarVehiculos()">
+                                <i class="fas fa-search me-2"></i>Buscar Vehículos
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-outline-secondary btn-lg w-100" onclick="limpiarBusquedaVehiculos()">
+                                <i class="fas fa-broom me-2"></i>Limpiar Búsqueda
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resultados -->
+                    <div id="resultadosVehiculos">
+                        <div class="text-center py-5">
+                            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Realice una búsqueda para ver los resultados</h5>
+                            <p class="text-muted">Ingrese placa, marca o modelo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = vehiculosHTML;
+}
+
+async function buscarVehiculos() {
+    const placa = document.getElementById('busquedaPlacaVehiculo').value.trim().toUpperCase();
+    const marca = document.getElementById('busquedaMarcaVehiculo').value.trim();
+    const modelo = document.getElementById('busquedaModeloVehiculo').value.trim();
+
+    if (!placa && !marca && !modelo) {
+        alert('Ingrese al menos un criterio de búsqueda');
+        return;
+    }
+
+    const resultadosDiv = document.getElementById('resultadosVehiculos');
+    resultadosDiv.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Buscando...</span>
+            </div>
+            <p class="mt-2">Buscando vehículos...</p>
+        </div>
+    `;
+
+    try {
+        const params = new URLSearchParams();
+        if (placa) params.append('placa', placa);
+        if (marca) params.append('marca', marca);
+        if (modelo) params.append('modelo', modelo);
+
+        const response = await fetch(`${window.location.origin}${window.location.pathname}?api=buscar-vehiculos&${params}`);
+        const result = await response.json();
+
+        if (result.success && result.vehiculos && result.vehiculos.length > 0) {
+            mostrarVehiculosEnTabla(result.vehiculos);
+        } else {
+            resultadosDiv.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-car-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No se encontraron vehículos</h5>
+                    <p class="text-muted">Intente con otros criterios de búsqueda</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al buscar vehículos:', error);
+        resultadosDiv.innerHTML = `
+            <div class="text-center py-5 text-danger">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h5>Error en la búsqueda</h5>
+                <p>Intente nuevamente más tarde</p>
+            </div>
+        `;
+    }
+}
+
+function mostrarVehiculosEnTabla(vehiculos) {
+    const resultadosDiv = document.getElementById('resultadosVehiculos');
+
+    const tablaHTML = `
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Placa</th>
+                        <th>Marca</th>
+                        <th>Modelo</th>
+                        <th>Año</th>
+                        <th>Propietario</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${vehiculos.map(vehiculo => `
+                        <tr>
+                            <td><span class="badge bg-dark">${vehiculo.placa || 'N/A'}</span></td>
+                            <td>${vehiculo.marca || 'N/A'}</td>
+                            <td>${vehiculo.modelo || 'N/A'}</td>
+                            <td>${vehiculo.anio || 'N/A'}</td>
+                            <td>${vehiculo.propietario || 'N/A'}</td>
+                            <td><span class="badge bg-success">Activo</span></td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="verVehiculo(${vehiculo.id})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success" onclick="editarVehiculo(${vehiculo.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" onclick="verHistorialVehiculo(${vehiculo.id})">
+                                        <i class="fas fa-history"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    resultadosDiv.innerHTML = tablaHTML;
+}
+
+function limpiarBusquedaVehiculos() {
+    document.getElementById('busquedaPlacaVehiculo').value = '';
+    document.getElementById('busquedaMarcaVehiculo').value = '';
+    document.getElementById('busquedaModeloVehiculo').value = '';
+
+    document.getElementById('resultadosVehiculos').innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-car fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">Realice una búsqueda para ver los resultados</h5>
+            <p class="text-muted">Ingrese placa, marca o modelo</p>
+        </div>
+    `;
+}
+
+function nuevoVehiculo() {
+    alert('🚧 Nuevo Vehículo - Funcionalidad en desarrollo');
+}
+
+function verVehiculo(id) {
+    alert(`🚧 Ver Vehículo ${id} - Funcionalidad en desarrollo`);
+}
+
+function editarVehiculo(id) {
+    alert(`🚧 Editar Vehículo ${id} - Funcionalidad en desarrollo`);
+}
+
+function verHistorialVehiculo(id) {
+    alert(`🚧 Historial Vehículo ${id} - Funcionalidad en desarrollo`);
+}
+
+// ==================== REPORTES ====================
+async function loadSection(seccion) {
+    console.log('📊 Cargando sección:', seccion);
+
+    const content = document.getElementById('contentContainer');
+    if (!content) return;
+
+    switch(seccion) {
+        case 'reportes':
+            await loadReportes();
+            break;
+        default:
+            content.innerHTML = `
+                <div class="container-fluid">
+                    <div class="text-center py-5">
+                        <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Sección en desarrollo</h4>
+                        <p class="text-muted">Esta funcionalidad estará disponible próximamente</p>
+                    </div>
+                </div>
+            `;
+    }
+}
+
+async function loadReportes() {
+    console.log('📊 Cargando reportes...');
+
+    const content = document.getElementById('contentContainer');
+
+    const reportesHTML = `
+        <div class="container-fluid">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-bar text-info"></i>
+                        Reportes y Estadísticas
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Opciones de reportes -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-file-alt me-2"></i>Reporte de Actas
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">Generar reportes detallados de actas por período, fiscalizador o estado.</p>
+                                    <button class="btn btn-primary w-100" onclick="generarReporteActas()">
+                                        <i class="fas fa-download me-2"></i>Generar Reporte
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-pie me-2"></i>Estadísticas
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">Ver estadísticas generales de infracciones, multas y rendimiento.</p>
+                                    <button class="btn btn-success w-100" onclick="verEstadisticas()">
+                                        <i class="fas fa-chart-line me-2"></i>Ver Estadísticas
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar-check me-2"></i>Reporte Mensual
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">Reportes consolidados mensuales para análisis y control.</p>
+                                    <button class="btn btn-warning w-100" onclick="generarReporteMensual()">
+                                        <i class="fas fa-calendar me-2"></i>Reporte Mensual
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área de resultados -->
+                    <div id="reportesResultados" class="mt-4" style="display: none;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Resultado del Reporte</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="reportesContenido">
+                                    <!-- Aquí se mostrarán los resultados -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = reportesHTML;
+}
+
+function generarReporteActas() {
+    alert('🚧 Generar Reporte de Actas - Funcionalidad en desarrollo');
+}
+
+function verEstadisticas() {
+    alert('🚧 Ver Estadísticas - Funcionalidad en desarrollo');
+}
+
+function generarReporteMensual() {
+    alert('🚧 Generar Reporte Mensual - Funcionalidad en desarrollo');
+}
+
+// ==================== CALENDARIO ====================
+async function loadCalendario() {
+    console.log('📅 Cargando calendario...');
+
+    const content = document.getElementById('contentContainer');
+    if (!content) return;
+
+    const calendarioHTML = `
+        <div class="container-fluid">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calendar-alt text-danger"></i>
+                        Calendario de Actividades
+                    </h3>
+                    <div>
+                        <button class="btn btn-primary me-2" onclick="nuevaActividad()">
+                            <i class="fas fa-plus"></i> Nueva Actividad
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="cambiarVistaCalendario('mes')">
+                            <i class="fas fa-calendar"></i> Mes
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="cambiarVistaCalendario('semana')">
+                            <i class="fas fa-calendar-week"></i> Semana
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Calendario -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div id="calendarioContainer" class="border rounded p-3">
+                                <div class="text-center py-5">
+                                    <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Calendario Interactivo</h5>
+                                    <p class="text-muted">Vista del calendario con actividades programadas</p>
+                                    <small class="text-muted">Funcionalidad en desarrollo</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- Próximas actividades -->
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-clock text-warning me-2"></i>
+                                        Próximas Actividades
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Inspección programada</h6>
+                                                <small>Hoy 10:00</small>
+                                            </div>
+                                            <p class="mb-1">Revisión de zona urbana norte</p>
+                                            <small class="text-muted">Prioridad: Alta</small>
+                                        </div>
+
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Reunión de coordinación</h6>
+                                                <small>Mañana 09:00</small>
+                                            </div>
+                                            <p class="mb-1">Coordinación con inspectores</p>
+                                            <small class="text-muted">Prioridad: Media</small>
+                                        </div>
+
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Capacitación</h6>
+                                                <small>15 Dic 14:00</small>
+                                            </div>
+                                            <p class="mb-1">Actualización normativa de tránsito</p>
+                                            <small class="text-muted">Prioridad: Baja</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Leyenda -->
+                            <div class="card mt-3">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Leyenda</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="badge bg-danger me-2">&nbsp;</div>
+                                        <small>Inspecciones</small>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="badge bg-warning me-2">&nbsp;</div>
+                                        <small>Reuniones</small>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="badge bg-info me-2">&nbsp;</div>
+                                        <small>Capacitaciones</small>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <div class="badge bg-success me-2">&nbsp;</div>
+                                        <small>Otros eventos</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = calendarioHTML;
+}
+
+function nuevaActividad() {
+    alert('🚧 Nueva Actividad - Funcionalidad en desarrollo');
+}
+
+function cambiarVistaCalendario(vista) {
+    alert(`🚧 Cambiar vista a ${vista} - Funcionalidad en desarrollo`);
+}
+
 // ==================== EXPORTAR FUNCIONES ====================
 // Hacer las funciones disponibles globalmente para el fiscalizador
 window.loadDashboardStatsFiscalizador = loadDashboardStatsFiscalizador;
@@ -1017,6 +2041,12 @@ window.loadMisActas = loadMisActas;
 window.loadCrearActa = loadCrearActa;
 window.loadBuscarConductor = loadBuscarConductor;
 window.loadBuscarVehiculo = loadBuscarVehiculo;
+window.loadConductores = loadConductores;
+window.loadVehiculos = loadVehiculos;
+window.loadInspecciones = loadInspecciones;
+window.loadSection = loadSection;
+window.loadCalendario = loadCalendario;
+window.mostrarFormularioCrearActa = mostrarFormularioCrearActa;
 window.loadInfracciones = loadInfracciones;
 window.loadGestionarInfracciones = loadGestionarInfracciones;
 window.loadNuevaInfraccion = loadNuevaInfraccion;

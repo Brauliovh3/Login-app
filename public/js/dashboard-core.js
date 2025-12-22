@@ -182,7 +182,6 @@ function bindSidebarEvents() {
 
         const section = a.getAttribute('data-section');
         if (section) {
-            console.log('➡️ Sidebar click (data-section):', section);
             loadSection(section);
             return;
         }
@@ -190,13 +189,11 @@ function bindSidebarEvents() {
         // Manejar onclick attributes
         const onclick = a.getAttribute('onclick') || '';
         if (onclick) {
-            console.log('➡️ Sidebar click (onclick):', onclick);
-            
             if (onclick.includes('loadUsuariosList')) {
                 loadUsuariosList();
                 return;
             }
-            
+
             if (onclick.includes('toggleSubmenu')) {
                 const match = onclick.match(/toggleSubmenu\((?:'|")?(\w+)(?:'|")?\s*,\s*event\)/);
                 if (match) {
@@ -204,33 +201,25 @@ function bindSidebarEvents() {
                 }
                 return;
             }
-            
+
             if (onclick.includes('showCrearUsuarioModal')) {
                 showCrearUsuarioModal();
                 return;
             }
         }
-
-        console.log('ℹ️ Click en sidebar sin acción mapeada:', a);
     });
 
-    console.log('✅ Event listeners del sidebar configurados');
 }
 
 function toggleSubmenu(menuId, event) {
-    console.log('🔄 [DEBUG] toggleSubmenu llamado con menuId:', menuId);
-    
     if (event) {
         event.preventDefault();
-        console.log('✅ [DEBUG] preventDefault ejecutado');
     }
-    
+
     const submenu = document.getElementById('submenu-' + menuId);
-    console.log('🔍 [DEBUG] Buscando elemento:', 'submenu-' + menuId);
-    console.log('📍 [DEBUG] Elemento encontrado:', !!submenu);
-    
+
     if (!submenu) {
-        console.error('❌ [DEBUG] Submenu no encontrado:', 'submenu-' + menuId);
+        console.error('Submenu no encontrado:', 'submenu-' + menuId);
         return;
     }
     
@@ -238,37 +227,28 @@ function toggleSubmenu(menuId, event) {
     const currentDisplay = submenu.style.display;
     const isHidden = currentDisplay === 'none' || currentDisplay === '';
     
-    console.log('📊 [DEBUG] Estado actual - display:', currentDisplay, 'isHidden:', isHidden);
-    
     if (isHidden) {
         // Mostrar - forzar con !important
         submenu.style.setProperty('display', 'block', 'important');
         submenu.classList.add('show');
-        console.log('✅ [DEBUG] Submenu mostrado con !important');
     } else {
         // Ocultar - forzar con !important
         submenu.style.setProperty('display', 'none', 'important');
         submenu.classList.remove('show');
-        console.log('✅ [DEBUG] Submenu ocultado con !important');
     }
-    
-    console.log('🏁 [DEBUG] toggleSubmenu completado');
 }
 
 // Función alternativa para toggle submenu con método más directo
 function toggleSubmenuAlt(menuId, event) {
-    console.log('🔄 [ALT] toggleSubmenuAlt llamado con menuId:', menuId);
-    
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
+
     const submenu = document.getElementById('submenu-' + menuId);
-    console.log('🔍 [ALT] Elemento encontrado:', !!submenu);
-    
+
     if (!submenu) {
-        console.error('❌ [ALT] Submenu no encontrado');
+        console.error('Submenu no encontrado:', menuId);
         return;
     }
     
@@ -279,13 +259,11 @@ function toggleSubmenuAlt(menuId, event) {
         submenu.style.visibility = 'visible';
         submenu.style.opacity = '1';
         submenu.style.height = 'auto';
-        console.log('✅ [ALT] Submenu mostrado');
     } else {
         // Ocultar
         submenu.style.display = 'none';
         submenu.style.visibility = 'hidden';
         submenu.style.opacity = '0';
-        console.log('✅ [ALT] Submenu ocultado');
     }
 }
 
