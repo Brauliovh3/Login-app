@@ -243,11 +243,29 @@ Route::middleware(['auth', 'user.approved'])->group(function () {
     })->middleware('role:inspector')->name('inspector.dashboard');
 });
 
-// Rutas funcionales específicas para fiscalizador
-Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
+// Rutas funcionales específicas para fiscalizador y admin
+Route::middleware(['auth', 'user.approved'])->group(function () {
     Route::get('/fiscalizador/actas-contra', function() {
         return view('fiscalizador.actas-contra');
     })->name('fiscalizador.actas-contra');
+    
+    // Ruta para admin que carga el mismo formulario de actas
+    Route::get('/admin/actas-contra', function() {
+        return view('fiscalizador.actas-contra');
+    })->name('admin.actas-contra');
+    
+    // Ruta de prueba para verificar si la vista funciona
+    Route::get('/test-actas-view', function() {
+        try {
+            return view('fiscalizador.actas-contra');
+        } catch (\Exception $e) {
+            return "Error loading view: " . $e->getMessage();
+        }
+    });
+});
+
+// Rutas exclusivas para fiscalizador
+Route::middleware(['auth', 'user.approved', 'role:fiscalizador'])->group(function () {
     
     Route::get('/fiscalizador/calendario', function() {
         return view('fiscalizador.calendario');
@@ -496,6 +514,90 @@ Route::delete('/debug/api/actas/{id}', [ActaController::class, 'destroy'])->name
 Route::middleware(['auth', 'user.approved'])->prefix('api')->group(function () {
     // Dashboard stats
     Route::get('/dashboard-stats', [DashboardController::class, 'getDashboardStats']);
+    
+    // Subcategories for infringements
+    Route::get('/infracciones/subcategorias/{codigo_base}', function ($codigo_base) {
+        try {
+            // Debug: Check if tables exist and have data
+            $infraccionesCount = DB::table('infracciones')->count();
+            $detalleCount = DB::table('detalle_infraccion')->count();
+            
+            // Get main infringement
+            $infraccion = DB::table('infracciones')
+                ->where('codigo_infraccion', $codigo_base)
+                ->first();
+                
+            if (!$infraccion) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => "Código '$codigo_base' no encontrado",
+                    'debug' => [
+                        'infracciones_count' => $infraccionesCount,
+                        'detalle_count' => $detalleCount,
+                        'available_codes' => DB::table('infracciones')->pluck('codigo_infraccion')->toArray()
+                    ]
+                ]);
+            }
+            
+            // Get subcategories
+            $subcategorias = DB::table('detalle_infraccion')
+                ->where('infraccion_id', $infraccion->id)
+                ->orderBy('subcategoria')
+                ->get();
+                
+            $result = [];
+            foreach ($subcategorias as $sub) {
+                $result[] = [
+                    'subcategoria' => $sub->subcategoria,
+                    'codigo_completo' => $codigo_base . '-' . $sub->subcategoria,
+                    'descripcion_detallada' => $sub->descripcion_detallada,
+                    'condiciones_especiales' => $sub->condiciones_especiales,
+                    'observaciones' => $sub->observaciones
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'subcategorias' => $result,
+                'codigo_base' => $codigo_base,
+                'descripcion_base' => $infraccion->infraccion,
+                'debug' => [
+                    'infraccion_id' => $infraccion->id,
+                    'subcategorias_count' => count($result),
+                    'infracciones_total' => $infraccionesCount,
+                    'detalle_total' => $detalleCount
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    });
+    
+    // Test endpoint for debugging
+    Route::get('/infracciones/test', function () {
+        try {
+            $infracciones = DB::table('infracciones')->limit(5)->get();
+            $detalle = DB::table('detalle_infraccion')->limit(5)->get();
+            
+            return response()->json([
+                'success' => true,
+                'infracciones_count' => DB::table('infracciones')->count(),
+                'detalle_count' => DB::table('detalle_infraccion')->count(),
+                'sample_infracciones' => $infracciones,
+                'sample_detalle' => $detalle
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    });
     
     // Gestión de usuarios (solo administradores)
     Route::middleware(['role:administrador,superadmin'])->group(function () {
